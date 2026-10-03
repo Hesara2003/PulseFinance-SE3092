@@ -9,3 +9,4 @@ All comprehensive project documentation is maintained in the [`docs/`](docs/) di
 - **[Data Models & Storage](docs/DATA_MODELS_AND_STORAGE.md)** — Room entities, DAOs, Firestore schemas, TypeConverters.
 - **[Security & API Integrations](docs/API_AND_SECURITY.md)** — Firestore security rules, client sandbox, currency normalization engine.
 - **[Setup & Developer Guide](docs/SETUP_AND_CONTRIBUTION_GUIDE.md)** — Step-by-step instructions for JDK 21, Android Studio, Firebase, and building APKs.
+- **[Release Workflow & Google Drive](docs/RELEASE_WORKFLOW_AND_GDRIVE.md)** — Automated GitHub Actions CI/CD bundling APK/AAB and uploading to Google Drive.

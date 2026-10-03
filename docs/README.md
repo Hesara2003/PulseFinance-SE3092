@@ -15,6 +15,7 @@ Welcome to the official technical documentation for **PulseFinance** — a probl
 | [**Data Models & Storage**](DATA_MODELS_AND_STORAGE.md) | Entity schemas, Room DAOs, Firestore collections, TypeConverters, multi-currency conversion. | Backend & Database Engineers |
 | [**Security & API Integration**](API_AND_SECURITY.md) | Firebase Auth, Firestore security rules, currency normalization, and privacy controls. | Security Engineers & DevOps |
 | [**Setup & Contribution Guide**](SETUP_AND_CONTRIBUTION_GUIDE.md) | JDK 21 setup, Android Studio configuration, Firebase initialization, building APKs. | Developers & Contributors |
+| [**Release Workflow & Google Drive**](RELEASE_WORKFLOW_AND_GDRIVE.md) | Automated GitHub Actions CI/CD bundling APK/AAB and uploading to Google Drive. | Release Engineers & DevOps |
 
 ---
 
