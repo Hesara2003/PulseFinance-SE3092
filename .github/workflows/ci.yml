@@ -1,0 +1,51 @@
+name: Android CI Quality Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-test:
+    name: Build, Lint & Unit Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: 🐘 Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: false
+
+      - name: 🔨 Make Gradlew Executable
+        run: chmod +x ./gradlew
+
+      - name: 🧪 Run Unit Tests
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      - name: 🔍 Run Android Lint
+        run: ./gradlew lintDebug --no-daemon || true
+
+      - name: 🚀 Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: 💾 Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PulseFinance-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
