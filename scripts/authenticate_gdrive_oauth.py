@@ -40,32 +40,18 @@ def main():
 
     flow = InstalledAppFlow.from_client_config(client_config, scopes=scopes)
     
-    # Generate auth URL to print
-    auth_url, _ = flow.authorization_url(
-        access_type="offline",
-        prompt="consent"
-    )
-
     print("\n==================================================")
     print("🌐 GOOGLE DRIVE OAUTH AUTHORIZATION")
     print("==================================================")
-    print("Opening authorization in your browser...")
-    print(f"\nIf browser did not open automatically, visit this URL:\n\n{auth_url}\n")
-    print("==================================================")
+    print("Starting local listener on port 8085 and opening browser...")
     sys.stdout.flush()
 
-    # Open browser on macOS
-    try:
-        subprocess.run(["open", auth_url], check=False)
-    except Exception:
-        pass
-
-    # Start local server to receive the authorization code
+    # Start local server to receive the authorization code with automatic browser open and URL display
     credentials = flow.run_local_server(
         port=args.port,
         access_type="offline",
         prompt="consent",
-        open_browser=False
+        open_browser=True
     )
 
     refresh_token = credentials.refresh_token
