@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1071117558538",
+    "project_id": "finance-app-se3092",
+    "storage_bucket": "finance-app-se3092.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1071117558538:android:4ec1283bc0cae2a08ad0f3",
+        "android_client_info": {
+          "package_name": "com.se3092.pulsefinance"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3HdjQtA2byUX6D3y-h_04f6zMFf7Oqfw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
