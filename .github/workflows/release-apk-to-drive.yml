@@ -173,12 +173,14 @@ jobs:
 
       - name: ☁️ Upload APK to Google Drive
         env:
+          GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
           GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
           GDRIVE_FOLDER_ID: "1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d"
         run: |
-          if [ -z "$GDRIVE_SA_KEY" ]; then
-            echo "::warning::GDRIVE_SA_KEY secret is not set in this repository. Skipping Google Drive upload step."
-            echo "Please configure the GDRIVE_SA_KEY repository secret and share Google Drive folder '1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d' with the Service Account email as Editor."
+          if [ -z "$GDRIVE_REFRESH_TOKEN" ] && [ -z "$GDRIVE_SA_KEY" ]; then
+            echo "::warning::Neither GDRIVE_REFRESH_TOKEN nor GDRIVE_SA_KEY secret is configured. Skipping Google Drive upload step."
             echo "See docs/RELEASE_WORKFLOW_AND_GDRIVE.md for setup instructions."
           else
             echo "Uploading APK to Google Drive folder 1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d..."
