@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 PulseFinance Google Drive Release Upload Script
-Uploads built APK/AAB bundles to Google Drive folder using a Service Account.
+Supports:
+1. OAuth 2.0 User Refresh Token (Recommended for personal @gmail.com accounts - no 0-byte quota issue)
+2. Service Account JSON Key (Recommended for Google Workspace Shared / Team Drives)
 """
 
 import os
@@ -25,31 +27,49 @@ def parse_args():
     return parser.parse_args()
 
 def load_credentials(creds_input):
-    from google.oauth2 import service_account
-
     scopes = [
         "https://www.googleapis.com/auth/drive",
         "https://www.googleapis.com/auth/drive.file"
     ]
 
-    # 1. From CLI argument or environment variables
+    # --- Mode 1: OAuth 2.0 User Refresh Token (Bypasses Service Account 0-byte quota) ---
+    refresh_token = os.environ.get("GDRIVE_REFRESH_TOKEN")
+    client_id = os.environ.get("GDRIVE_CLIENT_ID")
+    client_secret = os.environ.get("GDRIVE_CLIENT_SECRET")
+
+    if refresh_token and client_id and client_secret:
+        from google.oauth2.credentials import Credentials
+        print("[*] Authenticating via OAuth 2.0 User Refresh Token (Personal Drive Quota)...")
+        return Credentials(
+            None,
+            refresh_token=refresh_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=client_id,
+            client_secret=client_secret,
+            scopes=scopes
+        )
+
+    # --- Mode 2: Service Account JSON ---
+    from google.oauth2 import service_account
+
     raw = creds_input or os.environ.get("GDRIVE_SA_KEY") or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
     if not raw:
         raise ValueError(
-            "Missing Google Drive Service Account credentials! "
-            "Please provide --credentials or set GDRIVE_SA_KEY in environment/secrets."
+            "Missing Google Drive credentials! Provide either:\n"
+            "  1. GDRIVE_REFRESH_TOKEN + GDRIVE_CLIENT_ID + GDRIVE_CLIENT_SECRET (for personal Google Drive)\n"
+            "  2. GDRIVE_SA_KEY (for Google Workspace Shared Drives)\n"
         )
 
-    # Check if raw is an existing file path
+    # Check if raw is a file path
     if os.path.exists(raw):
-        print(f"[*] Loading credentials from file: {raw}")
+        print(f"[*] Loading Service Account credentials from file: {raw}")
         return service_account.Credentials.from_service_account_file(raw, scopes=scopes)
 
     # Check if raw is Base64 encoded JSON
     try:
         decoded = base64.b64decode(raw).decode("utf-8")
         if "{" in decoded and "client_email" in decoded:
-            print("[*] Loaded credentials from base64-encoded string.")
+            print("[*] Loaded Service Account credentials from base64-encoded string.")
             info = json.loads(decoded)
             return service_account.Credentials.from_service_account_info(info, scopes=scopes)
     except Exception:
@@ -58,7 +78,7 @@ def load_credentials(creds_input):
     # Check if raw is plain JSON string
     try:
         info = json.loads(raw)
-        print("[*] Loaded credentials from raw JSON string.")
+        print("[*] Loaded Service Account credentials from raw JSON string.")
         return service_account.Credentials.from_service_account_info(info, scopes=scopes)
     except Exception as e:
         raise ValueError(f"Could not parse Service Account credentials: {e}")
@@ -97,12 +117,17 @@ def main():
     credentials = load_credentials(args.credentials)
     service = build("drive", "v3", credentials=credentials, cache_discovery=False)
 
-    # Determine MIME type
     mime_type = "application/vnd.android.package-archive" if file_path.suffix.lower() == ".apk" else "application/octet-stream"
 
-    # Check if file with same name already exists in target folder
+    # Search for existing file in target folder
     query = f"'{args.folder_id}' in parents and name = '{file_name}' and trashed = false"
-    response = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
+    response = service.files().list(
+        q=query,
+        spaces='drive',
+        fields='files(id, name)',
+        supportsAllDrives=True,
+        includeItemsFromAllDrives=True
+    ).execute()
     existing_files = response.get('files', [])
 
     media = MediaFileUpload(
@@ -118,7 +143,8 @@ def main():
         file_obj = service.files().update(
             fileId=existing_id,
             media_body=media,
-            fields='id, name, webViewLink, webContentLink, size'
+            fields='id, name, webViewLink, webContentLink, size',
+            supportsAllDrives=True
         ).execute()
     else:
         file_metadata = {
@@ -129,7 +155,8 @@ def main():
         file_obj = service.files().create(
             body=file_metadata,
             media_body=media,
-            fields='id, name, webViewLink, webContentLink, size'
+            fields='id, name, webViewLink, webContentLink, size',
+            supportsAllDrives=True
         ).execute()
 
     file_id = file_obj.get("id")
