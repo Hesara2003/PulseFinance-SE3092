@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Finance app: phone showing a safe-to-spend gauge, used in onboarding -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <path
+        android:fillColor="#00C950"
+        android:fillAlpha="0.10"
+        android:pathData="M100,20C150,20 185,55 182,102C179,150 145,182 98,180C50,178 18,146 20,98C22,52 52,20 100,20Z" />
+    <path
+        android:fillColor="#191C1E"
+        android:pathData="M72,28h56a10,10 0,0 1,10 10v124a10,10 0,0 1,-10 10H72a10,10 0,0 1,-10,-10V38a10,10 0,0 1,10,-10z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M68,40h64v116H68z" />
+    <path
+        android:strokeColor="#E2E8F0"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M80,94a20,20 0,1 1,40 0" />
+    <path
+        android:strokeColor="#00C950"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M80,94a20,20 0,0 1,30,-17" />
+    <path
+        android:strokeColor="#CBD5E1"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M80,120h40" />
+    <path
+        android:strokeColor="#CBD5E1"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M80,132h28" />
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M150,56m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0" />
+</vector>
