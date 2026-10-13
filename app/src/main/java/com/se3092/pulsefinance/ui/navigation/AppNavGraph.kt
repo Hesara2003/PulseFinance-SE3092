@@ -284,11 +284,18 @@ fun AppNavGraph(
 
             composable(Screen.Dashboard.route) {
                 val dashboardViewModel: DashboardViewModel = hiltViewModel()
+                fun goToTab(route: String) {
+                    navController.navigate(route) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
                 DashboardScreen(
                     viewModel = dashboardViewModel,
-                    onNavigateToAddExpense = {
-                        navController.navigate(Screen.Expenses.route)
-                    },
+                    onNavigateToIncome = { goToTab(Screen.Income.route) },
+                    onNavigateToGoal = { goToTab(Screen.Goal.route) },
+                    onNavigateToAnalytics = { goToTab(Screen.Analytics.route) },
                     onSignOut = {
                         navController.navigate(Screen.Auth.route) {
                             popUpTo(0) { inclusive = true }
