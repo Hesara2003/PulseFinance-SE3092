@@ -1,29 +1,35 @@
 package com.se3092.pulsefinance.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Upsert
 import com.se3092.pulsefinance.data.local.entity.IncomeEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface IncomeDao {
+abstract class IncomeDao {
     @Query("SELECT * FROM income_streams WHERE userId = :userId ORDER BY dateReceivedOrExpected DESC")
-    fun getIncomeStreams(userId: String): Flow<List<IncomeEntity>>
+    abstract fun getIncomeStreams(userId: String): Flow<List<IncomeEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertIncome(income: IncomeEntity)
+    @Upsert
+    abstract suspend fun upsertIncome(income: IncomeEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertIncomeStreams(incomes: List<IncomeEntity>)
+    @Upsert
+    abstract suspend fun upsertIncomeStreams(incomes: List<IncomeEntity>)
 
     @Query("UPDATE income_streams SET status = :status WHERE id = :incomeId AND userId = :userId")
-    suspend fun updateStatus(incomeId: String, userId: String, status: String)
+    abstract suspend fun updateStatus(incomeId: String, userId: String, status: String)
 
     @Query("DELETE FROM income_streams WHERE id = :incomeId AND userId = :userId")
-    suspend fun deleteIncome(incomeId: String, userId: String)
+    abstract suspend fun deleteIncome(incomeId: String, userId: String)
 
     @Query("DELETE FROM income_streams WHERE userId = :userId")
-    suspend fun clearUserIncome(userId: String)
+    abstract suspend fun clearUserIncome(userId: String)
+
+    @Transaction
+    open suspend fun replaceUserIncome(userId: String, incomes: List<IncomeEntity>) {
+        clearUserIncome(userId)
+        upsertIncomeStreams(incomes)
+    }
 }
