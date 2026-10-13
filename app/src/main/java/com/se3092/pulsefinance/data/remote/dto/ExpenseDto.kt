@@ -1,20 +1,22 @@
 package com.se3092.pulsefinance.data.remote.dto
 
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.PropertyName
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 
 data class ExpenseDto(
-    @DocumentId val id: String = "",
-    val userId: String = "",
-    val title: String = "",
-    val amountLkr: Double = 0.0,
-    val category: String = "OTHER",
-    val isCommitted: Boolean = false,
-    val paymentAccountId: String = "",
-    val paymentAccountName: String = "",
-    val timestamp: Long = System.currentTimeMillis(),
-    val notes: String = ""
+    @DocumentId var id: String = "",
+    var userId: String = "",
+    var title: String = "",
+    var amountLkr: Double = 0.0,
+    var category: String = "OTHER",
+    @get:PropertyName("isCommitted") @set:PropertyName("isCommitted")
+    var isCommitted: Boolean = false,
+    var paymentAccountId: String = "",
+    var paymentAccountName: String = "",
+    var timestamp: Long = System.currentTimeMillis(),
+    var notes: String = ""
 ) {
     fun toDomain(): Expense = Expense(
         id = id,
