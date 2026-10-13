@@ -42,6 +42,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.se3092.pulsefinance.R
+import com.se3092.pulsefinance.ui.components.EmptyStateView
+import com.se3092.pulsefinance.ui.util.Formatters
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -166,7 +169,7 @@ fun AnalyticsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "KP",
+                                text = state.userInitials,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White,
                                 fontSize = 12.sp
@@ -475,7 +478,7 @@ fun AnalyticsScreen(
                                     }
 
                                     Text(
-                                        text = "LKR ${String.format("%,.2f", selectedDay.amountLkr)}",
+                                        text = Formatters.lkr(selectedDay.amountLkr, decimals = 2),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = NeoTextPrimary
@@ -486,7 +489,14 @@ fun AnalyticsScreen(
                     }
                 }
 
-                // 3. Recent Transactions Header
+                // 3. Category Breakdown for the selected period
+                if (state.categoryBreakdown.isNotEmpty()) {
+                    item {
+                        CategoryBreakdownCard(slices = state.categoryBreakdown)
+                    }
+                }
+
+                // 4. Recent Transactions Header
                 item {
                     Row(
                         modifier = Modifier
@@ -521,6 +531,16 @@ fun AnalyticsScreen(
                     state.transactions
                 } else {
                     state.transactions.take(3)
+                }
+
+                if (state.transactions.isEmpty()) {
+                    item {
+                        EmptyStateView(
+                            title = "Nothing logged in this period",
+                            message = "Switch period or log expenses from the Cockpit to see your spending patterns.",
+                            illustration = R.drawable.illustration_insights
+                        )
+                    }
                 }
 
                 items(visibleTransactions, key = { it.id }) { tx ->
@@ -565,12 +585,9 @@ private fun TransactionLedgerCard(
                 modifier = Modifier.weight(1f)
             ) {
                 // Category / Type Glyphs Container
-                val (bgColor, iconTint, iconVector) = when (tx.iconType) {
-                    "fitness" -> Triple(NeoErrorContainer, NeoRose, Icons.Default.FitnessCenter)
-                    "taxi" -> Triple(NeoSecondaryContainer, NeoTextSecondary, Icons.Default.LocalTaxi)
-                    "wifi" -> Triple(NeoCardLow, NeoTextSecondary, Icons.Default.Wifi)
-                    else -> Triple(NeoGreen.copy(alpha = 0.15f), NeoGreenDark, Icons.Default.Payments)
-                }
+                val bgColor = if (tx.isZombie) NeoErrorContainer else tx.visual.container
+                val iconTint = if (tx.isZombie) NeoRose else tx.visual.tint
+                val iconVector = tx.visual.icon
 
                 Box(
                     modifier = Modifier
@@ -661,6 +678,94 @@ private fun TransactionLedgerCard(
                     tint = NeoTextSecondary,
                     modifier = Modifier.size(18.dp)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryBreakdownCard(slices: List<CategorySlice>) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = NeoCard,
+        border = BorderStroke(1.dp, NeoBorder)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Where It Went",
+                style = MaterialTheme.typography.titleMedium,
+                color = NeoTextPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+
+            // Stacked share bar across all categories
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(CircleShape)
+                    .background(NeoContainer)
+            ) {
+                slices.forEach { slice ->
+                    if (slice.share > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .weight(slice.share)
+                                .fillMaxHeight()
+                                .background(slice.visual.tint)
+                        )
+                    }
+                }
+            }
+
+            slices.forEach { slice ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clip(CircleShape)
+                            .background(slice.visual.container),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = slice.visual.icon,
+                            contentDescription = null,
+                            tint = slice.visual.tint,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Text(
+                        text = slice.category.displayName,
+                        fontSize = 13.sp,
+                        color = NeoTextPrimary,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = Formatters.percent(slice.share),
+                        fontSize = 12.sp,
+                        color = NeoTextSecondary
+                    )
+                    Text(
+                        text = Formatters.lkr(slice.amountLkr),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeoTextPrimary
+                    )
+                }
             }
         }
     }
