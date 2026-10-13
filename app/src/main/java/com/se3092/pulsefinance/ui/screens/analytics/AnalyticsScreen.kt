@@ -1,5 +1,8 @@
 package com.se3092.pulsefinance.ui.screens.analytics
 
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import com.se3092.pulsefinance.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -30,6 +33,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FitnessCenter
@@ -67,6 +72,17 @@ import com.se3092.pulsefinance.ui.theme.NeoGreenDark
 import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
 import com.se3092.pulsefinance.ui.theme.NeoRose
 import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Payments
+import com.se3092.pulsefinance.ui.common.TransactionItem
+import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
+import com.se3092.pulsefinance.ui.common.lkr
+import com.se3092.pulsefinance.ui.common.relativeDayLabel
+import com.se3092.pulsefinance.ui.common.signedLkr
+import com.se3092.pulsefinance.ui.common.transactionVisual
+import com.se3092.pulsefinance.ui.components.CommittedVsDiscretionaryBar
+import com.se3092.pulsefinance.ui.components.EmptyStateView
 import com.se3092.pulsefinance.ui.theme.NeoSurface
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
@@ -103,24 +119,11 @@ fun AnalyticsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(NeoGreenDark, NeoGreen)
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.RocketLaunch,
-                            contentDescription = "PulseFinance Emblem",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    Image(
+                        painter = painterResource(R.drawable.logo_mark),
+                        contentDescription = "PulseFinance logo",
+                        modifier = Modifier.size(36.dp)
+                    )
                     Text(
                         text = "PulseFinance",
                         style = MaterialTheme.typography.titleMedium,
@@ -165,11 +168,11 @@ fun AnalyticsScreen(
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "KP",
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color.White,
-                                fontSize = 12.sp
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Profile",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -198,7 +201,7 @@ fun AnalyticsScreen(
                                 .padding(4.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            val isWeekly = state.selectedInterval == "weekly"
+                            val isWeekly = state.interval == AnalyticsInterval.WEEKLY
 
                             // Weekly Button
                             Box(
@@ -214,7 +217,7 @@ fun AnalyticsScreen(
                                             Modifier.background(Color.Transparent)
                                         }
                                     )
-                                    .clickable { viewModel.switchInterval("weekly") }
+                                    .clickable { viewModel.switchInterval(AnalyticsInterval.WEEKLY) }
                                     .padding(vertical = 10.dp),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -227,7 +230,7 @@ fun AnalyticsScreen(
                             }
 
                             // Monthly Button
-                            val isMonthly = state.selectedInterval == "monthly"
+                            val isMonthly = state.interval == AnalyticsInterval.MONTHLY
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
@@ -241,7 +244,7 @@ fun AnalyticsScreen(
                                             Modifier.background(Color.Transparent)
                                         }
                                     )
-                                    .clickable { viewModel.switchInterval("monthly") }
+                                    .clickable { viewModel.switchInterval(AnalyticsInterval.MONTHLY) }
                                     .padding(vertical = 10.dp),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -302,7 +305,7 @@ fun AnalyticsScreen(
                                 Spacer(modifier = Modifier.width(20.dp))
 
                                 Text(
-                                    text = state.currentPeriod,
+                                    text = state.periodLabel,
                                     style = MaterialTheme.typography.titleMedium,
                                     color = NeoTextPrimary,
                                     fontWeight = FontWeight.Bold,
@@ -316,7 +319,8 @@ fun AnalyticsScreen(
                                         .size(34.dp)
                                         .clip(CircleShape)
                                         .background(NeoCardLow)
-                                        .clickable { viewModel.shiftPeriod(1) },
+                                        .alpha(if (state.canGoForward) 1f else 0.35f)
+                                        .clickable(enabled = state.canGoForward) { viewModel.shiftPeriod(1) },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -332,7 +336,7 @@ fun AnalyticsScreen(
 
                             // Total Financial Metric Breakdown
                             Text(
-                                text = state.heroAmountFormatted,
+                                text = lkr(state.totalSpentLkr, 2),
                                 style = MaterialTheme.typography.headlineLarge,
                                 color = NeoTextPrimary,
                                 fontWeight = FontWeight.ExtraBold,
@@ -341,7 +345,7 @@ fun AnalyticsScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Committed vs Discretionary total",
+                                text = "Spent · ${lkr(state.incomeLkr)} received in the same period",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = NeoTextSecondary,
                                 fontSize = 13.sp
@@ -357,7 +361,7 @@ fun AnalyticsScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.Bottom
                             ) {
-                                state.timelineDays.forEachIndexed { index, day ->
+                                state.bars.forEachIndexed { index, day ->
                                     val isSelected = index == state.selectedBarIndex
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -397,14 +401,14 @@ fun AnalyticsScreen(
 
                                         // Day number (e.g. 17, 18, 23)
                                         Text(
-                                            text = day.dayNumber,
+                                            text = day.primaryLabel,
                                             fontSize = 13.sp,
                                             fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
                                             color = if (isSelected) NeoGreenDark else NeoTextPrimary
                                         )
                                         // Day of week (e.g. Sun, Mon)
                                         Text(
-                                            text = day.dayOfWeek,
+                                            text = day.secondaryLabel,
                                             fontSize = 11.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             color = if (isSelected) NeoGreenDark else NeoTextSecondary
@@ -436,8 +440,8 @@ fun AnalyticsScreen(
                                 label = "alpha"
                             )
 
-                            val selectedDay = state.selectedDayStat
-                            Surface(
+                            val selectedDay = state.selectedBar
+                            if (selectedDay != null) Surface(
                                 shape = RoundedCornerShape(14.dp),
                                 color = NeoCardLow,
                                 modifier = Modifier.fillMaxWidth()
@@ -461,10 +465,11 @@ fun AnalyticsScreen(
                                                 .clip(CircleShape)
                                                 .background(NeoGreen)
                                         )
+                                        val unit = if (state.interval == AnalyticsInterval.WEEKLY) "day" else "week"
                                         val labelText = if (selectedDay.isPeak) {
-                                            "Peak Outflow Day: ${selectedDay.dayNumber} ${selectedDay.dayOfWeek}"
+                                            "Peak $unit: ${selectedDay.primaryLabel} ${selectedDay.secondaryLabel}"
                                         } else {
-                                            "Daily Outflow: ${selectedDay.dayNumber} ${selectedDay.dayOfWeek}"
+                                            "Spent: ${selectedDay.primaryLabel} ${selectedDay.secondaryLabel}"
                                         }
                                         Text(
                                             text = labelText,
@@ -486,7 +491,20 @@ fun AnalyticsScreen(
                     }
                 }
 
-                // 3. Recent Transactions Header
+                // 3. Committed vs discretionary for the selected period
+                item {
+                    CommittedVsDiscretionaryBar(
+                        committedAmountLkr = state.committedLkr,
+                        discretionaryAmountLkr = state.discretionaryLkr
+                    )
+                }
+
+                // 4. Where the money went, by category
+                if (state.categoryTotals.isNotEmpty()) item {
+                    CategoryBreakdownCard(state.categoryTotals)
+                }
+
+                // 5. Transactions Header
                 item {
                     Row(
                         modifier = Modifier
@@ -496,31 +514,42 @@ fun AnalyticsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Recent Transactions",
+                            text = "Transactions",
                             style = MaterialTheme.typography.titleMedium,
                             color = NeoTextPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
 
-                        Text(
-                            text = if (state.showAllTransactions) "Show less" else "View all",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = NeoGreenDark,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { viewModel.toggleViewAll() }
-                                .padding(horizontal = 4.dp, vertical = 2.dp)
-                        )
+                        if (state.transactions.size > 3) {
+                            Text(
+                                text = if (state.showAllTransactions) "Show less" else "View all (${state.transactions.size})",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeoGreenDark,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { viewModel.toggleViewAll() }
+                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                 }
 
-                // 4. Recent Transactions Ledger Stack
+                // 6. Ledger Stack (income and expenses in this period)
                 val visibleTransactions = if (state.showAllTransactions) {
                     state.transactions
                 } else {
                     state.transactions.take(3)
+                }
+
+                if (!state.isLoading && visibleTransactions.isEmpty()) item {
+                    EmptyStateView(
+                        title = "Nothing recorded in this period",
+                        message = "Expenses and received income for ${state.periodLabel.lowercase()} will appear here.",
+                        icon = Icons.Default.Payments,
+                        illustration = R.drawable.illustration_no_data
+                    )
                 }
 
                 items(visibleTransactions, key = { it.id }) { tx ->
@@ -536,9 +565,79 @@ fun AnalyticsScreen(
 }
 
 @Composable
-private fun TransactionLedgerCard(
-    tx: com.se3092.pulsefinance.ui.screens.analytics.TransactionDisplayItem
-) {
+private fun CategoryBreakdownCard(totals: List<CategoryTotal>) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = NeoCard,
+        border = BorderStroke(1.dp, NeoBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "WHERE IT WENT",
+                style = MaterialTheme.typography.labelSmall,
+                color = NeoTextSecondary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                letterSpacing = 1.sp
+            )
+            totals.forEach { total ->
+                val visual = expenseCategoryVisual(total.category)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .clip(CircleShape)
+                                    .background(visual.container),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(visual.icon, contentDescription = null, tint = visual.tint, modifier = Modifier.size(14.dp))
+                            }
+                            Text(text = total.category.displayName, fontSize = 13.sp, color = NeoTextPrimary)
+                        }
+                        Text(
+                            text = "${lkr(total.amountLkr)} · ${(total.share * 100).toInt()}%",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeoTextPrimary
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(CircleShape)
+                            .background(NeoContainer)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(total.share.coerceAtLeast(0.02f))
+                                .fillMaxHeight()
+                                .clip(CircleShape)
+                                .background(if (total.category.isTypicallyCommitted) NeoTextSecondary else NeoGreen)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransactionLedgerCard(tx: TransactionItem) {
+    val visual = transactionVisual(tx)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -564,64 +663,32 @@ private fun TransactionLedgerCard(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                // Category / Type Glyphs Container
-                val (bgColor, iconTint, iconVector) = when (tx.iconType) {
-                    "fitness" -> Triple(NeoErrorContainer, NeoRose, Icons.Default.FitnessCenter)
-                    "taxi" -> Triple(NeoSecondaryContainer, NeoTextSecondary, Icons.Default.LocalTaxi)
-                    "wifi" -> Triple(NeoCardLow, NeoTextSecondary, Icons.Default.Wifi)
-                    else -> Triple(NeoGreen.copy(alpha = 0.15f), NeoGreenDark, Icons.Default.Payments)
-                }
-
                 Box(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(CircleShape)
-                        .background(bgColor),
+                        .background(visual.container),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = iconVector,
+                        imageVector = visual.icon,
                         contentDescription = tx.title,
-                        tint = iconTint,
+                        tint = visual.tint,
                         modifier = Modifier.size(22.dp)
                     )
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = tx.title,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = NeoTextPrimary,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-
-                        // Flagged Zombie Chip
-                        if (tx.isZombie) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(NeoRose.copy(alpha = 0.12f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "Zombie",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = NeoRose
-                                )
-                            }
-                        }
-                    }
-
+                    Text(
+                        text = tx.title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = NeoTextPrimary,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     Spacer(modifier = Modifier.height(2.dp))
-
                     Text(
                         text = tx.subtitle,
                         style = MaterialTheme.typography.labelSmall,
@@ -633,33 +700,20 @@ private fun TransactionLedgerCard(
                 }
             }
 
-            // Amount & Timestamp Row
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = tx.amountText,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (tx.isPositive) NeoGreenDark else NeoTextPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = tx.timeLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = NeoTextSecondary,
-                        fontSize = 11.sp
-                    )
-                }
-
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = NeoTextSecondary,
-                    modifier = Modifier.size(18.dp)
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = signedLkr(tx.amountLkr),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (tx.isIncoming) NeoGreenDark else NeoTextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = tx.originalAmountLabel ?: relativeDayLabel(tx.timestamp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = NeoTextSecondary,
+                    fontSize = 11.sp
                 )
             }
         }

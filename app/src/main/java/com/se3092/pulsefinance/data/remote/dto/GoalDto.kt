@@ -6,9 +6,9 @@ import com.se3092.pulsefinance.domain.model.SavingsGoal
 data class GoalDto(
     @DocumentId val id: String = "",
     val userId: String = "",
-    val title: String = "MacBook Pro M4",
-    val targetAmountLkr: Double = 490000.0,
-    val currentSavedLkr: Double = 11200.0,
+    val title: String = "",
+    val targetAmountLkr: Double = 0.0,
+    val currentSavedLkr: Double = 0.0,
     val targetDateMillis: Long = System.currentTimeMillis() + (365L * 24 * 60 * 60 * 1000),
     val createdDateMillis: Long = System.currentTimeMillis(),
     val notes: String = ""

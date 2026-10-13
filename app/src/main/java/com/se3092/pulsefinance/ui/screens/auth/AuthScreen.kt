@@ -34,6 +34,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Button
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.se3092.pulsefinance.R
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -52,6 +55,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -84,6 +88,21 @@ fun AuthScreen(
     val pagerState = rememberPagerState(pageCount = { 3 })
     val coroutineScope = rememberCoroutineScope()
     var showCustomCredentials by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    fun openCredentials(isLogin: Boolean) {
+        viewModel.setLoginMode(isLogin)
+        showCustomCredentials = true
+    }
+
+    fun startGoogleSignIn() {
+        coroutineScope.launch {
+            GoogleIdTokenRequester.request(context).fold(
+                onSuccess = { token -> token?.let(viewModel::onGoogleIdToken) },
+                onFailure = viewModel::onGoogleSignInFailed
+            )
+        }
+    }
 
     LaunchedEffect(state.isAuthenticated) {
         if (state.isAuthenticated) {
@@ -174,7 +193,7 @@ fun AuthScreen(
                                     pagerState.animateScrollToPage(2)
                                 }
                             } else {
-                                viewModel.submit()
+                                openCredentials(isLogin = false)
                             }
                         }
                     ) {
@@ -325,14 +344,12 @@ fun AuthScreen(
             // =========================================================================
             Button(
                 onClick = {
-                    if (pagerState.currentPage < 2 && !showCustomCredentials) {
-                        // Move to next onboarding screen
-                        coroutineScope.launch {
+                    when {
+                        showCustomCredentials -> viewModel.submit()
+                        pagerState.currentPage < 2 -> coroutineScope.launch {
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
-                    } else {
-                        // Final step or custom credentials submission
-                        viewModel.submit()
+                        else -> openCredentials(isLogin = false)
                     }
                 },
                 enabled = !state.isLoading,
@@ -381,6 +398,39 @@ fun AuthScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Same size and shape as the primary CTA so the two read as equal choices
+            Button(
+                onClick = { startGoogleSignIn() },
+                enabled = !state.isLoading,
+                shape = CircleShape,
+                border = BorderStroke(1.dp, NeoBorder),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = NeoTextPrimary,
+                    disabledContainerColor = Color.White.copy(alpha = 0.6f)
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 0.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_google_logo),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Continue with Google",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    color = NeoTextPrimary
+                )
+            }
+
             Spacer(modifier = Modifier.height(14.dp))
 
             // Sub-Action: Toggle credentials / Login switch
@@ -394,14 +444,14 @@ fun AuthScreen(
                     color = NeoTextTertiary
                 )
                 Text(
-                    text = if (showCustomCredentials) "Hide Credentials" else "Login / Custom",
+                    text = if (showCustomCredentials) "Hide form" else "Sign in",
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = NeoGreenDark,
                     modifier = Modifier
                         .clip(CircleShape)
                         .clickable {
-                            showCustomCredentials = !showCustomCredentials
+                            if (showCustomCredentials) showCustomCredentials = false else openCredentials(isLogin = true)
                         }
                         .padding(horizontal = 4.dp, vertical = 2.dp)
                 )

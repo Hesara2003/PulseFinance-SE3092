@@ -1,6 +1,7 @@
 package com.se3092.pulsefinance.data.remote.dto
 
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.PropertyName
 import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.AccountType
 
@@ -10,7 +11,7 @@ data class AccountDto(
     val name: String = "",
     val type: String = "BANK_PRIMARY",
     val balanceLkr: Double = 0.0,
-    val isAutoDebitSource: Boolean = false
+    @get:PropertyName("isAutoDebitSource") val isAutoDebitSource: Boolean = false
 ) {
     fun toDomain(): Account = Account(
         id = id,

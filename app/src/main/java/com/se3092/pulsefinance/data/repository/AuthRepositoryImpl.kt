@@ -20,6 +20,9 @@ class AuthRepositoryImpl @Inject constructor(
     override val userEmail: String?
         get() = firebaseAuthDataSource.userEmail
 
+    override val userDisplayName: String?
+        get() = firebaseAuthDataSource.userDisplayName
+
     override fun observeAuthState(): Flow<String?> =
         firebaseAuthDataSource.observeAuthState()
 
@@ -28,6 +31,9 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun signUpWithEmail(email: String, password: String): Result<String> =
         firebaseAuthDataSource.signUpWithEmail(email, password)
+
+    override suspend fun signInWithGoogle(idToken: String): Result<String> =
+        firebaseAuthDataSource.signInWithGoogle(idToken)
 
     override suspend fun signOut() =
         firebaseAuthDataSource.signOut()

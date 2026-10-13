@@ -7,11 +7,8 @@ import com.se3092.pulsefinance.data.remote.firebase.FirestoreDataSource
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,60 +19,38 @@ class IncomeRepositoryImpl @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource
 ) : IncomeRepository {
 
-    private val repositoryScope = CoroutineScope(Dispatchers.IO)
-
-    override fun getIncomeStreams(userId: String): Flow<List<IncomeStream>> {
-        repositoryScope.launch { syncIncome(userId) }
-        return incomeDao.getIncomeStreams(userId).map { entities ->
-            entities.map { it.toDomain() }
+    override fun getIncomeStreams(userId: String): Flow<List<IncomeStream>> = cacheBackedFlow(
+        tag = TAG,
+        local = incomeDao.getIncomeStreams(userId).map { entities -> entities.map { it.toDomain() } },
+        sync = {
+            firestoreDataSource.observeIncomeStreams(userId).collect { dtos ->
+                incomeDao.replaceAll(userId, dtos.map { IncomeEntity.fromDomain(it.toDomain()) })
+            }
         }
-    }
+    )
 
-    override suspend fun addIncomeStream(income: IncomeStream): Result<Unit> {
-        return try {
-            val incomeId = if (income.id.isNotBlank()) income.id else UUID.randomUUID().toString()
-            val preparedIncome = income.copy(id = incomeId)
-
-            incomeDao.insertIncome(IncomeEntity.fromDomain(preparedIncome))
-            firestoreDataSource.saveIncomeStream(income.userId, IncomeDto.fromDomain(preparedIncome))
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.success(Unit) // Offline fallback
-        }
+    override suspend fun saveIncomeStream(income: IncomeStream): Result<Unit> = runCatching {
+        val prepared = income.copy(id = income.id.ifBlank { UUID.randomUUID().toString() })
+        incomeDao.insertIncome(IncomeEntity.fromDomain(prepared))
+        firestoreDataSource.saveIncomeStream(prepared.userId, IncomeDto.fromDomain(prepared))
     }
 
     override suspend fun updateInvoiceStatus(
         incomeId: String,
         userId: String,
-        status: InvoiceStatus
-    ): Result<Unit> {
-        return try {
-            incomeDao.updateStatus(incomeId, userId, status.name)
-            firestoreDataSource.updateIncomeStatus(userId, incomeId, status.name)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        status: InvoiceStatus,
+        dateMillis: Long
+    ): Result<Unit> = runCatching {
+        incomeDao.updateStatus(incomeId, userId, status.name, dateMillis)
+        firestoreDataSource.updateIncomeStatus(userId, incomeId, status.name, dateMillis)
     }
 
-    override suspend fun deleteIncomeStream(incomeId: String, userId: String): Result<Unit> {
-        return try {
-            incomeDao.deleteIncome(incomeId, userId)
-            firestoreDataSource.deleteIncomeStream(userId, incomeId)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    override suspend fun deleteIncomeStream(incomeId: String, userId: String): Result<Unit> = runCatching {
+        incomeDao.deleteIncome(incomeId, userId)
+        firestoreDataSource.deleteIncomeStream(userId, incomeId)
     }
 
-    override suspend fun syncIncome(userId: String) {
-        repositoryScope.launch {
-            try {
-                firestoreDataSource.observeIncomeStreams(userId).collect { dtos ->
-                    val entities = dtos.map { IncomeEntity.fromDomain(it.toDomain()) }
-                    incomeDao.insertIncomeStreams(entities)
-                }
-            } catch (_: Exception) {}
-        }
+    private companion object {
+        const val TAG = "IncomeRepository"
     }
 }

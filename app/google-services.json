@@ -12,7 +12,20 @@
           "package_name": "com.se3092.pulsefinance"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1071117558538-pkb8latmc8a1fc6akpvmta3klvn70b02.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.se3092.pulsefinance",
+            "certificate_hash": "1465d407b8f0044f469f35f6b41a7c06e0180cba"
+          }
+        },
+        {
+          "client_id": "1071117558538-1u20d10cpgear953qr7a9dpdbvt5972m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA3HdjQtA2byUX6D3y-h_04f6zMFf7Oqfw"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1071117558538-1u20d10cpgear953qr7a9dpdbvt5972m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

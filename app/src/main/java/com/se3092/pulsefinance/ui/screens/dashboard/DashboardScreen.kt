@@ -1,5 +1,7 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import com.se3092.pulsefinance.ui.common.presetVisual
+import com.se3092.pulsefinance.ui.common.TransactionVisual
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -25,12 +27,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.NorthEast
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Paid
-import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.SouthWest
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -41,15 +39,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.se3092.pulsefinance.R
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
@@ -61,13 +65,19 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.se3092.pulsefinance.ui.common.compactAmount
+import com.se3092.pulsefinance.ui.common.lkr
+import com.se3092.pulsefinance.ui.common.signedLkr
+import com.se3092.pulsefinance.ui.common.transactionVisual
 import com.se3092.pulsefinance.ui.components.CommittedVsDiscretionaryBar
 import com.se3092.pulsefinance.ui.components.ExpenseItemCard
 import com.se3092.pulsefinance.ui.components.MacBookGoalCard
 import com.se3092.pulsefinance.ui.components.SafeToSpendGauge
+import com.se3092.pulsefinance.ui.screens.expense.AddExpenseBottomSheet
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
@@ -87,17 +97,28 @@ import com.se3092.pulsefinance.ui.theme.NeoTrack
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
-    onNavigateToAddExpense: () -> Unit,
+    onNavigateToIncome: () -> Unit,
+    onNavigateToGoal: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var isBalanceMasked by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(state.message) {
+        state.message?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.dismissMessage()
+        }
+    }
 
     Scaffold(
         containerColor = NeoSurface,
+        snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.padding(bottom = 76.dp)) },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToAddExpense,
+                onClick = { viewModel.openAddExpense() },
                 containerColor = NeoGreen,
                 contentColor = Color.White,
                 shape = CircleShape,
@@ -145,7 +166,7 @@ fun DashboardScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "KS",
+                                    text = state.initials,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White,
                                     fontSize = 15.sp
@@ -171,7 +192,7 @@ fun DashboardScreen(
 
                         Column {
                             Text(
-                                text = "Kavindu",
+                                text = state.firstName,
                                 style = MaterialTheme.typography.titleMedium,
                                 color = NeoTextPrimary,
                                 fontWeight = FontWeight.Bold,
@@ -179,7 +200,7 @@ fun DashboardScreen(
                                 letterSpacing = (-0.3).sp
                             )
                             Text(
-                                text = "Good morning",
+                                text = state.greeting,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = NeoTextSecondary,
                                 fontSize = 11.5.sp,
@@ -208,34 +229,6 @@ fun DashboardScreen(
                                     contentDescription = "Toggle Balance Privacy",
                                     tint = NeoTextSecondary,
                                     modifier = Modifier.size(19.dp)
-                                )
-                            }
-                        }
-
-                        // Notifications Button with Unread Badge
-                        Surface(
-                            shape = CircleShape,
-                            color = NeoCard,
-                            shadowElevation = 2.dp,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clickable { }
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Notifications,
-                                    contentDescription = "Notifications",
-                                    tint = NeoTextPrimary,
-                                    modifier = Modifier.size(19.dp)
-                                )
-                                // Unread Green Indicator Dot
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(top = 9.dp, end = 9.dp)
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(NeoGreen)
                                 )
                             }
                         }
@@ -368,7 +361,7 @@ fun DashboardScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        text = "VISA",
+                                        text = "PULSE",
                                         color = Color.White,
                                         fontWeight = FontWeight.ExtraBold,
                                         fontStyle = FontStyle.Italic,
@@ -381,37 +374,22 @@ fun DashboardScreen(
                                         fontSize = 11.sp
                                     )
                                     Text(
-                                        text = "COMMERCIAL BANK",
+                                        text = state.monthLabel.uppercase(),
                                         color = Color.White.copy(alpha = 0.9f),
                                         fontSize = 10.5.sp,
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = 0.8.sp
                                     )
                                 }
-
-                                Surface(
-                                    shape = CircleShape,
-                                    color = Color.White.copy(alpha = 0.15f),
-                                    modifier = Modifier.size(30.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.Default.MoreHoriz,
-                                            contentDescription = "Options",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                }
                             }
 
-                            // Center Balance Display
+                            // Center: this month's net cash flow across every income source
                             Column {
                                 Text(
                                     text = if (isBalanceMasked)
                                         "LKR ••••••••"
                                     else
-                                        "LKR ${String.format("%,.2f", state.summary.totalLiquidBalanceLkr)}",
+                                        signedLkr(state.summary.netSavingsLkr),
                                     color = Color.White,
                                     fontSize = 26.sp,
                                     fontWeight = FontWeight.ExtraBold,
@@ -419,7 +397,7 @@ fun DashboardScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Safe-to-Spend Liquid Balance",
+                                    text = "Net cash flow this month",
                                     color = Color.White.copy(alpha = 0.85f),
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Medium,
@@ -427,18 +405,19 @@ fun DashboardScreen(
                                 )
                             }
 
-                            // Bottom Hardware Signifiers (Masked Pan, Contactless & EMV Chip)
+                            // Bottom: money in vs money out
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "•••• 9402",
-                                    color = Color.White.copy(alpha = 0.85f),
+                                    text = if (isBalanceMasked) "In •••• · Out ••••" else
+                                        "In ${compactAmount(state.summary.totalRealizedIncomeLkr)} · Out ${compactAmount(state.summary.totalExpensesLkr)}",
+                                    color = Color.White.copy(alpha = 0.9f),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    letterSpacing = 2.sp
+                                    letterSpacing = 0.5.sp
                                 )
 
                                 Row(
@@ -507,7 +486,13 @@ fun DashboardScreen(
             // =========================================================================
             // 3. Overdue Milestone Reconcile Banner
             // =========================================================================
-            item {
+            if (state.unpaidInvoices.isNotEmpty()) item {
+                val firstUnpaid = state.unpaidInvoices.first()
+                val hasOverdue = state.overdueInvoiceCount > 0
+                val bannerTitle = if (hasOverdue)
+                    "${state.overdueInvoiceCount} invoice${if (state.overdueInvoiceCount > 1) "s" else ""} overdue: ${firstUnpaid.title}"
+                else
+                    "${state.unpaidInvoices.size} invoice${if (state.unpaidInvoices.size > 1) "s" else ""} awaiting payment"
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -517,12 +502,7 @@ fun DashboardScreen(
                             ambientColor = Color(0x1FBA1A1A),
                             spotColor = Color(0x1FBA1A1A)
                         )
-                        .clickable {
-                            // If an overdue invoice exists, reconcile it
-                            state.incomeStreams.firstOrNull { it.isRealized.not() }?.let {
-                                viewModel.markInvoicePaid(it.id)
-                            }
-                        },
+                        .clickable { onNavigateToIncome() },
                     shape = RoundedCornerShape(16.dp),
                     color = NeoErrorContainer,
                     border = BorderStroke(1.dp, NeoRose.copy(alpha = 0.2f))
@@ -555,16 +535,15 @@ fun DashboardScreen(
                             }
                             Column {
                                 Text(
-                                    text = if (state.overdueInvoicesCount > 0)
-                                        "${state.overdueInvoicesCount} Milestone Overdue: SME Mobile App"
-                                    else
-                                        "1 Milestone Overdue: SME Mobile App",
+                                    text = bannerTitle,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = NeoRose
                                 )
                                 Text(
-                                    text = "LKR ${String.format("%,.0f", state.overdueInvoicesTotalLkr.coerceAtLeast(45000.0))} pending — Tap to reconcile",
+                                    text = "${lkr(state.summary.pendingIncomeLkr)} unpaid — tap to follow up",
                                     fontSize = 11.sp,
                                     color = NeoRose.copy(alpha = 0.85f),
                                     fontWeight = FontWeight.Medium
@@ -619,7 +598,7 @@ fun DashboardScreen(
                         // "+ Add" circular button
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { onNavigateToAddExpense() }
+                            modifier = Modifier.clickable { viewModel.openAddExpense() }
                         ) {
                             Box(
                                 modifier = Modifier
@@ -644,21 +623,15 @@ fun DashboardScreen(
                             )
                         }
 
-                        // Preset 1: Cafe
-                        QuickPresetBadge(emoji = "☕", label = "Cafe", amount = "LKR 850") {
-                            onNavigateToAddExpense()
-                        }
-                        // Preset 2: PickMe
-                        QuickPresetBadge(emoji = "🚗", label = "PickMe", amount = "1.4k") {
-                            onNavigateToAddExpense()
-                        }
-                        // Preset 3: UberEats
-                        QuickPresetBadge(emoji = "🍔", label = "UberEats", amount = "2.4k") {
-                            onNavigateToAddExpense()
-                        }
-                        // Preset 4: Rent
-                        QuickPresetBadge(emoji = "🏠", label = "Rent", amount = "34k") {
-                            onNavigateToAddExpense()
+                        // The user's own repeated spends (starter templates until habits emerge)
+                        state.presets.forEach { preset ->
+                            QuickPresetBadge(
+                                visual = presetVisual(preset.title, preset.category),
+                                label = preset.title,
+                                amount = compactAmount(preset.amountLkr)
+                            ) {
+                                viewModel.openAddExpense(preset)
+                            }
                         }
                     }
                 }
@@ -688,49 +661,39 @@ fun DashboardScreen(
                             fontSize = 12.sp,
                             color = NeoGreenDark,
                             fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.clickable { onNavigateToAddExpense() }
+                            modifier = Modifier.clickable { onNavigateToAnalytics() }
                         )
                     }
 
-                    // Horizontal Cards Slider
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Card 1: PickMe Ride
-                        TransactionSquareCard(
-                            currency = "LKR",
-                            amount = "1,450.00",
-                            title = "PickMe",
-                            icon = Icons.Default.DirectionsCar,
-                            iconContainerColor = NeoGreen.copy(alpha = 0.15f),
-                            iconColor = NeoGreenDark,
-                            isIncoming = false
+                    if (state.recentTransactions.isEmpty()) {
+                        Text(
+                            text = "Nothing logged yet. Tap + to record your first expense, or add income from the Income hub.",
+                            fontSize = 12.5.sp,
+                            color = NeoTextSecondary,
+                            modifier = Modifier.padding(horizontal = 2.dp)
                         )
-
-                        // Card 2: AdSense Payout
-                        TransactionSquareCard(
-                            currency = "USD",
-                            amount = "120.00",
-                            title = "AdSense",
-                            icon = Icons.Default.Paid,
-                            iconContainerColor = Color(0xFFDAE2FD),
-                            iconColor = Color(0xFF131B2E),
-                            isIncoming = true
-                        )
-
-                        // Card 3: UberEats
-                        TransactionSquareCard(
-                            currency = "LKR",
-                            amount = "2,400.00",
-                            title = "UberEats",
-                            icon = Icons.Default.Restaurant,
-                            iconContainerColor = NeoErrorContainer,
-                            iconColor = NeoRose,
-                            isIncoming = false
-                        )
+                    } else {
+                        // Horizontal Cards Slider — newest income and expenses together
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            state.recentTransactions.forEach { tx ->
+                                val visual = transactionVisual(tx)
+                                TransactionSquareCard(
+                                    currency = tx.originalAmountLabel?.substringBefore(' ') ?: "LKR",
+                                    amount = tx.originalAmountLabel?.substringAfter(' ')
+                                        ?: "%,.0f".format(kotlin.math.abs(tx.amountLkr)),
+                                    title = tx.title,
+                                    icon = visual.icon,
+                                    iconContainerColor = visual.container,
+                                    iconColor = visual.tint,
+                                    isIncoming = tx.isIncoming
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -767,33 +730,40 @@ fun DashboardScreen(
                                         .clip(CircleShape)
                                         .background(NeoGreen)
                                 )
+                                Column {
+                                    Text(
+                                        text = "Discretionary this week",
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = NeoTextPrimary
+                                    )
+                                    Text(
+                                        text = lkr(state.weekDiscretionaryLkr),
+                                        fontSize = 11.5.sp,
+                                        color = NeoTextSecondary
+                                    )
+                                }
+                            }
+                            // Fewer discretionary rupees than last week is the win worth showing.
+                            state.weekChangePct?.let { change ->
                                 Text(
-                                    text = "Discretionary Cash Velocity",
-                                    fontSize = 12.5.sp,
+                                    text = if (change <= 0) "${-change}% less than last week" else "+$change% vs last week",
+                                    fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = NeoTextPrimary
+                                    color = if (change <= 0) NeoGreenDark else NeoRose
                                 )
                             }
-                            Text(
-                                text = "+14% Saved",
-                                fontSize = 11.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeoGreenDark
-                            )
                         }
 
-                        // Micro Capsule 7-Day Chart (M, T, W, T, F, S, S)
+                        // Micro Capsule 7-Day Chart (Mon..Sun of the current week)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp),
+                                .height(64.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.Bottom
                         ) {
-                            val days = listOf("M", "T", "W", "T", "F", "S", "S")
-                            val heights = listOf(24.dp, 32.dp, 12.dp, 28.dp, 36.dp, 16.dp, 32.dp)
-
-                            days.forEachIndexed { i, dayLetter ->
+                            state.weekBars.forEach { bar ->
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -806,19 +776,21 @@ fun DashboardScreen(
                                             .background(NeoContainerHigh),
                                         contentAlignment = Alignment.BottomCenter
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(heights[i])
-                                                .clip(CircleShape)
-                                                .background(NeoGreen)
-                                        )
+                                        if (bar.amountLkr > 0) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height((40 * bar.fillRatio).coerceAtLeast(4f).dp)
+                                                    .clip(CircleShape)
+                                                    .background(NeoGreen)
+                                            )
+                                        }
                                     }
                                     Text(
-                                        text = dayLetter,
+                                        text = bar.label,
                                         fontSize = 10.sp,
-                                        color = NeoTextSecondary,
-                                        fontWeight = FontWeight.Medium
+                                        color = if (bar.isToday) NeoGreenDark else NeoTextSecondary,
+                                        fontWeight = if (bar.isToday) FontWeight.ExtraBold else FontWeight.Medium
                                     )
                                 }
                             }
@@ -830,16 +802,38 @@ fun DashboardScreen(
             // =========================================================================
             // 7. Safe-to-Spend & Goal Pacing Cards (Extended Features)
             // =========================================================================
-            item {
-                SafeToSpendGauge(
-                    dailyAllowanceLkr = state.summary.safeToSpendDailyLkr,
-                    daysRemainingInMonth = state.summary.daysRemainingInMonth
+            if (!state.isLoading && !state.summary.hasAnyData) item {
+                GettingStartedCard(
+                    onLogExpense = { viewModel.openAddExpense() },
+                    onAddIncome = onNavigateToIncome,
+                    onSetGoal = onNavigateToGoal,
+                    hasGoal = state.primaryGoal != null
                 )
             }
 
             item {
-                state.primaryGoal?.let { goal ->
-                    MacBookGoalCard(goal = goal)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SafeToSpendGauge(
+                        dailyAllowanceLkr = state.summary.safeToSpendDailyLkr,
+                        daysRemainingInMonth = state.summary.daysRemainingInMonth
+                    )
+                    if (state.summary.incomeBasisIsAverage) {
+                        Text(
+                            text = "Using your 3-month average income (${lkr(state.summary.incomeBasisLkr)}) until this month's income arrives.",
+                            fontSize = 11.sp,
+                            color = NeoTextSecondary,
+                            modifier = Modifier.padding(horizontal = 6.dp)
+                        )
+                    }
+                }
+            }
+
+            item {
+                val goal = state.primaryGoal
+                if (goal != null) {
+                    MacBookGoalCard(goal = goal, onMoreClick = onNavigateToGoal)
+                } else if (!state.isLoading) {
+                    SetGoalPromptCard(onClick = onNavigateToGoal)
                 }
             }
 
@@ -873,32 +867,154 @@ fun DashboardScreen(
                 Spacer(modifier = Modifier.height(90.dp)) // Clearance for bottom navigation dock
             }
         }
+
+        if (state.addExpense.isVisible) {
+            AddExpenseBottomSheet(
+                form = state.addExpense,
+                presets = state.presets,
+                accounts = state.accounts,
+                onTitleChange = viewModel::onTitleChanged,
+                onAmountChange = viewModel::onAmountChanged,
+                onCategoryChange = viewModel::onCategoryChanged,
+                onCommittedToggle = viewModel::onCommittedToggled,
+                onAccountSelect = viewModel::onAccountSelected,
+                onDaysAgoSelect = viewModel::onDaysAgoSelected,
+                onPresetSelect = viewModel::onPresetSelected,
+                onSubmit = viewModel::submitExpense,
+                onDismiss = viewModel::dismissAddExpense
+            )
+        }
+    }
+}
+
+@Composable
+private fun GettingStartedCard(
+    onLogExpense: () -> Unit,
+    onAddIncome: () -> Unit,
+    onSetGoal: () -> Unit,
+    hasGoal: Boolean
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = NeoCard,
+        border = BorderStroke(1.dp, NeoBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "Get your first clear picture",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeoTextPrimary
+            )
+            Text(
+                text = "Three quick steps and this screen starts showing where your money really goes.",
+                fontSize = 12.sp,
+                color = NeoTextSecondary
+            )
+            GettingStartedStep("1", "Record this month's income — salary, freelance, AdSense or crypto", onAddIncome)
+            GettingStartedStep("2", "Log today's spending — presets make it one tap", onLogExpense)
+            if (!hasGoal) GettingStartedStep("3", "Set the goal you're saving for", onSetGoal)
+        }
+    }
+}
+
+@Composable
+private fun GettingStartedStep(number: String, text: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(NeoCardLow)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(NeoGreen),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = number, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
+        Text(text = text, fontSize = 12.5.sp, color = NeoTextPrimary, modifier = Modifier.weight(1f))
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = NeoTextTertiary,
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}
+
+@Composable
+private fun SetGoalPromptCard(onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        color = NeoCard,
+        border = BorderStroke(1.dp, NeoBorder)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.illustration_piggy_bank),
+                contentDescription = null,
+                modifier = Modifier.size(64.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Set a savings goal", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeoTextPrimary)
+                Text(
+                    text = "See the exact monthly pace needed and when you'll get there",
+                    fontSize = 12.sp,
+                    color = NeoTextSecondary
+                )
+            }
+            Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = NeoTextTertiary)
+        }
     }
 }
 
 @Composable
 fun QuickPresetBadge(
-    emoji: String,
+    visual: TransactionVisual,
     label: String,
     amount: String,
     onClick: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
+        modifier = Modifier
+            .width(64.dp)
+            .clickable { onClick() }
     ) {
         Box(
             modifier = Modifier
                 .size(52.dp)
                 .clip(CircleShape)
-                .background(NeoCard)
-                .shadow(2.dp, CircleShape)
+                .background(visual.container)
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = emoji, fontSize = 21.sp)
+                Icon(
+                    imageVector = visual.icon,
+                    contentDescription = null,
+                    tint = visual.tint,
+                    modifier = Modifier.size(24.dp)
+                )
             }
             // Bottom-Right Pill Badge
             Surface(
@@ -920,7 +1036,9 @@ fun QuickPresetBadge(
             text = label,
             fontSize = 11.sp,
             color = NeoTextPrimary,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -1017,7 +1135,9 @@ fun TransactionSquareCard(
                     text = title,
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Medium,
-                    color = NeoTextPrimary
+                    color = NeoTextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
