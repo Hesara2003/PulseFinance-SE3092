@@ -1,6 +1,7 @@
 package com.se3092.pulsefinance.data.remote.dto
 
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.PropertyName
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 
@@ -10,7 +11,7 @@ data class ExpenseDto(
     val title: String = "",
     val amountLkr: Double = 0.0,
     val category: String = "OTHER",
-    val isCommitted: Boolean = false,
+    @get:PropertyName("isCommitted") val isCommitted: Boolean = false,
     val paymentAccountId: String = "",
     val paymentAccountName: String = "",
     val timestamp: Long = System.currentTimeMillis(),

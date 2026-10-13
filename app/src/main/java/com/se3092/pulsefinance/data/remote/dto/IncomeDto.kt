@@ -1,6 +1,7 @@
 package com.se3092.pulsefinance.data.remote.dto
 
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.PropertyName
 import com.se3092.pulsefinance.domain.model.Currency
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.IncomeStream
@@ -18,7 +19,7 @@ data class IncomeDto(
     val amountInLkr: Double = 0.0,
     val status: String = "RECEIVED",
     val dateReceivedOrExpected: Long = System.currentTimeMillis(),
-    val isRecurringMonthly: Boolean = false,
+    @get:PropertyName("isRecurringMonthly") val isRecurringMonthly: Boolean = false,
     val notes: String = ""
 ) {
     fun toDomain(): IncomeStream = IncomeStream(
