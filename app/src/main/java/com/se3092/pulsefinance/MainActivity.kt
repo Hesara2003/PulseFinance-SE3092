@@ -31,13 +31,18 @@ class MainActivity : ComponentActivity() {
             Screen.Auth.route
         }
 
+        val authState = authRepository.observeAuthState()
+
         setContent {
             PulseFinanceTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = NeoSurface
                 ) {
-                    AppNavGraph(startDestination = startDestination)
+                    AppNavGraph(
+                        startDestination = startDestination,
+                        authState = authState
+                    )
                 }
             }
         }
