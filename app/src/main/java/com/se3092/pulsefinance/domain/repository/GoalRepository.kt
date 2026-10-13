@@ -7,5 +7,4 @@ interface GoalRepository {
     fun getPrimaryGoal(userId: String): Flow<SavingsGoal?>
     suspend fun saveGoal(goal: SavingsGoal): Result<Unit>
     suspend fun updateSavedAmount(goalId: String, userId: String, newAmountLkr: Double): Result<Unit>
-    suspend fun syncGoals(userId: String)
 }
