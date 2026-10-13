@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,7 +44,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,7 +68,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.se3092.pulsefinance.R
 import com.se3092.pulsefinance.ui.components.CommittedVsDiscretionaryBar
+import com.se3092.pulsefinance.ui.components.EmptyStateView
+import com.se3092.pulsefinance.ui.screens.expense.AddExpenseBottomSheet
+import com.se3092.pulsefinance.ui.screens.expense.ExpensePresets
+import com.se3092.pulsefinance.ui.screens.expense.ExpenseViewModel
+import com.se3092.pulsefinance.ui.util.Formatters
 import com.se3092.pulsefinance.ui.components.ExpenseItemCard
 import com.se3092.pulsefinance.ui.components.MacBookGoalCard
 import com.se3092.pulsefinance.ui.components.SafeToSpendGauge
@@ -87,17 +97,45 @@ import com.se3092.pulsefinance.ui.theme.NeoTrack
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
-    onNavigateToAddExpense: () -> Unit,
+    expenseViewModel: ExpenseViewModel,
+    onNavigateToAnalytics: () -> Unit,
+    onNavigateToIncome: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val expenseState by expenseViewModel.uiState.collectAsStateWithLifecycle()
     var isBalanceMasked by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(expenseState.toastMessage) {
+        expenseState.toastMessage?.let { message ->
+            expenseViewModel.dismissToast()
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
+    if (expenseState.isAddSheetVisible) {
+        AddExpenseBottomSheet(
+            state = expenseState,
+            onTitleChange = expenseViewModel::onTitleChanged,
+            onAmountChange = expenseViewModel::onAmountChanged,
+            onCategoryChange = expenseViewModel::onCategoryChanged,
+            onCommittedToggle = expenseViewModel::onCommittedToggled,
+            onAccountSelect = expenseViewModel::onAccountSelected,
+            onPresetSelect = expenseViewModel::applyPreset,
+            onSubmit = expenseViewModel::submitExpense,
+            onDismiss = expenseViewModel::hideAddSheet
+        )
+    }
 
     Scaffold(
         containerColor = NeoSurface,
+        snackbarHost = {
+            SnackbarHost(snackbarHostState, modifier = Modifier.padding(bottom = 76.dp))
+        },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToAddExpense,
+                onClick = expenseViewModel::showAddSheet,
                 containerColor = NeoGreen,
                 contentColor = Color.White,
                 shape = CircleShape,
@@ -145,7 +183,7 @@ fun DashboardScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "KS",
+                                    text = Formatters.initials(state.user),
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White,
                                     fontSize = 15.sp
@@ -171,7 +209,7 @@ fun DashboardScreen(
 
                         Column {
                             Text(
-                                text = "Kavindu",
+                                text = Formatters.firstName(state.user),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = NeoTextPrimary,
                                 fontWeight = FontWeight.Bold,
@@ -179,7 +217,7 @@ fun DashboardScreen(
                                 letterSpacing = (-0.3).sp
                             )
                             Text(
-                                text = "Good morning",
+                                text = Formatters.greeting(),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = NeoTextSecondary,
                                 fontSize = 11.5.sp,
@@ -381,7 +419,8 @@ fun DashboardScreen(
                                         fontSize = 11.sp
                                     )
                                     Text(
-                                        text = "COMMERCIAL BANK",
+                                        text = state.primaryAccountLabel,
+                                        maxLines = 1,
                                         color = Color.White.copy(alpha = 0.9f),
                                         fontSize = 10.5.sp,
                                         fontWeight = FontWeight.Bold,
@@ -411,7 +450,7 @@ fun DashboardScreen(
                                     text = if (isBalanceMasked)
                                         "LKR ••••••••"
                                     else
-                                        "LKR ${String.format("%,.2f", state.summary.totalLiquidBalanceLkr)}",
+                                        Formatters.lkr(state.summary.totalLiquidBalanceLkr, decimals = 2),
                                     color = Color.White,
                                     fontSize = 26.sp,
                                     fontWeight = FontWeight.ExtraBold,
@@ -419,7 +458,7 @@ fun DashboardScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Safe-to-Spend Liquid Balance",
+                                    text = "Total Liquid Balance · ${state.accounts.size} accounts",
                                     color = Color.White.copy(alpha = 0.85f),
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Medium,
@@ -434,7 +473,10 @@ fun DashboardScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "•••• 9402",
+                                    text = if (state.summary.pendingIncomeLkr > 0)
+                                        "+ ${Formatters.lkrCompact(state.summary.pendingIncomeLkr)} in pipeline"
+                                    else
+                                        "All invoices cleared",
                                     color = Color.White.copy(alpha = 0.85f),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -507,7 +549,8 @@ fun DashboardScreen(
             // =========================================================================
             // 3. Overdue Milestone Reconcile Banner
             // =========================================================================
-            item {
+            state.overdueInvoices.firstOrNull()?.let { oldestOverdue ->
+            item(key = "overdue_banner") {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -518,10 +561,8 @@ fun DashboardScreen(
                             spotColor = Color(0x1FBA1A1A)
                         )
                         .clickable {
-                            // If an overdue invoice exists, reconcile it
-                            state.incomeStreams.firstOrNull { it.isRealized.not() }?.let {
-                                viewModel.markInvoicePaid(it.id)
-                            }
+                            // 1-tap reconcile: the oldest overdue milestone is marked as received
+                            viewModel.markInvoicePaid(oldestOverdue.id)
                         },
                     shape = RoundedCornerShape(16.dp),
                     color = NeoErrorContainer,
@@ -555,16 +596,17 @@ fun DashboardScreen(
                             }
                             Column {
                                 Text(
-                                    text = if (state.overdueInvoicesCount > 0)
-                                        "${state.overdueInvoicesCount} Milestone Overdue: SME Mobile App"
+                                    text = if (state.overdueInvoicesCount > 1)
+                                        "${state.overdueInvoicesCount} Milestones Overdue: ${oldestOverdue.title}"
                                     else
-                                        "1 Milestone Overdue: SME Mobile App",
+                                        "1 Milestone Overdue: ${oldestOverdue.title}",
+                                    maxLines = 1,
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = NeoRose
                                 )
                                 Text(
-                                    text = "LKR ${String.format("%,.0f", state.overdueInvoicesTotalLkr.coerceAtLeast(45000.0))} pending — Tap to reconcile",
+                                    text = "${Formatters.lkr(state.overdueInvoicesTotalLkr)} pending — Tap to mark ${Formatters.lkrCompact(oldestOverdue.amountInLkr)} received",
                                     fontSize = 11.sp,
                                     color = NeoRose.copy(alpha = 0.85f),
                                     fontWeight = FontWeight.Medium
@@ -580,6 +622,7 @@ fun DashboardScreen(
                         )
                     }
                 }
+            }
             }
 
             // =========================================================================
@@ -619,7 +662,7 @@ fun DashboardScreen(
                         // "+ Add" circular button
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { onNavigateToAddExpense() }
+                            modifier = Modifier.clickable { expenseViewModel.showAddSheet() }
                         ) {
                             Box(
                                 modifier = Modifier
@@ -644,21 +687,11 @@ fun DashboardScreen(
                             )
                         }
 
-                        // Preset 1: Cafe
-                        QuickPresetBadge(emoji = "☕", label = "Cafe", amount = "LKR 850") {
-                            onNavigateToAddExpense()
-                        }
-                        // Preset 2: PickMe
-                        QuickPresetBadge(emoji = "🚗", label = "PickMe", amount = "1.4k") {
-                            onNavigateToAddExpense()
-                        }
-                        // Preset 3: UberEats
-                        QuickPresetBadge(emoji = "🍔", label = "UberEats", amount = "2.4k") {
-                            onNavigateToAddExpense()
-                        }
-                        // Preset 4: Rent
-                        QuickPresetBadge(emoji = "🏠", label = "Rent", amount = "34k") {
-                            onNavigateToAddExpense()
+                        // One tap logs the preset immediately against the default account
+                        ExpensePresets.defaults.forEach { preset ->
+                            QuickPresetBadge(emoji = preset.emoji, label = preset.label, amount = preset.badgeAmount) {
+                                expenseViewModel.logPreset(preset)
+                            }
                         }
                     }
                 }
@@ -688,7 +721,17 @@ fun DashboardScreen(
                             fontSize = 12.sp,
                             color = NeoGreenDark,
                             fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.clickable { onNavigateToAddExpense() }
+                            modifier = Modifier.clickable { onNavigateToAnalytics() }
+                        )
+                    }
+
+                    if (state.recentActivity.isEmpty() && !state.isLoading) {
+                        EmptyStateView(
+                            title = "No transactions yet",
+                            message = "Tap a preset above or the + button to log your first expense.",
+                            illustration = R.drawable.illustration_empty_ledger,
+                            actionLabel = "Add income instead",
+                            onAction = onNavigateToIncome
                         )
                     }
 
@@ -699,38 +742,17 @@ fun DashboardScreen(
                             .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Card 1: PickMe Ride
-                        TransactionSquareCard(
-                            currency = "LKR",
-                            amount = "1,450.00",
-                            title = "PickMe",
-                            icon = Icons.Default.DirectionsCar,
-                            iconContainerColor = NeoGreen.copy(alpha = 0.15f),
-                            iconColor = NeoGreenDark,
-                            isIncoming = false
-                        )
-
-                        // Card 2: AdSense Payout
-                        TransactionSquareCard(
-                            currency = "USD",
-                            amount = "120.00",
-                            title = "AdSense",
-                            icon = Icons.Default.Paid,
-                            iconContainerColor = Color(0xFFDAE2FD),
-                            iconColor = Color(0xFF131B2E),
-                            isIncoming = true
-                        )
-
-                        // Card 3: UberEats
-                        TransactionSquareCard(
-                            currency = "LKR",
-                            amount = "2,400.00",
-                            title = "UberEats",
-                            icon = Icons.Default.Restaurant,
-                            iconContainerColor = NeoErrorContainer,
-                            iconColor = NeoRose,
-                            isIncoming = false
-                        )
+                        state.recentActivity.forEach { activity ->
+                            TransactionSquareCard(
+                                currency = activity.currencyLabel,
+                                amount = activity.amountText,
+                                title = activity.title,
+                                icon = activity.visual.icon,
+                                iconContainerColor = activity.visual.container,
+                                iconColor = activity.visual.tint,
+                                isIncoming = activity.isIncoming
+                            )
+                        }
                     }
                 }
             }
@@ -775,7 +797,7 @@ fun DashboardScreen(
                                 )
                             }
                             Text(
-                                text = "+14% Saved",
+                                text = state.savingsRate?.let { "+${it.savingsRatePercent}% Saved" } ?: "—",
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeoGreenDark
@@ -790,10 +812,7 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.Bottom
                         ) {
-                            val days = listOf("M", "T", "W", "T", "F", "S", "S")
-                            val heights = listOf(24.dp, 32.dp, 12.dp, 28.dp, 36.dp, 16.dp, 32.dp)
-
-                            days.forEachIndexed { i, dayLetter ->
+                            state.weeklyDiscretionary.forEach { day ->
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -809,13 +828,13 @@ fun DashboardScreen(
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .height(heights[i])
+                                                .fillMaxHeight(day.fillRatio.coerceAtLeast(0.08f))
                                                 .clip(CircleShape)
-                                                .background(NeoGreen)
+                                                .background(if (day.isToday) NeoGreenDark else NeoGreen)
                                         )
                                     }
                                     Text(
-                                        text = dayLetter,
+                                        text = day.label,
                                         fontSize = 10.sp,
                                         color = NeoTextSecondary,
                                         fontWeight = FontWeight.Medium
@@ -839,7 +858,10 @@ fun DashboardScreen(
 
             item {
                 state.primaryGoal?.let { goal ->
-                    MacBookGoalCard(goal = goal)
+                    MacBookGoalCard(
+                        goal = goal,
+                        monthlyNetSavingsLkr = state.savingsRate?.monthlyNetSavingsLkr
+                    )
                 }
             }
 
