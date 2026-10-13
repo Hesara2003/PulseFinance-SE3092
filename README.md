@@ -99,7 +99,21 @@ The project follows clean architecture principles with unidirectional data flow 
 5. Click **Run 'app'** (`Shift + F10`).
 
 ### Automated Test Accounts & Seeding
-- On first launch, the app automatically initializes Kavindu's accounts (Commercial Bank Primary, Secondary Account, Cash Wallet, and Binance) along with his baseline MacBook Pro M4 goal (LKR 490,000 target, LKR 11,200 initial saved).
+- On the first sign-in with the demo persona, the app initializes Kavindu's accounts (once per account; the flag is stored on the Firestore user document) (Commercial Bank Primary, Secondary Account, Cash Wallet, and Binance), three months of recurring subscription debits, his income streams, and his baseline MacBook Pro M4 goal (LKR 490,000 target, LKR 11,200 initial saved).
 - Test login credentials:
   - **Email:** `kavindu.silva@pulsemail.io`
   - **Password:** `ColomboDev2026!`
+- Any other account starts empty with a single zero-balance "Main Account".
+
+### Google Sign-In Setup
+1. In the Firebase Console, enable the **Google** provider under Authentication → Sign-in method.
+2. Add your debug/release **SHA-1** fingerprints to the Android app (`./gradlew signingReport`).
+3. Download the refreshed `google-services.json` (it now contains a Web OAuth client) into `app/`.
+   Alternatively, paste the Web client ID into `google_web_client_id` in `app/src/main/res/values/strings.xml`.
+
+---
+
+## 5. Credits
+- Google Sign-In via [Android Credential Manager](https://developer.android.com/identity/sign-in/credential-manager-siwg) and the Google Identity library.
+- Google "G" logo used per [Google Sign-In branding guidelines](https://developers.google.com/identity/branding-guidelines).
+- Empty-state and onboarding illustrations are original vector drawables in the style of [Storyset](https://storyset.com).
