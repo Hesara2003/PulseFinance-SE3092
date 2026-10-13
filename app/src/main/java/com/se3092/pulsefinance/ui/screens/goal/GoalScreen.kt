@@ -52,6 +52,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import com.se3092.pulsefinance.R
+import com.se3092.pulsefinance.ui.components.EmptyStateView
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -202,7 +204,7 @@ fun GoalScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "KP",
+                                text = state.userInitials,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White,
                                 fontSize = 12.sp
@@ -286,7 +288,11 @@ fun GoalScreen(
                                         .background(NeoGreen)
                                 )
                                 Text(
-                                    text = "Pacing Active",
+                                    text = when {
+                                        state.goal == null -> "No Goal Yet"
+                                        state.velocityReport?.isPacingOnTrack == true -> "On Pace"
+                                        else -> "Pacing Active"
+                                    },
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = NeoTextPrimary
@@ -298,12 +304,30 @@ fun GoalScreen(
 
                 // 2. MacBook Pro M4 Hero Card
                 item {
-                    state.goal?.let { goal ->
+                    val goal = state.goal
+                    if (goal != null) {
                         MacBookGoalCard(
                             goal = goal,
+                            monthlyNetSavingsLkr = state.monthlyNetSavingsLkr,
                             onMoreClick = {
                                 viewModel.setAllocateSheetVisible(true)
                             }
+                        )
+                        state.velocityReport?.let { report ->
+                            Text(
+                                text = report.behavioralInsight,
+                                fontSize = 12.sp,
+                                color = NeoTextSecondary,
+                                modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp)
+                            )
+                        }
+                    } else {
+                        EmptyStateView(
+                            title = "Set your first savings goal",
+                            message = "Start the MacBook Pro M4 target and PulseFinance will pace every purchase against it.",
+                            illustration = R.drawable.illustration_goal,
+                            actionLabel = "Start MacBook Pro M4 goal",
+                            onAction = viewModel::createDefaultGoal
                         )
                     }
                 }
@@ -349,41 +373,15 @@ fun GoalScreen(
                 // 4. Opportunity Cost Live Impact Cards (3 Cards)
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        // Card 1: Weekend Cafe/Dinner
-                        OpportunityCostCard(
-                            icon = Icons.Default.LocalCafe,
-                            title = "Skip 1 Weekend Cafe/Dinner",
-                            subtitle = "Save LKR 2,500 • 1.9 days funded",
-                            badgeText = "+1.9 Days",
-                            onClick = {
-                                viewModel.onDepositAmountChanged("2500")
-                                viewModel.setAllocateSheetVisible(true)
-                            }
-                        )
-
-                        // Card 2: PickMe City Rides
-                        OpportunityCostCard(
-                            icon = Icons.Default.DirectionsCar,
-                            title = "Skip 3 PickMe City Rides",
-                            subtitle = "Save LKR 4,350 • Shifts arrival",
-                            badgeText = "+3.3 Days",
-                            onClick = {
-                                viewModel.onDepositAmountChanged("4350")
-                                viewModel.setAllocateSheetVisible(true)
-                            }
-                        )
-
-                        // Card 3: Zombie SaaS Sub
-                        OpportunityCostCard(
-                            icon = Icons.Default.CancelPresentation,
-                            title = "Kill 1 Zombie SaaS Sub",
-                            subtitle = "Save LKR 4,500/mo • Compounding speed",
-                            badgeText = "+11% Boost",
-                            onClick = {
-                                viewModel.onDepositAmountChanged("4500")
-                                viewModel.setAllocateSheetVisible(true)
-                            }
-                        )
+                        state.suggestions.forEach { suggestion ->
+                            OpportunityCostCard(
+                                icon = suggestion.icon,
+                                title = suggestion.title,
+                                subtitle = suggestion.subtitle,
+                                badgeText = suggestion.badgeText,
+                                onClick = { viewModel.applySuggestion(suggestion) }
+                            )
+                        }
                     }
                 }
 
@@ -428,7 +426,10 @@ fun GoalScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Target Delivery: December 14, 2025",
+                                    text = when (val arrival = state.projectedArrivalMillis) {
+                                        null -> "Not reachable at current pace"
+                                        else -> "Projected: ${java.text.SimpleDateFormat("MMMM d, yyyy", java.util.Locale.US).format(java.util.Date(arrival))}"
+                                    },
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = NeoTextPrimary,
                                     fontWeight = FontWeight.Bold,
@@ -641,8 +642,7 @@ fun GoalScreen(
                     // Impact Preview
                     val inputAmount = state.depositAmountInput.toDoubleOrNull() ?: 0.0
                     if (inputAmount > 0) {
-                        val dailyPace = state.goal?.requiredDailySavingsLkr ?: 1330.0
-                        val days = inputAmount / dailyPace
+                        val days = state.daysFunded(inputAmount)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
