@@ -66,6 +66,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.se3092.pulsefinance.R
+import com.se3092.pulsefinance.domain.model.Currency
+import com.se3092.pulsefinance.domain.model.IncomeStream
+import com.se3092.pulsefinance.domain.model.InvoiceStatus
+import com.se3092.pulsefinance.ui.components.EmptyStateView
+import com.se3092.pulsefinance.ui.util.Formatters
+import com.se3092.pulsefinance.ui.util.TransactionVisuals
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.width
 import com.se3092.pulsefinance.ui.theme.NeoAmber
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
@@ -184,7 +193,7 @@ fun IncomeScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "KP",
+                                text = state.userInitials,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White,
                                 fontSize = 12.sp
@@ -329,7 +338,7 @@ fun IncomeScreen(
 
                                 // Inflow Amount & Subtitle
                                 Text(
-                                    text = "LKR ${String.format("%,.2f", state.totalProjectedLkr)}",
+                                    text = Formatters.lkr(state.totalProjectedLkr, decimals = 2),
                                     style = MaterialTheme.typography.headlineLarge,
                                     color = NeoTextPrimary,
                                     fontWeight = FontWeight.ExtraBold,
@@ -371,7 +380,7 @@ fun IncomeScreen(
                                         }
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = "LKR ${String.format("%,.2f", state.totalRealizedLkr)}",
+                                            text = Formatters.lkr(state.totalRealizedLkr, decimals = 2),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = NeoTextPrimary
@@ -398,7 +407,7 @@ fun IncomeScreen(
                                         }
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = "LKR ${String.format("%,.2f", state.totalPendingLkr)}",
+                                            text = Formatters.lkr(state.totalPendingLkr, decimals = 2),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = NeoTextPrimary
@@ -508,631 +517,31 @@ fun IncomeScreen(
                     }
                 }
 
-                // 4. Income Streams List (Filtered)
-                // Stream Card 1: Software Engineer Salary (Primary Salary)
-                if (state.filterCategory == "all" || state.filterCategory == "contracts") {
+                // 4. Income Streams List (Filtered, live from Room)
+                if (!state.isLoading && state.visibleStreams.isEmpty()) {
                     item {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .shadow(
-                                    elevation = 6.dp,
-                                    shape = RoundedCornerShape(24.dp),
-                                    ambientColor = Color(0x080F172A),
-                                    spotColor = Color(0x080F172A)
-                                ),
-                            shape = RoundedCornerShape(24.dp),
-                            color = NeoCard,
-                            border = BorderStroke(1.dp, NeoBorder)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(18.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(48.dp)
-                                                .clip(RoundedCornerShape(16.dp))
-                                                .background(NeoGreen.copy(alpha = 0.15f)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.CorporateFare,
-                                                contentDescription = null,
-                                                tint = NeoGreenDark,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        }
-
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = "Software Engineer Salary",
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = NeoTextPrimary,
-                                                fontSize = 16.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            Text(
-                                                text = "Commercial Bank · Direct Deposit",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = NeoTextSecondary,
-                                                fontSize = 12.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text(
-                                            text = "LKR 140,000.00",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = NeoTextPrimary,
-                                            fontSize = 16.sp
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                        ) {
-                                            Text(
-                                                text = "Realized",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = NeoGreenDark
-                                            )
-                                            Icon(
-                                                imageVector = Icons.Default.CheckCircle,
-                                                contentDescription = null,
-                                                tint = NeoGreenDark,
-                                                modifier = Modifier.size(13.dp)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(14.dp))
-
-                                // Bottom Meta Pill
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = NeoCardLow.copy(alpha = 0.6f),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(6.dp)
-                                                    .clip(CircleShape)
-                                                    .background(NeoGreen)
-                                            )
-                                            Text(
-                                                text = "Cleared Oct 25 via SWIFT AC/8812",
-                                                fontSize = 11.sp,
-                                                color = NeoTextSecondary
-                                            )
-                                        }
-                                        Text(
-                                            text = "100% Locked",
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = NeoTextPrimary
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                        EmptyStateView(
+                            title = if (state.streams.isEmpty()) "No income streams yet" else "Nothing in this filter",
+                            message = if (state.streams.isEmpty())
+                                "Add your salary, freelance milestones, AdSense or crypto yield to see realized vs. pending cash."
+                            else
+                                "Try another category to see the rest of your streams.",
+                            illustration = R.drawable.illustration_finance_app,
+                            actionLabel = if (state.streams.isEmpty()) "Add income stream" else null,
+                            onAction = if (state.streams.isEmpty()) viewModel::showAddSheet else null
+                        )
                     }
                 }
 
-                // Stream Card 2: E-Commerce Milestone #2 (Milestone Overdue Actionable Card)
-                if (state.filterCategory == "all" || state.filterCategory == "contracts") {
-                    item {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .shadow(
-                                    elevation = 6.dp,
-                                    shape = RoundedCornerShape(24.dp),
-                                    ambientColor = Color(0x080F172A),
-                                    spotColor = Color(0x080F172A)
-                                )
-                                .animateContentSize(),
-                            shape = RoundedCornerShape(24.dp),
-                            color = NeoCard,
-                            border = BorderStroke(1.dp, NeoBorder)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(18.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(48.dp)
-                                                .clip(RoundedCornerShape(16.dp))
-                                                .background(
-                                                    if (state.isMilestoneRealized) NeoGreen.copy(alpha = 0.15f)
-                                                    else NeoAmber.copy(alpha = 0.15f)
-                                                ),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Terminal,
-                                                contentDescription = null,
-                                                tint = if (state.isMilestoneRealized) NeoGreenDark else NeoAmber,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        }
-
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = "E-Commerce Milestone #2",
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = NeoTextPrimary,
-                                                fontSize = 16.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            Text(
-                                                text = "Client: Nordic Apparel · Due 4 days ago",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = NeoTextSecondary,
-                                                fontSize = 12.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text(
-                                            text = "LKR 65,000.00",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = NeoTextPrimary,
-                                            fontSize = 16.sp
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        if (state.isMilestoneRealized) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .clip(CircleShape)
-                                                    .background(NeoGreen.copy(alpha = 0.15f))
-                                                    .padding(horizontal = 8.dp, vertical = 2.dp)
-                                            ) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "Realized (Just now)",
-                                                        fontSize = 11.sp,
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        color = NeoGreenDark
-                                                    )
-                                                    Icon(
-                                                        imageVector = Icons.Default.Check,
-                                                        contentDescription = null,
-                                                        tint = NeoGreenDark,
-                                                        modifier = Modifier.size(12.dp)
-                                                    )
-                                                }
-                                            }
-                                        } else {
-                                            Box(
-                                                modifier = Modifier
-                                                    .clip(CircleShape)
-                                                    .background(NeoAmber.copy(alpha = 0.15f))
-                                                    .padding(horizontal = 8.dp, vertical = 2.dp)
-                                            ) {
-                                                Text(
-                                                    text = "Overdue 4 Days",
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    color = Color(0xFFB45309)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(14.dp))
-
-                                // Action Panel inside Milestone Card
-                                if (!state.isMilestoneRealized) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Schedule,
-                                                contentDescription = null,
-                                                tint = NeoAmber,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Text(
-                                                text = "Invoice #NO-8919",
-                                                fontSize = 12.sp,
-                                                color = NeoTextSecondary
-                                            )
-                                        }
-
-                                        Button(
-                                            onClick = { viewModel.markMilestoneReceived() },
-                                            modifier = Modifier
-                                                .height(40.dp)
-                                                .shadow(6.dp, CircleShape, spotColor = NeoGreenGlow),
-                                            shape = CircleShape,
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = NeoGreen,
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Check,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                                Text(
-                                                    text = "Mark Received",
-                                                    fontSize = 13.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    // Cleared Status Bar
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = NeoGreen.copy(alpha = 0.10f),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Verified,
-                                                    contentDescription = null,
-                                                    tint = NeoGreenDark,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                                Text(
-                                                    text = "Funds marked as cleared into checking",
-                                                    fontSize = 12.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    color = NeoGreenDark
-                                                )
-                                            }
-                                            Text(
-                                                text = "Auto-receipt logged",
-                                                fontSize = 11.sp,
-                                                color = NeoTextSecondary
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                items(state.visibleStreams, key = { it.id }) { stream ->
+                    IncomeStreamItem(
+                        stream = stream,
+                        onMarkReceived = { viewModel.markReceived(stream.id) }
+                    )
                 }
 
-                // Stream Card 3: Google AdSense USD Wire
-                if (state.filterCategory == "all" || state.filterCategory == "usd") {
-                    item {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .shadow(
-                                    elevation = 6.dp,
-                                    shape = RoundedCornerShape(24.dp),
-                                    ambientColor = Color(0x080F172A),
-                                    spotColor = Color(0x080F172A)
-                                ),
-                            shape = RoundedCornerShape(24.dp),
-                            color = NeoCard,
-                            border = BorderStroke(1.dp, NeoBorder)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(18.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(48.dp)
-                                                .clip(RoundedCornerShape(16.dp))
-                                                .background(NeoSecondaryContainer),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.SmartDisplay,
-                                                contentDescription = null,
-                                                tint = NeoTextSecondary,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        }
-
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = "Google AdSense USD",
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = NeoTextPrimary,
-                                                fontSize = 16.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            Text(
-                                                text = "YouTube & Technical Blog",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = NeoTextSecondary,
-                                                fontSize = 12.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text(
-                                            text = "USD $320.00",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = NeoTextPrimary,
-                                            fontSize = 16.sp
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = "Realized Inflow",
-                                            fontSize = 11.sp,
-                                            color = NeoTextSecondary
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(14.dp))
-
-                                // Bottom FX Conversion Pill
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = NeoCardLow.copy(alpha = 0.7f),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.CurrencyExchange,
-                                                contentDescription = null,
-                                                tint = NeoTextSecondary,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Text(
-                                                text = "FX: 1 USD = 305.00 LKR",
-                                                fontSize = 11.sp,
-                                                color = NeoTextSecondary
-                                            )
-                                        }
-                                        Text(
-                                            text = "≈ LKR 97,600.00",
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = NeoTextPrimary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Stream Card 4: Binance Crypto Staking
-                if (state.filterCategory == "all" || state.filterCategory == "yield") {
-                    item {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .shadow(
-                                    elevation = 6.dp,
-                                    shape = RoundedCornerShape(24.dp),
-                                    ambientColor = Color(0x080F172A),
-                                    spotColor = Color(0x080F172A)
-                                ),
-                            shape = RoundedCornerShape(24.dp),
-                            color = NeoCard,
-                            border = BorderStroke(1.dp, NeoBorder)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(18.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(48.dp)
-                                                .clip(RoundedCornerShape(16.dp))
-                                                .background(Color(0xFFEEF2FF)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Token,
-                                                contentDescription = null,
-                                                tint = Color(0xFF4F46E5),
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        }
-
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = "Binance Crypto Staking",
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = NeoTextPrimary,
-                                                fontSize = 16.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            Text(
-                                                text = "USDT / ETH Flexible Yield",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = NeoTextSecondary,
-                                                fontSize = 12.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text(
-                                            text = "150.00 USDT",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = NeoTextPrimary,
-                                            fontSize = 16.sp
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = "≈ LKR 45,000.00",
-                                            fontSize = 11.sp,
-                                            color = NeoTextSecondary
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(14.dp))
-
-                                // Bottom Auto-Compound Pill
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = Color(0xFFEEF2FF),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Autorenew,
-                                                contentDescription = null,
-                                                tint = Color(0xFF4338CA),
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Text(
-                                                text = "Weekly Auto-Compound",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = Color(0xFF4338CA)
-                                            )
-                                        }
-                                        Text(
-                                            text = "+8.4% APY",
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF3730A3)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 5. Weekly Yield Velocity Banner Card
-                item {
+                // 5. Auto-sweep suggestion for realized foreign-currency inflow
+                if (state.foreignRealizedLkr > 0) item {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1189,7 +598,7 @@ fun IncomeScreen(
                                         )
                                         Spacer(modifier = Modifier.height(1.dp))
                                         Text(
-                                            text = "LKR 97,600 from USD wire eligible for 11.2% p.a.",
+                                            text = "${Formatters.lkr(state.foreignRealizedLkr)} from FX inflows eligible for 11.2% p.a.",
                                             fontSize = 11.sp,
                                             color = Color.White.copy(alpha = 0.9f)
                                         )
@@ -1344,5 +753,179 @@ private fun CategoryPill(
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
             color = if (isSelected) Color.White else NeoTextSecondary
         )
+    }
+}
+
+@Composable
+private fun IncomeStreamItem(
+    stream: IncomeStream,
+    onMarkReceived: () -> Unit
+) {
+    val visual = TransactionVisuals.forIncome(stream.source)
+    val now = System.currentTimeMillis()
+    val isRealized = stream.isRealized
+    val isOverdue = stream.status == InvoiceStatus.OVERDUE
+    val accent = when {
+        isRealized -> NeoGreenDark
+        isOverdue -> NeoAmber
+        else -> NeoTextSecondary
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(24.dp),
+                ambientColor = Color(0x080F172A),
+                spotColor = Color(0x080F172A)
+            )
+            .animateContentSize(),
+        shape = RoundedCornerShape(24.dp),
+        color = NeoCard,
+        border = BorderStroke(1.dp, NeoBorder)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(if (isOverdue) NeoAmber.copy(alpha = 0.15f) else visual.container),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = visual.icon,
+                            contentDescription = null,
+                            tint = if (isOverdue) NeoAmber else visual.tint,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stream.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = NeoTextPrimary,
+                            fontSize = 16.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "${stream.clientOrPlatform} · ${stream.source.displayName}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = NeoTextSecondary,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = Formatters.original(stream.originalAmount, stream.currency),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = NeoTextPrimary,
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(accent.copy(alpha = 0.12f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = when {
+                                isRealized -> "Realized"
+                                isOverdue -> {
+                                    val days = Formatters.daysBetween(stream.dateReceivedOrExpected, now)
+                                    if (days > 0) "Overdue $days Days" else "Overdue"
+                                }
+                                else -> "Pending"
+                            },
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isOverdue) Color(0xFFB45309) else accent
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = if (isRealized) Icons.Default.Verified else Icons.Default.Schedule,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = buildString {
+                            append(if (isRealized) "Cleared " else "Due ")
+                            append(Formatters.relativeDay(stream.dateReceivedOrExpected, now))
+                            if (stream.currency != Currency.LKR) {
+                                append(" · ≈ ")
+                                append(Formatters.lkr(stream.amountInLkr))
+                            }
+                            if (stream.isRecurringMonthly) append(" · Monthly")
+                        },
+                        fontSize = 12.sp,
+                        color = NeoTextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                if (!isRealized) {
+                    Button(
+                        onClick = onMarkReceived,
+                        modifier = Modifier
+                            .height(40.dp)
+                            .shadow(6.dp, CircleShape, spotColor = NeoGreenGlow),
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = NeoGreen,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Mark Received", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
     }
 }
