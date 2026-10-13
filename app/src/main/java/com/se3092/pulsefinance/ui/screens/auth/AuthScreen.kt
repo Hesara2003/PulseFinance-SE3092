@@ -33,7 +33,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.foundation.Image
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -55,6 +58,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -62,6 +67,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.se3092.pulsefinance.R
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
@@ -84,6 +90,8 @@ fun AuthScreen(
     val pagerState = rememberPagerState(pageCount = { 3 })
     val coroutineScope = rememberCoroutineScope()
     var showCustomCredentials by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val googleIdTokenRequester = remember(context) { GoogleIdTokenRequester(context) }
 
     LaunchedEffect(state.isAuthenticated) {
         if (state.isAuthenticated) {
@@ -266,6 +274,37 @@ fun AuthScreen(
                             fontSize = 16.sp
                         )
 
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // 1-tap examiner shortcut: Kavindu's scenario is seeded on first sign-in
+                        Surface(
+                            shape = CircleShape,
+                            color = NeoGreen.copy(alpha = 0.10f),
+                            border = BorderStroke(1.dp, NeoGreen.copy(alpha = 0.35f)),
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .clickable(onClick = viewModel::fillDemoPersona)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = NeoGreenDark,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = "Fill Demo Persona (Kavindu)",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = NeoGreenDark
+                                )
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(14.dp))
 
                         OutlinedTextField(
@@ -350,7 +389,7 @@ fun AuthScreen(
                     contentColor = Color.White
                 )
             ) {
-                if (state.isLoading) {
+                if (state.loadingMethod == AuthMethod.EMAIL) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(22.dp),
                         color = Color.White,
@@ -376,6 +415,55 @@ fun AuthScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Google Sign-In via Android Credential Manager
+            OutlinedButton(
+                onClick = {
+                    viewModel.onGoogleSignInStarted()
+                    coroutineScope.launch {
+                        googleIdTokenRequester.requestIdToken().fold(
+                            onSuccess = viewModel::signInWithGoogle,
+                            onFailure = viewModel::onGoogleSignInFailed
+                        )
+                    }
+                },
+                enabled = !state.isLoading,
+                shape = CircleShape,
+                border = BorderStroke(1.dp, NeoBorder),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = NeoCard,
+                    contentColor = NeoTextPrimary
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+            ) {
+                if (state.loadingMethod == AuthMethod.GOOGLE) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = NeoGreen,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_google_logo),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Continue with Google",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
