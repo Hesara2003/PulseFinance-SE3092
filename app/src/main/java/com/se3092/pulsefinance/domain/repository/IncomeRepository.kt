@@ -9,5 +9,4 @@ interface IncomeRepository {
     suspend fun addIncomeStream(income: IncomeStream): Result<Unit>
     suspend fun updateInvoiceStatus(incomeId: String, userId: String, status: InvoiceStatus): Result<Unit>
     suspend fun deleteIncomeStream(incomeId: String, userId: String): Result<Unit>
-    suspend fun syncIncome(userId: String)
 }
