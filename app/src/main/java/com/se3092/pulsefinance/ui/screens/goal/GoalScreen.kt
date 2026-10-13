@@ -1,5 +1,7 @@
 package com.se3092.pulsefinance.ui.screens.goal
 
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.Dialog
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -30,6 +32,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -60,6 +64,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.se3092.pulsefinance.R
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
@@ -74,6 +81,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.se3092.pulsefinance.domain.model.SavingsGoal
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.se3092.pulsefinance.domain.usecase.GoalVelocityReport
+import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
+import com.se3092.pulsefinance.ui.common.formatDate
+import com.se3092.pulsefinance.ui.common.lkr
+import com.se3092.pulsefinance.ui.theme.NeoRose
 import com.se3092.pulsefinance.ui.components.MacBookGoalCard
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
@@ -139,24 +154,11 @@ fun GoalScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(NeoGreenDark, NeoGreen)
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.RocketLaunch,
-                            contentDescription = "PulseFinance Emblem",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    Image(
+                        painter = painterResource(R.drawable.logo_mark),
+                        contentDescription = "PulseFinance logo",
+                        modifier = Modifier.size(36.dp)
+                    )
                     Text(
                         text = "PulseFinance",
                         style = MaterialTheme.typography.titleMedium,
@@ -201,11 +203,11 @@ fun GoalScreen(
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "KP",
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color.White,
-                                fontSize = 12.sp
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Profile",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -286,7 +288,11 @@ fun GoalScreen(
                                         .background(NeoGreen)
                                 )
                                 Text(
-                                    text = "Pacing Active",
+                                    text = when {
+                                        state.velocityReport == null -> "No goal yet"
+                                        state.velocityReport!!.isPacingOnTrack -> "On pace"
+                                        else -> "Behind pace"
+                                    },
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = NeoTextPrimary
@@ -296,20 +302,26 @@ fun GoalScreen(
                     }
                 }
 
-                // 2. MacBook Pro M4 Hero Card
+                // 2. Goal Hero Card (or first-time setup)
                 item {
-                    state.goal?.let { goal ->
+                    val goal = state.goal
+                    if (goal != null) {
                         MacBookGoalCard(
                             goal = goal,
-                            onMoreClick = {
-                                viewModel.setAllocateSheetVisible(true)
-                            }
+                            onMoreClick = { viewModel.openGoalEditor() }
                         )
+                    } else if (!state.isLoading) {
+                        GoalSetupCard(onCreate = viewModel::openGoalEditor)
                     }
                 }
 
+                // 2b. Actual savings rate vs required pace
+                state.velocityReport?.let { report ->
+                    item { PacingCard(report) }
+                }
+
                 // 3. Opportunity Cost Translator Header
-                item {
+                if (state.goal != null) item {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -346,49 +358,31 @@ fun GoalScreen(
                     }
                 }
 
-                // 4. Opportunity Cost Live Impact Cards (3 Cards)
-                item {
+                // 4. Opportunity cost, priced from the user's own discretionary habits
+                if (state.goal != null) item {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        // Card 1: Weekend Cafe/Dinner
-                        OpportunityCostCard(
-                            icon = Icons.Default.LocalCafe,
-                            title = "Skip 1 Weekend Cafe/Dinner",
-                            subtitle = "Save LKR 2,500 • 1.9 days funded",
-                            badgeText = "+1.9 Days",
-                            onClick = {
-                                viewModel.onDepositAmountChanged("2500")
-                                viewModel.setAllocateSheetVisible(true)
-                            }
-                        )
-
-                        // Card 2: PickMe City Rides
-                        OpportunityCostCard(
-                            icon = Icons.Default.DirectionsCar,
-                            title = "Skip 3 PickMe City Rides",
-                            subtitle = "Save LKR 4,350 • Shifts arrival",
-                            badgeText = "+3.3 Days",
-                            onClick = {
-                                viewModel.onDepositAmountChanged("4350")
-                                viewModel.setAllocateSheetVisible(true)
-                            }
-                        )
-
-                        // Card 3: Zombie SaaS Sub
-                        OpportunityCostCard(
-                            icon = Icons.Default.CancelPresentation,
-                            title = "Kill 1 Zombie SaaS Sub",
-                            subtitle = "Save LKR 4,500/mo • Compounding speed",
-                            badgeText = "+11% Boost",
-                            onClick = {
-                                viewModel.onDepositAmountChanged("4500")
-                                viewModel.setAllocateSheetVisible(true)
-                            }
-                        )
+                        if (state.opportunities.isEmpty()) {
+                            Text(
+                                text = "Log a few discretionary expenses and this shows which habit, trimmed by a quarter, moves your goal closest.",
+                                fontSize = 12.5.sp,
+                                color = NeoTextSecondary,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                        }
+                        state.opportunities.forEach { opportunity ->
+                            OpportunityCostCard(
+                                icon = expenseCategoryVisual(opportunity.category).icon,
+                                title = "Trim ${opportunity.category.displayName} by 25%",
+                                subtitle = "${lkr(opportunity.monthlySpendLkr)} last 30 days · saves ${lkr(opportunity.monthlySavingLkr)}/mo",
+                                badgeText = "+${"%.1f".format(opportunity.daysOfGoalPace)} days",
+                                onClick = { viewModel.openAllocateWith(opportunity.monthlySavingLkr) }
+                            )
+                        }
                     }
                 }
 
                 // 5. Arrival Projection Box
-                item {
+                state.velocityReport?.let { report -> item {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(18.dp),
@@ -428,7 +422,13 @@ fun GoalScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Target Delivery: December 14, 2025",
+                                    text = "Deadline: ${formatDate(report.goal.targetDateMillis, "dd MMMM yyyy")}",
+                                    fontSize = 12.sp,
+                                    color = NeoTextSecondary
+                                )
+                                Text(
+                                    text = report.projectedArrivalMillis?.let { "At your pace: ${formatDate(it, "dd MMMM yyyy")}" }
+                                        ?: "At your pace: not reachable yet",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = NeoTextPrimary,
                                     fontWeight = FontWeight.Bold,
@@ -439,8 +439,10 @@ fun GoalScreen(
                     }
                 }
 
+                }
+
                 // 6. Action Button: Allocate Funds to Goal
-                item {
+                if (state.goal != null) item {
                     Button(
                         onClick = {
                             viewModel.setAllocateSheetVisible(true)
@@ -469,7 +471,7 @@ fun GoalScreen(
                                 modifier = Modifier.size(22.dp)
                             )
                             Text(
-                                text = "Allocate Funds to Goal",
+                                text = "Set Money Aside",
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -558,7 +560,7 @@ fun GoalScreen(
                                 fontSize = 20.sp
                             )
                             Text(
-                                text = "Accelerate MacBook Pro M4 arrival",
+                                text = "Add to ${state.goal?.title ?: "your goal"}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = NeoTextSecondary,
                                 fontSize = 13.sp
@@ -598,14 +600,14 @@ fun GoalScreen(
                     ) {
                         PresetChip(
                             label = "+2,500",
-                            sublabel = "Dinner",
+                            sublabel = "Small",
                             onClick = { viewModel.onDepositAmountChanged("2500") },
                             modifier = Modifier.weight(1f)
                         )
                         PresetChip(
-                            label = "+4,350",
-                            sublabel = "PickMe",
-                            onClick = { viewModel.onDepositAmountChanged("4350") },
+                            label = "+5,000",
+                            sublabel = "Medium",
+                            onClick = { viewModel.onDepositAmountChanged("5000") },
                             modifier = Modifier.weight(1f)
                         )
                         PresetChip(
@@ -641,7 +643,7 @@ fun GoalScreen(
                     // Impact Preview
                     val inputAmount = state.depositAmountInput.toDoubleOrNull() ?: 0.0
                     if (inputAmount > 0) {
-                        val dailyPace = state.goal?.requiredDailySavingsLkr ?: 1330.0
+                        val dailyPace = state.goal?.requiredDailySavingsLkr?.takeIf { it > 0 } ?: inputAmount
                         val days = inputAmount / dailyPace
                         Box(
                             modifier = Modifier
@@ -661,7 +663,7 @@ fun GoalScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(
-                                    text = "This allocation pulls forward delivery by ~${String.format("%.1f", days)} days!",
+                                    text = "Covers ~${String.format("%.1f", days)} days of your required pace",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = NeoGreenDark
@@ -696,6 +698,19 @@ fun GoalScreen(
                     }
                 }
             }
+        }
+    
+        state.celebration?.let { celebration ->
+            CelebrationDialog(celebration = celebration, onDismiss = viewModel::dismissCelebration)
+        }
+
+        if (state.editor.isVisible) {
+            GoalEditorSheet(
+                editor = state.editor,
+                onChange = viewModel::onEditorChanged,
+                onSave = viewModel::saveGoal,
+                onDismiss = viewModel::dismissGoalEditor
+            )
         }
     }
 }
@@ -757,7 +772,7 @@ private fun OpportunityCostCard(
                         color = NeoTextPrimary,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(2.dp))
@@ -766,7 +781,7 @@ private fun OpportunityCostCard(
                         style = MaterialTheme.typography.labelSmall,
                         color = NeoTextSecondary,
                         fontSize = 12.sp,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
@@ -818,6 +833,248 @@ private fun PresetChip(
                 fontSize = 10.sp,
                 color = NeoTextSecondary
             )
+        }
+    }
+}
+
+@Composable
+private fun GoalSetupCard(onCreate: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = NeoCard,
+        border = BorderStroke(1.dp, NeoBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(22.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.illustration_piggy_bank),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(180.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+            Text(text = "What are you saving for?", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = NeoTextPrimary)
+            Text(
+                text = "Name it, price it and pick a deadline. PulseFinance then shows the exact monthly pace, " +
+                    "compares it to what you actually save, and projects when you'll get there.",
+                fontSize = 13.sp,
+                color = NeoTextSecondary
+            )
+            Button(
+                onClick = onCreate,
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = Color.White),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Set my goal", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PacingCard(report: GoalVelocityReport) {
+    val accent = if (report.isPacingOnTrack) NeoGreenDark else NeoRose
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = NeoCard,
+        border = BorderStroke(1.dp, NeoBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                PaceStat(
+                    label = "YOU SAVE",
+                    value = "${lkr(report.actualMonthlySavingsLkr)}/mo",
+                    color = accent,
+                    modifier = Modifier.weight(1f)
+                )
+                PaceStat(
+                    label = "NEEDED",
+                    value = "${lkr(report.monthlyPacingTargetLkr)}/mo",
+                    color = NeoTextPrimary,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            // A visible reaction makes the pace land harder than a number alone
+            Image(
+                painter = painterResource(
+                    if (report.isPacingOnTrack) R.drawable.illustration_success else R.drawable.illustration_stressed
+                ),
+                contentDescription = if (report.isPacingOnTrack) "People celebrating with a trophy" else "Worried person surrounded by bills",
+                modifier = Modifier
+                    .size(170.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+            Text(text = report.behavioralInsight, fontSize = 12.5.sp, color = NeoTextSecondary)
+            Text(
+                text = "Savings rate = received income minus spending, averaged over your last 90 days.",
+                fontSize = 10.5.sp,
+                color = NeoTextTertiary
+            )
+        }
+    }
+}
+
+@Composable
+private fun PaceStat(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(NeoCardLow)
+            .padding(12.dp)
+    ) {
+        Text(text = label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = NeoTextSecondary, letterSpacing = 0.5.sp)
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(text = value, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = color)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GoalEditorSheet(
+    editor: GoalEditorState,
+    onChange: ((GoalEditorState) -> GoalEditorState) -> Unit,
+    onSave: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = NeoGreen,
+        unfocusedBorderColor = NeoBorder,
+        focusedTextColor = NeoTextPrimary,
+        unfocusedTextColor = NeoTextPrimary
+    )
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = NeoCard
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = if (editor.isNew) "Set your goal" else "Edit goal",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = NeoTextPrimary
+            )
+            OutlinedTextField(
+                value = editor.titleInput,
+                onValueChange = { v -> onChange { it.copy(titleInput = v) } },
+                label = { Text("Goal (e.g. MacBook Pro M4)") },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                colors = fieldColors
+            )
+            OutlinedTextField(
+                value = editor.targetInput,
+                onValueChange = { v -> onChange { it.copy(targetInput = v) } },
+                label = { Text("Target amount") },
+                prefix = { Text("LKR ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                colors = fieldColors
+            )
+            OutlinedTextField(
+                value = editor.savedInput,
+                onValueChange = { v -> onChange { it.copy(savedInput = v) } },
+                label = { Text("Already saved") },
+                prefix = { Text("LKR ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                colors = fieldColors
+            )
+            OutlinedTextField(
+                value = editor.monthsInput,
+                onValueChange = { v -> onChange { it.copy(monthsInput = v) } },
+                label = { Text("Reach it within (months)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                colors = fieldColors
+            )
+            OutlinedTextField(
+                value = editor.notesInput,
+                onValueChange = { v -> onChange { it.copy(notesInput = v) } },
+                label = { Text("Why it matters (optional)") },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                colors = fieldColors
+            )
+            editor.errorMessage?.let { Text(text = it, color = NeoRose, fontSize = 12.sp) }
+            Button(
+                onClick = onSave,
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = Color.White),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+            ) {
+                Text(text = if (editor.isNew) "Create goal" else "Save changes", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CelebrationDialog(celebration: Celebration, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(28.dp), color = NeoCard) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.illustration_success),
+                    contentDescription = null,
+                    modifier = Modifier.size(220.dp)
+                )
+                Text(
+                    text = celebration.title,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = NeoTextPrimary,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = celebration.message,
+                    fontSize = 14.sp,
+                    color = NeoTextSecondary,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Button(
+                    onClick = onDismiss,
+                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = Color.White),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                ) {
+                    Text(text = "Keep going", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            }
         }
     }
 }
