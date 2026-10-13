@@ -49,15 +49,20 @@ import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
 import com.se3092.pulsefinance.ui.theme.NeoSurfaceHighest
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
+import com.se3092.pulsefinance.ui.theme.NeoAmber
+import com.se3092.pulsefinance.ui.util.Formatters
 
 @Composable
 fun MacBookGoalCard(
     goal: SavingsGoal,
     modifier: Modifier = Modifier,
+    /** This month's net savings; when provided the pace pill says whether it keeps up. */
+    monthlyNetSavingsLkr: Double? = null,
     onMoreClick: () -> Unit = {}
 ) {
-    val progress = (goal.currentSavedLkr / goal.targetAmountLkr).coerceIn(0.0, 1.0).toFloat()
-    val percentageStr = String.format("%.1f%%", progress * 100)
+    val progress = goal.progressPercentage
+    val percentageStr = Formatters.percentOneDecimal(progress)
+    val isOnPace = monthlyNetSavingsLkr != null && monthlyNetSavingsLkr >= goal.requiredMonthlySavingsLkr
 
     Surface(
         modifier = modifier
@@ -143,7 +148,8 @@ fun MacBookGoalCard(
                                 fontSize = 17.sp
                             )
                             Text(
-                                text = "36GB Unified Memory • 1TB SSD",
+                                text = if (goal.remainingAmountLkr <= 0) "Fully funded — go get it!"
+                                else "${Formatters.lkrCompact(goal.remainingAmountLkr)} to go · ${goal.daysRemaining} days left",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = NeoTextSecondary,
                                 fontSize = 12.sp
@@ -247,7 +253,7 @@ fun MacBookGoalCard(
                                     fontSize = 11.sp
                                 )
                                 Text(
-                                    text = "LKR ${String.format("%,.0f", goal.currentSavedLkr)}",
+                                    text = Formatters.lkr(goal.currentSavedLkr),
                                     style = MaterialTheme.typography.titleMedium,
                                     color = NeoTextPrimary,
                                     fontWeight = FontWeight.ExtraBold,
@@ -263,7 +269,7 @@ fun MacBookGoalCard(
                                     fontSize = 11.sp
                                 )
                                 Text(
-                                    text = "LKR ${String.format("%,.0f", goal.targetAmountLkr)}",
+                                    text = Formatters.lkr(goal.targetAmountLkr),
                                     style = MaterialTheme.typography.titleMedium,
                                     color = NeoTextSecondary,
                                     fontWeight = FontWeight.Bold,
@@ -300,13 +306,24 @@ fun MacBookGoalCard(
                                     append("Required Pace: ")
                                 }
                                 withStyle(SpanStyle(color = NeoTextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)) {
-                                    append("LKR ${String.format("%,.0f", goal.requiredDailySavingsLkr)}")
+                                    append(Formatters.lkr(goal.requiredDailySavingsLkr))
                                 }
                                 withStyle(SpanStyle(color = NeoTextSecondary, fontSize = 13.sp)) {
                                     append("/day ")
                                 }
                                 withStyle(SpanStyle(color = NeoTextSecondary, fontSize = 12.sp)) {
-                                    append("(~LKR ${String.format("%,.0f", goal.requiredMonthlySavingsLkr)}/mo)")
+                                    append("(~${Formatters.lkrCompact(goal.requiredMonthlySavingsLkr)}/mo)")
+                                }
+                                if (monthlyNetSavingsLkr != null) {
+                                    withStyle(
+                                        SpanStyle(
+                                            color = if (isOnPace) NeoGreenDark else NeoAmber,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp
+                                        )
+                                    ) {
+                                        append(if (isOnPace) " · On pace" else " · Behind pace")
+                                    }
                                 }
                             }
                         )
