@@ -88,6 +88,10 @@ import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
 import com.se3092.pulsefinance.ui.theme.NeoSurface
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
+import com.se3092.pulsefinance.R
+import com.se3092.pulsefinance.ui.components.EmptyStateView
+import com.se3092.pulsefinance.ui.util.Formatters
+import androidx.compose.material3.TextButton
 import kotlinx.coroutines.delay
 
 @Composable
@@ -193,7 +197,7 @@ fun ExpenseScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "KP",
+                                text = state.userInitials,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White,
                                 fontSize = 12.sp
@@ -317,7 +321,8 @@ fun ExpenseScreen(
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "${state.activeFlaggedCount} Subscriptions Detected",
+                                    text = if (state.activeFlaggedCount == 1) "1 Subscription Flagged"
+                                    else "${state.activeFlaggedCount} Subscriptions Flagged",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF93000A),
@@ -330,7 +335,7 @@ fun ExpenseScreen(
                                         withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
                                             append(state.totalDrainMonthlyFormatted)
                                         }
-                                        append(" from your Secondary Commercial Bank account without active usage.")
+                                        append(" through auto-debits you haven't reviewed yet.")
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color(0xFF93000A).copy(alpha = 0.9f),
@@ -482,13 +487,23 @@ fun ExpenseScreen(
                 }
 
                 // 5. Zombie Subscription Cards List
+                if (!state.hasDetections) {
+                    item {
+                        EmptyStateView(
+                            title = "No recurring debits yet",
+                            message = "Log subscriptions or repeat bills and PulseFinance will flag the ones quietly draining your accounts.",
+                            illustration = R.drawable.illustration_insights
+                        )
+                    }
+                }
                 items(
                     items = state.zombieSubscriptions.filter { !it.isDismissed },
                     key = { it.id }
                 ) { sub ->
                     ZombieCardItem(
                         sub = sub,
-                        onAction = { viewModel.dismissZombieSubscription(sub.id) }
+                        onAction = { viewModel.dismissZombieSubscription(sub.id) },
+                        onKeep = { viewModel.keepSubscription(sub.id) }
                     )
                 }
 
@@ -525,7 +540,7 @@ fun ExpenseScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    text = "All Leaks Plugged (Saved LKR 11,700/mo)",
+                                    text = if (state.hasDetections) "All Leaks Plugged" else "Nothing to Nuke",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -538,9 +553,12 @@ fun ExpenseScreen(
                                 )
                                 Text(
                                     text = buildAnnotatedString {
-                                        append("Nuke 2 Flagged Leaks ")
+                                        append(
+                                            if (state.activeFlaggedCount == 1) "Nuke 1 Flagged Leak "
+                                            else "Nuke ${state.activeFlaggedCount} Flagged Leaks "
+                                        )
                                         withStyle(SpanStyle(color = NeoGreenLight)) {
-                                            append("(Save LKR 11,700/mo)")
+                                            append("(Save ${Formatters.lkr(state.flaggedMonthlyDrainLkr)}/mo)")
                                         }
                                     },
                                     fontSize = 14.sp,
@@ -599,7 +617,8 @@ fun ExpenseScreen(
 @Composable
 private fun ZombieCardItem(
     sub: ZombieSubscription,
-    onAction: () -> Unit
+    onAction: () -> Unit,
+    onKeep: () -> Unit
 ) {
     Surface(
         modifier = Modifier
@@ -782,6 +801,10 @@ private fun ZombieCardItem(
                 }
 
                 if (sub.isFlagged) {
+                  Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onKeep) {
+                        Text("Keep", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = NeoTextSecondary)
+                    }
                     Button(
                         onClick = onAction,
                         shape = CircleShape,
@@ -808,6 +831,7 @@ private fun ZombieCardItem(
                             )
                         }
                     }
+                  }
                 } else {
                     Box(
                         modifier = Modifier
