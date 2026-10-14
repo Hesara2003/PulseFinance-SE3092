@@ -17,11 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import com.se3092.pulsefinance.ui.util.Formatters
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,12 +40,9 @@ fun CommittedVsDiscretionaryBar(
     discretionaryAmountLkr: Double,
     modifier: Modifier = Modifier
 ) {
-    val total = committedAmountLkr + discretionaryAmountLkr
-    val hasSpend = total > 0
-    val committedRatio = if (hasSpend) (committedAmountLkr / total).toFloat().coerceIn(0f, 1f) else 0f
-    val discretionaryRatio = if (hasSpend) (discretionaryAmountLkr / total).toFloat().coerceIn(0f, 1f) else 0f
-    // Animate the split so newly logged expenses visibly shift the bar
-    val animatedCommitted by animateFloatAsState(committedRatio, tween(600), label = "committedRatio")
+    val total = (committedAmountLkr + discretionaryAmountLkr).coerceAtLeast(1.0)
+    val committedRatio = (committedAmountLkr / total).toFloat().coerceIn(0f, 1f)
+    val discretionaryRatio = (discretionaryAmountLkr / total).toFloat().coerceIn(0f, 1f)
 
     Surface(
         modifier = modifier
@@ -82,7 +75,7 @@ fun CommittedVsDiscretionaryBar(
                     letterSpacing = 0.5.sp
                 )
                 Text(
-                    text = if (hasSpend) "Total ${Formatters.lkr(total)}" else "Nothing logged this month",
+                    text = "Total LKR ${String.format("%,.0f", committedAmountLkr + discretionaryAmountLkr)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = NeoTextSecondary,
                     fontSize = 12.sp,
@@ -100,10 +93,10 @@ fun CommittedVsDiscretionaryBar(
                     .clip(CircleShape)
                     .background(NeoTrack)
             ) {
-                if (animatedCommitted > 0f) {
+                if (committedRatio > 0f) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(animatedCommitted)
+                            .fillMaxWidth(committedRatio)
                             .height(12.dp)
                             .background(NeoTextPrimary)
                     )
@@ -141,7 +134,7 @@ fun CommittedVsDiscretionaryBar(
                             fontSize = 12.sp
                         )
                         Text(
-                            text = "${Formatters.lkr(committedAmountLkr)} (Rent/Bills)",
+                            text = "LKR ${String.format("%,.0f", committedAmountLkr)} (Rent/Bills)",
                             style = MaterialTheme.typography.labelSmall,
                             color = NeoTextTertiary,
                             fontSize = 11.sp
@@ -166,7 +159,7 @@ fun CommittedVsDiscretionaryBar(
                             fontSize = 12.sp
                         )
                         Text(
-                            text = "${Formatters.lkr(discretionaryAmountLkr)} (Lifestyle)",
+                            text = "LKR ${String.format("%,.0f", discretionaryAmountLkr)} (Lifestyle)",
                             style = MaterialTheme.typography.labelSmall,
                             color = NeoTextTertiary,
                             fontSize = 11.sp

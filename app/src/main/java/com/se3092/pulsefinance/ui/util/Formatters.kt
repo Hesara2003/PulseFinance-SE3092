@@ -115,3 +115,6 @@ object Formatters {
         return Math.floorDiv(millis + offset, 24L * 60 * 60 * 1000)
     }
 }
+
+fun formatDate(millis: Long, pattern: String = "dd MMM yyyy"): String =
+    SimpleDateFormat(pattern, Locale.getDefault()).format(Date(millis))

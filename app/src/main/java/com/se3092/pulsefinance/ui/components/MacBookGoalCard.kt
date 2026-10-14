@@ -34,9 +34,11 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.SavingsGoal
+import com.se3092.pulsefinance.ui.util.formatDate
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
@@ -49,20 +51,15 @@ import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
 import com.se3092.pulsefinance.ui.theme.NeoSurfaceHighest
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoAmber
-import com.se3092.pulsefinance.ui.util.Formatters
 
 @Composable
 fun MacBookGoalCard(
     goal: SavingsGoal,
     modifier: Modifier = Modifier,
-    /** This month's net savings; when provided the pace pill says whether it keeps up. */
-    monthlyNetSavingsLkr: Double? = null,
     onMoreClick: () -> Unit = {}
 ) {
-    val progress = goal.progressPercentage
-    val percentageStr = Formatters.percentOneDecimal(progress)
-    val isOnPace = monthlyNetSavingsLkr != null && monthlyNetSavingsLkr >= goal.requiredMonthlySavingsLkr
+    val progress = (goal.currentSavedLkr / goal.targetAmountLkr).coerceIn(0.0, 1.0).toFloat()
+    val percentageStr = String.format("%.1f%%", progress * 100)
 
     Surface(
         modifier = modifier
@@ -106,7 +103,8 @@ fun MacBookGoalCard(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.weight(1f)
                     ) {
                         // Laptop Glyphs Container
                         Box(
@@ -133,7 +131,7 @@ fun MacBookGoalCard(
                                     .padding(horizontal = 8.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = "Tech Upgrade",
+                                    text = "Savings Goal",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = NeoOnSecondaryFixed
@@ -142,14 +140,17 @@ fun MacBookGoalCard(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = goal.title,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 style = MaterialTheme.typography.titleMedium,
                                 color = NeoTextPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 17.sp
                             )
                             Text(
-                                text = if (goal.remainingAmountLkr <= 0) "Fully funded — go get it!"
-                                else "${Formatters.lkrCompact(goal.remainingAmountLkr)} to go · ${goal.daysRemaining} days left",
+                                text = goal.notes.ifBlank { "Deadline ${formatDate(goal.targetDateMillis)}" },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = NeoTextSecondary,
                                 fontSize = 12.sp
@@ -253,7 +254,7 @@ fun MacBookGoalCard(
                                     fontSize = 11.sp
                                 )
                                 Text(
-                                    text = Formatters.lkr(goal.currentSavedLkr),
+                                    text = "LKR ${String.format("%,.0f", goal.currentSavedLkr)}",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = NeoTextPrimary,
                                     fontWeight = FontWeight.ExtraBold,
@@ -269,7 +270,7 @@ fun MacBookGoalCard(
                                     fontSize = 11.sp
                                 )
                                 Text(
-                                    text = Formatters.lkr(goal.targetAmountLkr),
+                                    text = "LKR ${String.format("%,.0f", goal.targetAmountLkr)}",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = NeoTextSecondary,
                                     fontWeight = FontWeight.Bold,
@@ -306,24 +307,13 @@ fun MacBookGoalCard(
                                     append("Required Pace: ")
                                 }
                                 withStyle(SpanStyle(color = NeoTextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)) {
-                                    append(Formatters.lkr(goal.requiredDailySavingsLkr))
+                                    append("LKR ${String.format("%,.0f", goal.requiredDailySavingsLkr)}")
                                 }
                                 withStyle(SpanStyle(color = NeoTextSecondary, fontSize = 13.sp)) {
                                     append("/day ")
                                 }
                                 withStyle(SpanStyle(color = NeoTextSecondary, fontSize = 12.sp)) {
-                                    append("(~${Formatters.lkrCompact(goal.requiredMonthlySavingsLkr)}/mo)")
-                                }
-                                if (monthlyNetSavingsLkr != null) {
-                                    withStyle(
-                                        SpanStyle(
-                                            color = if (isOnPace) NeoGreenDark else NeoAmber,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp
-                                        )
-                                    ) {
-                                        append(if (isOnPace) " · On pace" else " · Behind pace")
-                                    }
+                                    append("(~LKR ${String.format("%,.0f", goal.requiredMonthlySavingsLkr)}/mo)")
                                 }
                             }
                         )

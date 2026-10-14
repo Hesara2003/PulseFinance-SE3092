@@ -24,8 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import com.se3092.pulsefinance.ui.util.Formatters
-import com.se3092.pulsefinance.ui.util.TransactionVisuals
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,8 +77,13 @@ fun ExpenseItemCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Category Icon Badge
-            val visual = TransactionVisuals.forCategory(expense.category)
-            val categoryColor = visual.tint
+            val categoryColor = when (expense.category) {
+                ExpenseCategory.FOOD_DINING -> FoodColor
+                ExpenseCategory.RENT -> RentColor
+                ExpenseCategory.SUBSCRIPTION -> Color(0xFF8B5CF6)
+                ExpenseCategory.TRANSPORT -> Color(0xFF3B82F6)
+                else -> NeoGreen
+            }
 
             Box(
                 modifier = Modifier
@@ -90,7 +93,7 @@ fun ExpenseItemCard(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = visual.icon,
+                    imageVector = Icons.Default.NorthEast,
                     contentDescription = expense.category.name,
                     tint = categoryColor,
                     modifier = Modifier.size(20.dp)
@@ -138,7 +141,7 @@ fun ExpenseItemCard(
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = Formatters.signedLkr(expense.amountLkr, isPositive = false),
+                    text = "- LKR ${String.format("%,.0f", expense.amountLkr)}",
                     style = MaterialTheme.typography.titleMedium,
                     color = NeoTextPrimary,
                     fontWeight = FontWeight.Bold,

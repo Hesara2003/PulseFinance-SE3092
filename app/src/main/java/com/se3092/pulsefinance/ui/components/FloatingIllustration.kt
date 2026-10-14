@@ -8,43 +8,61 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.se3092.pulsefinance.ui.theme.NeoGreen
 
-/** Illustration that gently bobs up and down; used for onboarding and empty states. */
+/** Illustration bobbing gently over a soft green glow — the onboarding hero. */
 @Composable
 fun FloatingIllustration(
-    @DrawableRes resId: Int,
+    @DrawableRes imageRes: Int,
+    contentDescription: String,
     modifier: Modifier = Modifier,
-    size: Dp = 160.dp,
-    floatDistance: Dp = 6.dp,
-    contentDescription: String? = null
+    imageSize: Dp = 300.dp
 ) {
-    val transition = rememberInfiniteTransition(label = "floatingIllustration")
-    val progress by transition.animateFloat(
-        initialValue = -1f,
-        targetValue = 1f,
+    val float = rememberInfiniteTransition(label = "illustrationFloat")
+    val floatOffset by float.animateFloat(
+        initialValue = 0f,
+        targetValue = -10f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2600, easing = FastOutSlowInEasing),
+            animation = tween(1600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "floatOffset"
+        label = "offset"
     )
-
-    Image(
-        painter = painterResource(id = resId),
-        contentDescription = contentDescription,
-        contentScale = ContentScale.Fit,
+    Box(
         modifier = modifier
-            .size(size)
-            // graphicsLayer keeps the animation in the draw phase: no recomposition per frame
-            .graphicsLayer { translationY = progress * floatDistance.toPx() }
-    )
+            .fillMaxWidth()
+            .height(imageSize),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(imageSize - 20.dp)
+                .clip(CircleShape)
+                .background(Brush.radialGradient(listOf(NeoGreen.copy(alpha = 0.18f), Color.Transparent)))
+        )
+        Image(
+            painter = painterResource(imageRes),
+            contentDescription = contentDescription,
+            modifier = Modifier
+                .size(imageSize)
+                .offset(y = floatOffset.dp)
+        )
+    }
 }
