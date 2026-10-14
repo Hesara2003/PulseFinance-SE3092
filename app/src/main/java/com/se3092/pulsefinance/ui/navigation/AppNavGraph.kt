@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.RocketLaunch
@@ -58,6 +58,7 @@ import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoGreen
 import com.se3092.pulsefinance.ui.theme.NeoSurface
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
+import com.se3092.pulsefinance.ui.theme.OnAccent
 import kotlinx.coroutines.flow.Flow
 
 data class NavItem(
@@ -68,7 +69,7 @@ data class NavItem(
 
 /** Bottom dock tabs; the centre slot is the Income Hub action button. */
 private val leadingTabs = listOf(
-    NavItem(Screen.Dashboard, Icons.Default.Dashboard, "Cockpit"),
+    NavItem(Screen.Dashboard, Icons.Default.Dashboard, "Today"),
     NavItem(Screen.Analytics, Icons.Default.Analytics, "Analytics")
 )
 private val trailingTabs = listOf(
@@ -146,6 +147,7 @@ fun AppNavGraph(
                     expenseViewModel = expenseViewModel,
                     onNavigateToAnalytics = { navController.navigateToTab(Screen.Analytics.route) },
                     onNavigateToIncome = { navController.navigateToTab(Screen.Income.route) },
+                    onNavigateToGoal = { navController.navigateToTab(Screen.Goal.route) },
                     onSignOut = {
                         navController.navigate(Screen.Auth.route) {
                             popUpTo(0) { inclusive = true }
@@ -223,9 +225,9 @@ private fun BottomDock(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
+                        imageVector = Icons.Default.Payments,
                         contentDescription = "Income Hub",
-                        tint = Color.White,
+                        tint = OnAccent,
                         modifier = Modifier.size(24.dp)
                     )
                 }
