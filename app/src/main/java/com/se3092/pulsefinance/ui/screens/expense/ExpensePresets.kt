@@ -19,9 +19,9 @@ data class ExpensePreset(
 
 object ExpensePresets {
     val defaults: List<ExpensePreset> = listOf(
-        ExpensePreset("cafe", "☕", "Cafe", "Coffee & Pastry", 850.0, ExpenseCategory.FOOD_DINING),
-        ExpensePreset("pickme", "🚗", "PickMe", "PickMe Office Ride", 1450.0, ExpenseCategory.TRANSPORT),
-        ExpensePreset("ubereats", "🍔", "UberEats", "UberEats Dinner", 2400.0, ExpenseCategory.FOOD_DINING),
-        ExpensePreset("rent", "🏠", "Rent", "Apartment Rent", 34000.0, ExpenseCategory.RENT)
+        ExpensePreset("cafe", "☕", "Coffee", "Coffee", 850.0, ExpenseCategory.FOOD_DINING),
+        ExpensePreset("pickme", "🚗", "PickMe ride", "PickMe ride", 1450.0, ExpenseCategory.TRANSPORT),
+        ExpensePreset("ubereats", "🍔", "UberEats", "UberEats", 2400.0, ExpenseCategory.FOOD_DINING),
+        ExpensePreset("rent", "🏠", "Rent", "Rent", 34000.0, ExpenseCategory.RENT)
     )
 }

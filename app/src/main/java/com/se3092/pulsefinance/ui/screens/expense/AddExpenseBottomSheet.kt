@@ -1,5 +1,7 @@
 package com.se3092.pulsefinance.ui.screens.expense
 
+import com.se3092.pulsefinance.ui.util.Formatters
+import com.se3092.pulsefinance.ui.util.TransactionVisuals
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,7 +14,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -48,23 +50,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
-import com.se3092.pulsefinance.ui.theme.FoodColor
+import com.se3092.pulsefinance.ui.theme.OnAccent
+import com.se3092.pulsefinance.ui.theme.NeoContainer
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
 import com.se3092.pulsefinance.ui.theme.NeoGreen
 import com.se3092.pulsefinance.ui.theme.NeoGreenDark
+import com.se3092.pulsefinance.ui.theme.NeoRose
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import com.se3092.pulsefinance.ui.theme.RentColor
-import com.se3092.pulsefinance.ui.util.TransactionVisuals
 
-/**
- * 3-Tap Speed Logger: tap a preset (fills amount, title, category), confirm the account,
- * tap Log. Manual entry stays available underneath for anything else.
- */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddExpenseBottomSheet(
@@ -79,14 +79,18 @@ fun AddExpenseBottomSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
+    val presets = ExpensePresets.defaults
+    val accounts: List<Account> = state.accounts
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = NeoGreen,
         unfocusedBorderColor = NeoBorder,
         focusedTextColor = NeoTextPrimary,
-        unfocusedTextColor = NeoTextPrimary,
-        focusedLabelColor = NeoGreenDark,
-        unfocusedLabelColor = NeoTextTertiary
+        unfocusedTextColor = NeoTextPrimary
+    )
+    val chipColors = FilterChipDefaults.filterChipColors(
+        selectedContainerColor = NeoGreen,
+        selectedLabelColor = OnAccent,
+        labelColor = NeoTextSecondary
     )
 
     ModalBottomSheet(
@@ -99,8 +103,8 @@ fun AddExpenseBottomSheet(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .imePadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(horizontal = 22.dp)
+                .padding(bottom = 28.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -109,34 +113,59 @@ fun AddExpenseBottomSheet(
             ) {
                 Column {
                     Text(
-                        text = "Quick Expense Entry",
+                        text = "Log an Expense",
                         style = MaterialTheme.typography.titleLarge,
                         color = NeoTextPrimary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
                     )
                     Text(
-                        text = "Tap a preset or enter manually in seconds",
+                        text = "Tap a habit or type the amount — done in seconds",
                         style = MaterialTheme.typography.bodySmall,
-                        color = NeoTextSecondary
+                        color = NeoTextSecondary,
+                        fontSize = 13.sp
                     )
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = NeoTextTertiary)
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = NeoTextSecondary)
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            SectionLabel("FREQUENT PRESETS", color = NeoGreenDark)
-            Spacer(modifier = Modifier.height(6.dp))
+            SectionLabel("YOUR FREQUENT SPENDS")
+            Spacer(modifier = Modifier.height(8.dp))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ExpensePresets.defaults.forEach { preset ->
-                    val isSelected = state.titleInput == preset.title &&
-                        state.amountInput == preset.amountLkr.toInt().toString()
-                    PresetChip(label = preset.chipLabel, isSelected = isSelected) { onPresetSelect(preset) }
+                presets.forEach { preset ->
+                    Surface(
+                        shape = CircleShape,
+                        color = NeoCardLow,
+                        border = BorderStroke(1.dp, NeoBorder),
+                        modifier = Modifier.clickable { onPresetSelect(preset) }
+                    ) {
+                        val visual = TransactionVisuals.forPreset(preset.title, preset.category)
+                        Row(
+                            modifier = Modifier.padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = visual.icon,
+                                contentDescription = null,
+                                tint = visual.tint,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "${preset.title} · ${Formatters.compact(preset.amountLkr)}",
+                                color = NeoTextPrimary,
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
             }
 
@@ -144,112 +173,110 @@ fun AddExpenseBottomSheet(
 
             OutlinedTextField(
                 value = state.amountInput,
-                onValueChange = { input -> onAmountChange(input.filter { it.isDigit() || it == '.' }) },
-                label = { Text("Amount (LKR)") },
+                onValueChange = onAmountChange,
+                label = { Text("Amount") },
                 prefix = { Text("LKR ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
+                                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
                 colors = fieldColors
             )
+
 
             Spacer(modifier = Modifier.height(10.dp))
 
             OutlinedTextField(
                 value = state.titleInput,
                 onValueChange = onTitleChange,
-                label = { Text("Description / Merchant") },
+                label = { Text("What was it? (optional)") },
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
                 colors = fieldColors
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             SectionLabel("CATEGORY")
             Spacer(modifier = Modifier.height(6.dp))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 ExpenseCategory.entries.forEach { category ->
-                    val visual = TransactionVisuals.forCategory(category)
                     FilterChip(
                         selected = state.selectedCategory == category,
                         onClick = { onCategoryChange(category) },
                         label = { Text(category.displayName, fontSize = 12.sp) },
                         leadingIcon = {
-                            Icon(visual.icon, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Icon(
+                                imageVector = TransactionVisuals.forCategory(category).icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
                         },
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = NeoCardLow,
-                            labelColor = NeoTextPrimary,
-                            iconColor = visual.tint,
-                            selectedContainerColor = NeoGreen,
-                            selectedLabelColor = Color.White,
-                            selectedLeadingIconColor = Color.White
-                        )
+                        colors = chipColors
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
+            // Committed vs discretionary — pre-set from the category, overridable.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(16.dp))
                     .background(NeoCardLow)
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (state.isCommittedInput) "Committed Fixed Cost" else "Discretionary Lifestyle Spend",
+                        text = if (state.isCommittedInput) "Committed cost" else "Discretionary spend",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (state.isCommittedInput) RentColor else FoodColor
+                        color = if (state.isCommittedInput) RentColor else NeoGreenDark
                     )
                     Text(
-                        text = if (state.isCommittedInput) "Obligatory (Rent, Bills, Fixed Debits)" else "Flexible (Dining, Rides, Impulses)",
+                        text = if (state.isCommittedInput) "Must pay: rent, bills, fixed debits" else "Your choice: dining, rides, treats",
                         style = MaterialTheme.typography.bodySmall,
                         color = NeoTextSecondary
                     )
                 }
-
                 Switch(
                     checked = state.isCommittedInput,
                     onCheckedChange = onCommittedToggle,
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = RentColor
+                        checkedThumbColor = OnAccent,
+                        checkedTrackColor = RentColor,
+                        uncheckedThumbColor = NeoTextSecondary,
+                        uncheckedTrackColor = NeoContainer,
+                        uncheckedBorderColor = NeoTextTertiary
                     )
                 )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            SectionLabel("PAID VIA ACCOUNT")
-            Spacer(modifier = Modifier.height(6.dp))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                state.accounts.forEach { account ->
-                    FilterChip(
-                        selected = state.selectedAccountId == account.id,
-                        onClick = { onAccountSelect(account.id) },
-                        label = { Text(account.name, fontSize = 12.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = NeoCardLow,
-                            labelColor = NeoTextPrimary,
-                            selectedContainerColor = NeoTextPrimary,
-                            selectedLabelColor = Color.White
+            if (accounts.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                SectionLabel("PAID FROM")
+                Spacer(modifier = Modifier.height(6.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    accounts.forEach { account ->
+                        FilterChip(
+                            selected = state.selectedAccountId == account.id,
+                            onClick = { onAccountSelect(account.id) },
+                            label = { Text(account.name, fontSize = 12.sp) },
+                            colors = chipColors
                         )
-                    )
+                    }
                 }
             }
 
@@ -257,53 +284,33 @@ fun AddExpenseBottomSheet(
 
             Button(
                 onClick = onSubmit,
-                enabled = (state.amountInput.toDoubleOrNull() ?: 0.0) > 0 && !state.isSubmitting,
+                enabled = state.amountInput.isNotBlank() && !state.isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = NeoGreen,
-                    contentColor = Color.White
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent)
             ) {
-                Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.size(8.dp))
-                Text(text = "Log Expense", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                if (state.isSubmitting) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = OnAccent, strokeWidth = 2.dp)
+                } else {
+                    Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(text = "Log Expense", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
-private fun SectionLabel(text: String, color: Color = NeoTextTertiary) {
+private fun SectionLabel(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelSmall,
-        color = color,
+        color = NeoTextTertiary,
         fontWeight = FontWeight.Bold,
-        letterSpacing = 0.5.sp
+        fontSize = 10.5.sp,
+        letterSpacing = 0.6.sp
     )
-}
-
-@Composable
-private fun PresetChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
-    Surface(
-        shape = CircleShape,
-        color = if (isSelected) NeoGreen.copy(alpha = 0.12f) else NeoCardLow,
-        border = BorderStroke(1.dp, if (isSelected) NeoGreen else NeoBorder),
-        modifier = Modifier
-            .clip(CircleShape)
-            .clickable(onClick = onClick)
-    ) {
-        Text(
-            text = label,
-            color = NeoTextPrimary,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
-        )
-    }
 }
