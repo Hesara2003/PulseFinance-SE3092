@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.goal
 
+import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import androidx.compose.animation.AnimatedVisibility
@@ -88,8 +89,10 @@ import com.se3092.pulsefinance.domain.usecase.GoalVelocityReport
 import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.lkr
+import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoRose
 import com.se3092.pulsefinance.ui.components.MacBookGoalCard
+import com.se3092.pulsefinance.ui.components.QuestMap
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
@@ -169,13 +172,13 @@ fun GoalScreen(
                     )
                 }
 
-                // Goal Velocity Engine label & User Profile Avatar
+                // Section label & User Profile Avatar
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "Goal Velocity Engine",
+                        text = "MacBook Quest",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         color = NeoTextSecondary,
@@ -192,24 +195,7 @@ fun GoalScreen(
                             .background(NeoContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.linearGradient(
-                                        listOf(NeoGreenDark, NeoGreen)
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile",
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                        ProfileAvatar(initials = state.initials, size = 34.dp)
                     }
                 }
             }
@@ -232,7 +218,7 @@ fun GoalScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Goal Velocity",
+                                text = "Your Quest",
                                 style = MaterialTheme.typography.headlineLarge,
                                 color = NeoTextPrimary,
                                 fontWeight = FontWeight.Bold,
@@ -241,7 +227,8 @@ fun GoalScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Hardware & Life Milestones",
+                                text = state.quest?.let { "Each level = ${lkr(it.levels.first().thresholdLkr)} actually saved" }
+                                    ?: "Set a goal to start your journey",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = NeoTextSecondary,
                                 fontSize = 14.sp
@@ -298,6 +285,24 @@ fun GoalScreen(
                                     color = NeoTextPrimary
                                 )
                             }
+                        }
+                    }
+                }
+
+                // 1b. The goal as a level map through Colombo
+                state.quest?.let { quest ->
+                    item {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(28.dp),
+                            color = NeoCard,
+                            border = BorderStroke(1.dp, NeoBorder)
+                        ) {
+                            QuestMap(
+                                quest = quest,
+                                initials = state.initials,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            )
                         }
                     }
                 }
@@ -406,7 +411,7 @@ fun GoalScreen(
                                 Icon(
                                     imageVector = Icons.Default.CalendarMonth,
                                     contentDescription = "Target Date",
-                                    tint = Color.White,
+                                    tint = OnAccent,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -458,7 +463,7 @@ fun GoalScreen(
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = NeoGreen,
-                            contentColor = Color.White
+                            contentColor = OnAccent
                         )
                     ) {
                         Row(
@@ -683,7 +688,7 @@ fun GoalScreen(
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = NeoGreen,
-                            contentColor = Color.White
+                            contentColor = OnAccent
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -866,7 +871,7 @@ private fun GoalSetupCard(onCreate: () -> Unit) {
             Button(
                 onClick = onCreate,
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "Set my goal", fontWeight = FontWeight.Bold)
@@ -1025,7 +1030,7 @@ private fun GoalEditorSheet(
             Button(
                 onClick = onSave,
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
@@ -1067,7 +1072,7 @@ private fun CelebrationDialog(celebration: Celebration, onDismiss: () -> Unit) {
                 Button(
                     onClick = onDismiss,
                     shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)

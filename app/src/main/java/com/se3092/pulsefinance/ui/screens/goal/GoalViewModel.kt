@@ -1,7 +1,10 @@
 package com.se3092.pulsefinance.ui.screens.goal
 
+import com.se3092.pulsefinance.ui.common.initialsFor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.se3092.pulsefinance.domain.model.GoalQuest
+import com.se3092.pulsefinance.domain.model.QuestProgress
 import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
@@ -16,6 +19,7 @@ import com.se3092.pulsefinance.domain.usecase.GoalVelocityReport
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.whenSignedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +50,7 @@ data class GoalEditorState(
 )
 
 data class GoalScreenUiState(
+    val initials: String = "",
     val isLoading: Boolean = true,
     val goal: SavingsGoal? = null,
     val velocityReport: GoalVelocityReport? = null,
@@ -56,7 +61,10 @@ data class GoalScreenUiState(
     val editor: GoalEditorState = GoalEditorState(),
     val toastMessage: String? = null,
     val celebration: Celebration? = null
-)
+) {
+    /** The goal as a level-by-level journey, derived from [goal]. */
+    val quest: QuestProgress? = goal?.let(GoalQuest::of)
+}
 
 /** Shown after money is set aside, so progress feels like an event rather than a number change. */
 data class Celebration(val title: String, val message: String)
@@ -94,6 +102,8 @@ class GoalViewModel @Inject constructor(
         }
     }
 
+    private val initials = initialsFor(authRepository.userDisplayName, authRepository.userEmail)
+
     val uiState: StateFlow<GoalScreenUiState> = combine(data, local) { data, local ->
         val goal = data?.goal
         GoalScreenUiState(
@@ -108,7 +118,7 @@ class GoalViewModel @Inject constructor(
             toastMessage = local.toastMessage,
             celebration = local.celebration
         )
-    }.stateIn(
+    }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = GoalScreenUiState()
