@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.expense
 
+import com.se3092.pulsefinance.ui.common.initialsFor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.se3092.pulsefinance.domain.model.DetectedSubscription
@@ -13,6 +14,7 @@ import com.se3092.pulsefinance.domain.usecase.DetectSubscriptionsUseCase
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.whenSignedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 data class AuditUiState(
+    val initials: String = "",
     val isLoading: Boolean = true,
     val subscriptions: List<DetectedSubscription> = emptyList(),
     val flaggedCount: Int = 0,
@@ -65,9 +68,11 @@ class ExpenseViewModel @Inject constructor(
         }
     }
 
+    private val initials = initialsFor(authRepository.userDisplayName, authRepository.userEmail)
+
     val uiState: StateFlow<AuditUiState> = combine(data, message) { data, message ->
         (data ?: AuditUiState()).copy(message = message)
-    }.stateIn(
+    }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = AuditUiState()
