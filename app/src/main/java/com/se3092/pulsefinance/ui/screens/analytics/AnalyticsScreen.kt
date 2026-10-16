@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.analytics
 
+import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import com.se3092.pulsefinance.R
@@ -62,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
@@ -157,24 +159,7 @@ fun AnalyticsScreen(
                             .background(NeoContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.linearGradient(
-                                        listOf(NeoGreenDark, NeoGreen)
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile",
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                        ProfileAvatar(initials = state.initials, size = 34.dp)
                     }
                 }
             }
@@ -225,7 +210,7 @@ fun AnalyticsScreen(
                                     text = "Weekly",
                                     fontWeight = if (isWeekly) FontWeight.Bold else FontWeight.SemiBold,
                                     fontSize = 13.sp,
-                                    color = if (isWeekly) Color.White else NeoTextSecondary
+                                    color = if (isWeekly) OnAccent else NeoTextSecondary
                                 )
                             }
 
@@ -252,7 +237,7 @@ fun AnalyticsScreen(
                                     text = "Monthly",
                                     fontWeight = if (isMonthly) FontWeight.Bold else FontWeight.SemiBold,
                                     fontSize = 13.sp,
-                                    color = if (isMonthly) Color.White else NeoTextSecondary
+                                    color = if (isMonthly) OnAccent else NeoTextSecondary
                                 )
                             }
                         }

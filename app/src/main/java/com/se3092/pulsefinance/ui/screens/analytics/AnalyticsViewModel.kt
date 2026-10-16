@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.analytics
 
+import com.se3092.pulsefinance.ui.common.initialsFor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.se3092.pulsefinance.domain.model.DAY_MILLIS
@@ -16,6 +17,7 @@ import com.se3092.pulsefinance.ui.common.buildLedger
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.whenSignedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +40,7 @@ data class TimelineBar(
 data class CategoryTotal(val category: ExpenseCategory, val amountLkr: Double, val share: Float)
 
 data class AnalyticsUiState(
+    val initials: String = "",
     val isLoading: Boolean = true,
     val interval: AnalyticsInterval = AnalyticsInterval.WEEKLY,
     /** 0 = current period, -1 = previous, ... */
@@ -77,10 +80,12 @@ class AnalyticsViewModel @Inject constructor(
         combine(expenseRepository.getExpenses(userId), incomeRepository.getIncomeStreams(userId)) { e, i -> e to i }
     }
 
+    private val initials = initialsFor(authRepository.userDisplayName, authRepository.userEmail)
+
     val uiState: StateFlow<AnalyticsUiState> = combine(data, controls) { data, controls ->
         if (data == null) AnalyticsUiState(interval = controls.interval)
         else buildState(data.first, data.second, controls)
-    }.stateIn(
+    }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = AnalyticsUiState()
