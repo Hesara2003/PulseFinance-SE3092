@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.income
 
+import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import com.se3092.pulsefinance.R
@@ -85,6 +86,9 @@ import com.se3092.pulsefinance.ui.common.incomeSourceVisual
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.signedLkr
 import com.se3092.pulsefinance.ui.components.EmptyStateView
+import com.se3092.pulsefinance.ui.theme.OnAccent
+import com.se3092.pulsefinance.ui.theme.Teal
+import com.se3092.pulsefinance.ui.theme.VioletAccent
 import com.se3092.pulsefinance.ui.theme.NeoRose
 import com.se3092.pulsefinance.ui.theme.NeoAmber
 import com.se3092.pulsefinance.ui.theme.NeoBorder
@@ -179,24 +183,7 @@ fun IncomeScreen(
                             .background(NeoContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.linearGradient(
-                                        listOf(NeoGreenDark, NeoGreen)
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile",
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                        ProfileAvatar(initials = state.initials, size = 34.dp)
                     }
                 }
             }
@@ -247,7 +234,7 @@ fun IncomeScreen(
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = "Record income",
-                                tint = Color.White,
+                                tint = OnAccent,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -278,7 +265,7 @@ fun IncomeScreen(
                                     .background(
                                         Brush.radialGradient(
                                             colors = listOf(
-                                                NeoGreen.copy(alpha = 0.15f),
+                                                Teal.copy(alpha = 0.15f),
                                                 Color.Transparent
                                             )
                                         )
@@ -309,7 +296,7 @@ fun IncomeScreen(
                                     Box(
                                         modifier = Modifier
                                             .clip(CircleShape)
-                                            .background(NeoGreen.copy(alpha = 0.15f))
+                                            .background(Teal.copy(alpha = 0.15f))
                                             .padding(horizontal = 10.dp, vertical = 4.dp)
                                     ) {
                                         Row(
@@ -368,7 +355,7 @@ fun IncomeScreen(
                                                 modifier = Modifier
                                                     .size(10.dp)
                                                     .clip(CircleShape)
-                                                    .background(NeoGreen)
+                                                    .background(Teal)
                                             )
                                             Text(
                                                 text = "Received",
@@ -445,7 +432,7 @@ fun IncomeScreen(
                                                     .weight(animatedRealizedWidth.coerceAtLeast(0.01f))
                                                     .fillMaxHeight()
                                                     .clip(CircleShape)
-                                                    .background(NeoGreen)
+                                                    .background(Teal)
                                             )
                                         }
                                         if (animatedPendingWidth > 0.01f) {
@@ -665,7 +652,7 @@ private fun CategoryPill(
             text = label,
             fontSize = 13.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-            color = if (isSelected) Color.White else NeoTextSecondary
+            color = if (isSelected) OnAccent else NeoTextSecondary
         )
     }
 }
@@ -742,7 +729,7 @@ private fun SourceBreakdownCard(breakdown: List<SourceTotal>, totalLkr: Double) 
                                     .fillMaxWidth(share)
                                     .fillMaxHeight()
                                     .clip(CircleShape)
-                                    .background(NeoGreen)
+                                    .background(Teal)
                             )
                         }
                     }
@@ -758,7 +745,8 @@ private fun CryptoNetCard(netLkr: Double, entries: Int) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = Color(0xFFEEF2FF)
+        color = NeoCard,
+        border = BorderStroke(1.dp, VioletAccent.copy(alpha = 0.35f))
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -769,17 +757,17 @@ private fun CryptoNetCard(netLkr: Double, entries: Int) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(Color.White),
+                    .background(VioletAccent.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Token, contentDescription = null, tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Token, contentDescription = null, tint = VioletAccent, modifier = Modifier.size(20.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Crypto net, year to date", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF3730A3))
+                Text(text = "Crypto net, year to date", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeoTextPrimary)
                 Text(
                     text = "$entries realised gain/loss entr${if (entries == 1) "y" else "ies"} this year",
                     fontSize = 11.sp,
-                    color = Color(0xFF4338CA)
+                    color = NeoTextSecondary
                 )
             }
             Text(
@@ -801,8 +789,8 @@ private fun IncomeRecordCard(
     val status = income.effectiveStatus()
     val visual = incomeSourceVisual(income.source)
     val (statusLabel, statusBg, statusText) = when (status) {
-        InvoiceStatus.RECEIVED -> Triple(if (income.isLoss) "Loss" else "Received", if (income.isLoss) NeoRose.copy(alpha = 0.12f) else NeoGreen.copy(alpha = 0.15f), if (income.isLoss) NeoRose else NeoGreenDark)
-        InvoiceStatus.PENDING_INVOICE -> Triple("Awaiting payment", NeoAmber.copy(alpha = 0.15f), Color(0xFFB45309))
+        InvoiceStatus.RECEIVED -> Triple(if (income.isLoss) "Loss" else "Received", if (income.isLoss) NeoRose.copy(alpha = 0.12f) else Teal.copy(alpha = 0.15f), if (income.isLoss) NeoRose else NeoGreenDark)
+        InvoiceStatus.PENDING_INVOICE -> Triple("Awaiting payment", NeoAmber.copy(alpha = 0.15f), NeoAmber)
         InvoiceStatus.OVERDUE -> Triple("Overdue", NeoRose.copy(alpha = 0.12f), NeoRose)
     }
     val dateLine = when (status) {
@@ -960,7 +948,7 @@ private fun IncomeRecordCard(
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = NeoGreen,
-                            contentColor = Color.White
+                            contentColor = OnAccent
                         )
                     ) {
                         Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
