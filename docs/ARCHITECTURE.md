@@ -71,6 +71,175 @@ graph TD
 
 ---
 
+## 2.1. MVVM Mapping Diagram — Screens → ViewModels → Repositories → Data Sources
+
+This diagram is drawn from the code as it stands. It maps every screen to its ViewModel, every ViewModel to the use cases and repositories it injects, and every repository to its data sources. **Solid boxes and arrows are implemented.** **Dashed boxes and arrows are Planned** (see `docs/SRS.md` for the requirement IDs). Every ViewModel also injects `AuthRepository` to get the signed-in user's ID. To keep the diagram readable, that link is drawn only for `AuthViewModel`.
+
+```mermaid
+flowchart LR
+    %% ================= UI LAYER =================
+    subgraph UI["UI Layer — Jetpack Compose (single Activity)"]
+        direction TB
+        MA["MainActivity<br/>+ AppNavGraph<br/><i>Navigation Compose, hiltViewModel()</i>"]
+        S_AUTH["AuthScreen<br/>+ Onboarding 1–3"]
+        S_DASH["DashboardScreen<br/><i>SafeToSpendGauge,<br/>CommittedVsDiscretionaryBar</i>"]
+        S_INC["IncomeScreen<br/>+ AddIncomeBottomSheet"]
+        S_EXP["ExpenseScreen<br/>+ AddExpenseBottomSheet"]
+        S_GOAL["GoalScreen<br/><i>MacBookGoalCard</i>"]
+        S_ANA["AnalyticsScreen"]
+        MA --> S_AUTH & S_DASH & S_INC & S_EXP & S_GOAL & S_ANA
+    end
+
+    %% ================= VIEWMODEL LAYER =================
+    subgraph VM["ViewModel Layer — StateFlow#lt;UiState#gt;, viewModelScope"]
+        direction TB
+        VM_AUTH["AuthViewModel"]
+        VM_DASH["DashboardViewModel"]
+        VM_INC["IncomeViewModel"]
+        VM_EXP["ExpenseViewModel"]
+        VM_GOAL["GoalViewModel"]
+        VM_ANA["AnalyticsViewModel"]
+    end
+
+    S_AUTH -->|"collects uiState /<br/>sends events"| VM_AUTH
+    S_DASH --> VM_DASH
+    S_INC --> VM_INC
+    S_EXP --> VM_EXP
+    S_GOAL --> VM_GOAL
+    S_ANA --> VM_ANA
+
+    %% ================= DOMAIN LAYER =================
+    subgraph DOM["Domain Layer — pure Kotlin"]
+        direction TB
+        subgraph UC["Use Cases"]
+            UC_SUM["CalculateFinancialSummary"]
+            UC_VEL["CalculateGoalVelocity"]
+            UC_RATE["CalculateSavingsRate"]
+            UC_FX["ConvertCurrency"]
+            UC_SUB["DetectSubscriptions"]
+            UC_PAY["CalculatePayslip<br/>(EPF / APIT)"]:::planned
+            UC_SMS["ParseBankSms"]:::planned
+            UC_SEA["DetectSeasonalPeaks"]:::planned
+            UC_CSV["ExportCsv"]:::planned
+        end
+        subgraph RI["Repository Interfaces"]
+            R_AUTH["AuthRepository"]
+            R_ACC["AccountRepository"]
+            R_INC["IncomeRepository"]
+            R_EXP["ExpenseRepository"]
+            R_GOAL["GoalRepository"]
+            R_SUBR["SubscriptionReviewRepository"]
+            R_FXR["ExchangeRateRepository"]:::planned
+            R_TAX["TaxConfigRepository"]:::planned
+            R_USE["AppUsageRepository"]:::planned
+        end
+    end
+
+    %% ---- ViewModel → Use case / Repository (implemented) ----
+    VM_AUTH --> R_AUTH & R_ACC
+    VM_DASH --> UC_SUM
+    VM_DASH --> R_ACC & R_INC & R_EXP & R_GOAL
+    VM_INC --> UC_FX
+    VM_INC --> R_INC
+    VM_EXP --> UC_SUB
+    VM_EXP --> R_EXP & R_GOAL & R_SUBR
+    VM_GOAL --> UC_VEL & UC_RATE
+    VM_GOAL --> R_GOAL & R_INC & R_EXP
+    VM_ANA --> R_INC & R_EXP
+
+    %% ---- Planned wiring ----
+    VM_INC -.-> UC_PAY
+    UC_PAY -.-> R_TAX
+    VM_INC -.-> R_FXR
+    VM_GOAL -.-> R_FXR
+    VM_EXP -.-> UC_SMS
+    VM_EXP -.->|"Spending Freeze check"| R_ACC
+    VM_EXP -.-> R_USE
+    VM_DASH -.-> UC_SEA
+    VM_ANA -.-> UC_CSV
+
+    %% ================= DATA LAYER =================
+    subgraph DATA["Data Layer — Repository implementations (Hilt-bound)"]
+        direction TB
+        I_AUTH["AuthRepositoryImpl"]
+        I_ACC["AccountRepositoryImpl"]
+        I_INC["IncomeRepositoryImpl"]
+        I_EXP["ExpenseRepositoryImpl"]
+        I_GOAL["GoalRepositoryImpl"]
+        I_SUBR["SubscriptionReviewRepositoryImpl"]
+        CBF["cacheBackedFlow<br/><i>UI reads Room; Firestore<br/>listener mirrors into Room</i>"]
+        I_FXR["ExchangeRateRepositoryImpl"]:::planned
+        I_TAX["TaxConfigRepositoryImpl"]:::planned
+        I_USE["AppUsageRepositoryImpl"]:::planned
+    end
+
+    R_AUTH -->|"@Binds"| I_AUTH
+    R_ACC -->|"@Binds"| I_ACC
+    R_INC -->|"@Binds"| I_INC
+    R_EXP -->|"@Binds"| I_EXP
+    R_GOAL -->|"@Binds"| I_GOAL
+    R_SUBR -->|"@Binds"| I_SUBR
+    R_FXR -.-> I_FXR
+    R_TAX -.-> I_TAX
+    R_USE -.-> I_USE
+
+    I_ACC & I_INC & I_EXP & I_GOAL --> CBF
+
+    %% ================= DATA SOURCES =================
+    subgraph LOCAL["Local Data Sources"]
+        direction TB
+        ROOM[("Room — AppDatabase<br/>AccountDao · IncomeDao<br/>ExpenseDao · GoalDao")]
+        RATE_CACHE[("Room — rate cache<br/>(daily)")]:::planned
+        USM["Android UsageStatsManager"]:::planned
+    end
+
+    subgraph REMOTE["Remote Data Sources — Firebase & APIs"]
+        direction TB
+        FAD["FirebaseAuthDataSource"]
+        FSD["FirestoreDataSource<br/><i>addSnapshotListener</i>"]
+        FA[("Firebase Authentication<br/>Email/Password + Google")]
+        FS[("Cloud Firestore<br/>users/{uid}/… <br/>persistent offline cache")]
+        FX_API["open.er-api.com<br/>CoinGecko"]:::planned
+    end
+
+    CBF --> ROOM
+    CBF --> FSD
+    I_AUTH --> FAD
+    I_SUBR --> FSD
+    FAD --> FA
+    FSD --> FS
+    I_FXR -.-> RATE_CACHE
+    I_FXR -.-> FX_API
+    I_TAX -.->|"config/apit"| FSD
+    I_USE -.-> USM
+
+    classDef planned fill:#fff,stroke:#999,stroke-dasharray:5 4,color:#666
+    style UI fill:#e8f5e9,stroke:#2e7d32
+    style VM fill:#e3f2fd,stroke:#1565c0
+    style DOM fill:#fff8e1,stroke:#f9a825
+    style DATA fill:#f3e5f5,stroke:#6a1b9a
+    style LOCAL fill:#fafafa,stroke:#555
+    style REMOTE fill:#fafafa,stroke:#555
+```
+
+**How to read it, using the dashboard as an example:**
+1. `DashboardScreen` collects `DashboardViewModel.uiState`, a `StateFlow`. The screen holds no logic of its own.
+2. `DashboardViewModel` combines flows from `IncomeRepository`, `ExpenseRepository`, `GoalRepository` and `AccountRepository`. It then passes them through `CalculateFinancialSummaryUseCase` to produce the Safe-to-Spend Allowance and the committed/discretionary split.
+3. Each repository implementation returns a `cacheBackedFlow`. The UI always reads from **Room**, so it is instant and works offline. While the screen is visible, a **Firestore snapshot listener** mirrors changes into Room, which is what makes updates real-time (NFR-3, NFR-4).
+4. A write goes to Room first and is then queued in Firestore's persistent cache. It uploads when the device is back online.
+5. `SubscriptionReviewRepositoryImpl` is the one exception: it reads straight from Firestore and relies on Firestore's own offline cache instead of a Room table.
+
+| Screen | ViewModel | Use cases | Repositories |
+|---|---|---|---|
+| AuthScreen + Onboarding | AuthViewModel | — | Auth, Account |
+| DashboardScreen | DashboardViewModel | CalculateFinancialSummary · *DetectSeasonalPeaks (planned)* | Auth, Account, Income, Expense, Goal |
+| IncomeScreen | IncomeViewModel | ConvertCurrency · *CalculatePayslip (planned)* | Auth, Income · *ExchangeRate, TaxConfig (planned)* |
+| ExpenseScreen | ExpenseViewModel | DetectSubscriptions · *ParseBankSms (planned)* | Auth, Expense, Goal, SubscriptionReview · *Account, AppUsage (planned)* |
+| GoalScreen | GoalViewModel | CalculateGoalVelocity, CalculateSavingsRate | Auth, Goal, Income, Expense · *ExchangeRate (planned)* |
+| AnalyticsScreen | AnalyticsViewModel | *ExportCsv (planned)* | Auth, Income, Expense |
+
+---
+
 ## 3. Layer Breakdown
 
 ### 3.1. Presentation Layer (`com.se3092.pulsefinance.ui`)

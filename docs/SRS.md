@@ -134,47 +134,96 @@ Everything else is supporting detail.
 
 ### 4.1 Use case diagram
 
+UML notation drawn in Mermaid: actors are outside the system boundary, **primary actors on the left** and **secondary actors/systems on the right**. Use cases are ovals inside the boundary, grouped into packages. Solid lines are associations. Dashed arrows are `«include»` (always happens) and `«extend»` (happens only under a condition).
+
 ```mermaid
 flowchart LR
-    K([👤 Kavindu])
-    EX([👤 Examiner])
-    BANK([🏦 Bank SMS])
-    FXA([🌐 Exchange-Rate APIs])
-    USG([📱 Android Usage Stats])
-    AUTH([🔐 Firebase Auth / Google Identity])
-    FS([☁️ Cloud Firestore])
+    %% ---------- Primary actors (left) ----------
+    K["🧍<br/><b>Kavindu</b><br/>(User)"]:::actor
+    EX["🧍<br/><b>Examiner</b><br/>(Lecture panel)"]:::actor
 
-    subgraph PulseFinance
-        UC1((Sign up / Sign in))
-        UC2((Complete onboarding))
-        UC3((Log expense))
-        UC4((Share bank SMS as draft expense))
-        UC5((Record income))
-        UC6((Mark invoice received))
-        UC7((Enter payslip))
-        UC8((View dashboard & Safe-to-Spend))
-        UC9((View analytics))
-        UC10((Manage MacBook goal))
-        UC11((Review subscriptions))
-        UC12((Freeze account spending))
-        UC13((Reveal / copy account number))
-        UC14((Receive seasonal warning))
-        UC15((Export data to CSV))
-        UC16((Demo sign-in))
+    %% ---------- System boundary ----------
+    subgraph SYS["PulseFinance — system boundary"]
+        subgraph PKG_ID["Identity"]
+            UC1(["UC1 Sign up / Sign in"])
+            UC2(["UC2 Complete onboarding"])
+            UC16(["UC16 Demo sign-in<br/>(debug build only)"])
+        end
+
+        subgraph PKG_CAP["Capture"]
+            UC3(["UC3 Log expense"])
+            UC4(["UC4 Share bank SMS<br/>as draft expense"])
+            UC12(["UC12 Freeze account spending"])
+            UC5(["UC5 Record income"])
+            UC6(["UC6 Mark invoice received"])
+            UC7(["UC7 Enter payslip<br/>(EPF / APIT)"])
+        end
+
+        subgraph PKG_INS["Insight"]
+            UC8(["UC8 View dashboard &<br/>Safe-to-Spend"])
+            UC9(["UC9 View analytics<br/>(donut, Week/Month)"])
+            UC11(["UC11 Review subscriptions"])
+            UC14(["UC14 Receive seasonal warning"])
+        end
+
+        subgraph PKG_GOAL["Goal & Accounts"]
+            UC10(["UC10 Manage MacBook goal"])
+            UC13(["UC13 Reveal / copy<br/>account number"])
+            UC15(["UC15 Export data to CSV"])
+        end
     end
 
-    K --- UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC8 & UC9 & UC10 & UC11 & UC12 & UC13 & UC14 & UC15
+    %% ---------- Secondary actors (right) ----------
+    AUTH["🖥️<br/><b>Firebase Auth /<br/>Google Identity</b>"]:::system
+    FS["🖥️<br/><b>Cloud Firestore</b>"]:::system
+    BANK["🧍<br/><b>Bank</b><br/>(SMS alert)"]:::actor
+    FXA["🖥️<br/><b>Exchange-Rate APIs</b><br/>(open.er-api, CoinGecko)"]:::system
+    USG["🖥️<br/><b>Android Usage Stats</b>"]:::system
+
+    %% ---------- Primary associations ----------
+    K --- UC1
+    K --- UC2
+    K --- UC3
+    K --- UC4
+    K --- UC5
+    K --- UC6
+    K --- UC7
+    K --- UC8
+    K --- UC9
+    K --- UC10
+    K --- UC11
+    K --- UC12
+    K --- UC13
+    K --- UC14
+    K --- UC15
     EX --- UC16
-    BANK --- UC4
-    UC4 -. «include» .-> UC3
+
+    %% ---------- Include / extend ----------
+    UC4 -. "«include»" .-> UC3
+    UC12 -. "«extend»<br/>account is frozen" .-> UC3
+    UC6 -. "«extend»<br/>income is a pending invoice" .-> UC5
+    UC7 -. "«include»" .-> UC5
+
+    %% ---------- Secondary associations ----------
+    UC1 --- AUTH
+    UC16 --- AUTH
+    UC4 --- BANK
     UC5 --- FXA
     UC10 --- FXA
     UC11 --- USG
-    UC1 --- AUTH
-    UC16 --- AUTH
-    UC3 & UC5 & UC7 & UC8 & UC10 & UC11 --- FS
-    UC12 -. «extend» .-> UC3
+    UC3 --- FS
+    UC5 --- FS
+    UC8 --- FS
+    UC10 --- FS
+    UC11 --- FS
+    UC7 --- FS
+
+    classDef actor fill:none,stroke:none,font-size:14px
+    classDef system fill:#eef2ff,stroke:#6366f1,stroke-dasharray:4 3
+    style SYS fill:#fafafa,stroke:#333,stroke-width:2px
 ```
+
+> **Exporting for the PDF:** paste the block into <https://mermaid.live> and use *Actions → PNG/SVG*. SVG stays sharp when printed.
 
 ### 4.2 Use case summary
 
@@ -224,7 +273,7 @@ flowchart LR
 | FR-INC-5 | The income form shall pre-fill the day's suggested rate fetched from open.er-api.com (USD→LKR) and CoinGecko (USDT/ETH→USD), cached once per day and usable offline with its age shown. | §3.2 | F1 (manual lookup) | M | Planned |
 | FR-INC-6 | For a foreign-currency entry, Kavindu shall be able to type the LKR amount his bank actually credited instead of a rate; the system shall derive and store the effective rate. | §3.2 (AdSense "never records what he actually receives") | F1 | M | Planned |
 | FR-INC-7 | A crypto trade shall be recorded as a Crypto Trading Result: positive for a profit, negative for a loss. | §3.2 ("significant gain in Q1 and a material loss in Q3") | — | M | Done |
-| FR-INC-8 | The system shall show the Crypto YTD Net figure. | §3.2 ("cannot answer" YTD crypto earnings) | — | M | Planned |
+| FR-INC-8 | The system shall show the Crypto YTD Net figure. | §3.2 ("cannot answer" YTD crypto earnings) | — | M | Done |
 | FR-INC-9 | The Income screen shall show Realised Income and pending/overdue amounts separately for the month, by source. | §3.2 ("opens four separate applications") | F2 | M | Done |
 
 ### 5.3 Expenses (FR-EXP)
@@ -411,7 +460,7 @@ flowchart LR
 
 | Priority | Done | Planned |
 |---|---|---|
-| **Must** | FR-AUTH-1, 3, 4 · FR-INC-1–4, 7, 9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1, 2, 4–6 · FR-ACC-1 · FR-LK-6 · NFR-1, 3–7, 9 | FR-AUTH-7 (demo drawer) · FR-INC-5, 6, 8 · FR-DASH-3 · FR-ANA-1, 2 · FR-LK-1, 2 · NFR-12 |
+| **Must** | FR-AUTH-1, 3, 4 · FR-INC-1–4, 7–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1, 2, 4–6 · FR-ACC-1 · FR-LK-6 · NFR-1, 3–7, 9 | FR-AUTH-7 (demo drawer) · FR-INC-5, 6 · FR-DASH-3 · FR-ANA-1, 2 · FR-LK-1, 2 · NFR-12 |
 | **Should** | FR-AUTH-2 · FR-GOAL-5 · FR-ANA-3 · FR-ACC-2 | FR-EXP-4, 7 · FR-SUB-4–6 · FR-GOAL-6 · FR-ACC-3–7 · FR-LK-3–5 · FR-DATA-1 · NFR-8, 10, 11 |
 | **Could** | — | FR-AUTH-5, 6 · FR-GOAL-7 · FR-ANA-4, 5 |
 
