@@ -1,36 +1,29 @@
 package com.se3092.pulsefinance.ui.theme
 
 import androidx.compose.material3.Typography
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.R
 
-// Both are variable fonts bundled in res/font (SIL Open Font License), so they work offline.
-@OptIn(ExperimentalTextApi::class)
-private fun variable(resId: Int, weight: FontWeight) = Font(
-    resId = resId,
-    weight = weight,
-    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight))
-)
+// Static weight files cut from the variable fonts and bundled in res/font
+// (SIL Open Font License), so they work offline and every weight renders reliably.
 
 /** Headlines and section titles: a grotesque with some personality. */
 val Display = FontFamily(
-    variable(R.font.bricolage_grotesque, FontWeight.Medium),
-    variable(R.font.bricolage_grotesque, FontWeight.SemiBold),
-    variable(R.font.bricolage_grotesque, FontWeight.Bold),
-    variable(R.font.bricolage_grotesque, FontWeight.ExtraBold)
+    Font(R.font.bricolage_medium, FontWeight.Medium),
+    Font(R.font.bricolage_semibold, FontWeight.SemiBold),
+    Font(R.font.bricolage_bold, FontWeight.Bold),
+    Font(R.font.bricolage_extrabold, FontWeight.ExtraBold)
 )
 
-/** Money figures: tabular-feeling geometric numerals. */
+/** Money figures: geometric numerals. */
 val Numeric = FontFamily(
-    variable(R.font.space_grotesk, FontWeight.Medium),
-    variable(R.font.space_grotesk, FontWeight.SemiBold),
-    variable(R.font.space_grotesk, FontWeight.Bold)
+    Font(R.font.space_grotesk_medium, FontWeight.Medium),
+    Font(R.font.space_grotesk_semibold, FontWeight.SemiBold),
+    Font(R.font.space_grotesk_bold, FontWeight.Bold)
 )
 
 val Typography = Typography(
