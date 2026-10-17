@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.NorthEast
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.SouthWest
@@ -75,10 +76,17 @@ import com.se3092.pulsefinance.ui.common.signedLkr
 import com.se3092.pulsefinance.ui.common.transactionVisual
 import com.se3092.pulsefinance.ui.components.CommittedVsDiscretionaryBar
 import com.se3092.pulsefinance.ui.components.ExpenseItemCard
-import com.se3092.pulsefinance.ui.components.MacBookGoalCard
-import com.se3092.pulsefinance.ui.components.SafeToSpendGauge
+import com.se3092.pulsefinance.ui.components.ProfileAvatar
+import com.se3092.pulsefinance.ui.components.QuestCard
 import com.se3092.pulsefinance.ui.screens.expense.AddExpenseBottomSheet
+import com.se3092.pulsefinance.ui.theme.Display
 import com.se3092.pulsefinance.ui.theme.NeoBorder
+import com.se3092.pulsefinance.ui.theme.Numeric
+import com.se3092.pulsefinance.ui.theme.OnAccent
+import com.se3092.pulsefinance.ui.theme.Saffron
+import com.se3092.pulsefinance.ui.theme.SaffronSoft
+import com.se3092.pulsefinance.ui.theme.Teal
+import com.se3092.pulsefinance.ui.theme.WarmAmber
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
 import com.se3092.pulsefinance.ui.theme.NeoContainer
@@ -120,7 +128,7 @@ fun DashboardScreen(
             FloatingActionButton(
                 onClick = { viewModel.openAddExpense() },
                 containerColor = NeoGreen,
-                contentColor = Color.White,
+                contentColor = OnAccent,
                 shape = CircleShape,
                 modifier = Modifier
                     .padding(bottom = 76.dp)
@@ -138,426 +146,94 @@ fun DashboardScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // =========================================================================
-            // 1. Greeting & Profile Bar (Exact HTML Replica)
+            // 1. Greeting with the user's generated avatar
             // =========================================================================
             item {
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Profile Avatar & Greeting
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(modifier = Modifier.size(44.dp)) {
-                            // Avatar Circle
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        Brush.linearGradient(
-                                            listOf(NeoGreenDark, NeoGreen)
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = state.initials,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White,
-                                    fontSize = 15.sp
-                                )
-                            }
-                            // Active Presence Indicator Dot
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .align(Alignment.BottomEnd)
-                                    .clip(CircleShape)
-                                    .background(NeoSurface)
-                                    .padding(2.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape)
-                                        .background(NeoGreen)
-                                )
-                            }
-                        }
-
-                        Column {
-                            Text(
-                                text = state.firstName,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = NeoTextPrimary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp,
-                                letterSpacing = (-0.3).sp
-                            )
-                            Text(
-                                text = state.greeting,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = NeoTextSecondary,
-                                fontSize = 11.5.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
+                    ProfileAvatar(initials = state.initials, size = 48.dp)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = state.greeting,
+                            fontSize = 13.sp,
+                            color = NeoTextSecondary
+                        )
+                        Text(
+                            text = state.firstName,
+                            fontFamily = Display,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 24.sp,
+                            color = NeoTextPrimary
+                        )
                     }
-
-                    // Action Buttons (Eye Mask Toggle, Notification Bell, Sign Out)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Eye Toggle Button for Sensitive Balances
-                        Surface(
-                            shape = CircleShape,
-                            color = NeoCard,
-                            shadowElevation = 2.dp,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clickable { isBalanceMasked = !isBalanceMasked }
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = if (isBalanceMasked) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = "Toggle Balance Privacy",
-                                    tint = NeoTextSecondary,
-                                    modifier = Modifier.size(19.dp)
-                                )
-                            }
-                        }
-
-                        // Sign Out Button
-                        IconButton(
-                            onClick = {
-                                viewModel.signOut()
-                                onSignOut()
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                                contentDescription = "Sign Out",
-                                tint = NeoTextTertiary,
-                                modifier = Modifier.size(19.dp)
-                            )
-                        }
+                    IconButton(onClick = { isBalanceMasked = !isBalanceMasked }) {
+                        Icon(
+                            imageVector = if (isBalanceMasked) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = "Hide amounts",
+                            tint = NeoTextSecondary
+                        )
+                    }
+                    IconButton(onClick = {
+                        viewModel.signOut()
+                        onSignOut()
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Sign out",
+                            tint = NeoTextTertiary
+                        )
                     }
                 }
             }
 
             // =========================================================================
-            // 2. Hero Topographic Card Clone (Flagship Visual Card)
+            // 2. Hero: what Kavindu can spend today, and how the month is going
             // =========================================================================
             item {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(190.dp)
-                        .shadow(
-                            elevation = 16.dp,
-                            shape = RoundedCornerShape(26.dp),
-                            ambientColor = Color(0x3800C950),
-                            spotColor = Color(0x4000C950)
-                        ),
-                    shape = RoundedCornerShape(26.dp),
-                    color = NeoGreen
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(Color(0xFF00C950), Color(0xFF00A844))
-                                )
-                            )
-                    ) {
-                        // Vector Topographic Contour Waves & Dash Lines Overlay
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            val w = size.width
-                            val h = size.height
-
-                            val wave1 = Path().apply {
-                                moveTo(-10f, h * 0.3f)
-                                cubicTo(w * 0.2f, h * 0.05f, w * 0.55f, h * 0.45f, w + 10f, h * 0.15f)
-                            }
-                            drawPath(
-                                path = wave1,
-                                color = Color.White.copy(alpha = 0.22f),
-                                style = Stroke(width = 1.6.dp.toPx())
-                            )
-
-                            val wave2 = Path().apply {
-                                moveTo(-15f, h * 0.55f)
-                                cubicTo(w * 0.25f, h * 0.25f, w * 0.6f, h * 0.7f, w + 15f, h * 0.35f)
-                            }
-                            drawPath(
-                                path = wave2,
-                                color = Color.White.copy(alpha = 0.20f),
-                                style = Stroke(width = 1.6.dp.toPx())
-                            )
-
-                            val wave3 = Path().apply {
-                                moveTo(-10f, h * 0.8f)
-                                cubicTo(w * 0.35f, h * 0.5f, w * 0.65f, h * 0.95f, w + 10f, h * 0.6f)
-                            }
-                            drawPath(
-                                path = wave3,
-                                color = Color.White.copy(alpha = 0.18f),
-                                style = Stroke(width = 1.6.dp.toPx())
-                            )
-
-                            // Dashed Topographic Wave Line
-                            val waveDashed = Path().apply {
-                                moveTo(-10f, h * 0.1f)
-                                cubicTo(w * 0.25f, -10f, w * 0.7f, h * 0.25f, w + 10f, 0f)
-                            }
-                            drawPath(
-                                path = waveDashed,
-                                color = Color.White.copy(alpha = 0.24f),
-                                style = Stroke(
-                                    width = 1.2.dp.toPx(),
-                                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 10f), 0f)
-                                )
-                            )
-                        }
-
-                        // Top-Right Lighting Scrim
-                        Box(
-                            modifier = Modifier
-                                .size(160.dp)
-                                .align(Alignment.TopEnd)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.radialGradient(
-                                        colors = listOf(Color.White.copy(alpha = 0.15f), Color.Transparent),
-                                        center = Offset.Unspecified,
-                                        radius = 180f
-                                    )
-                                )
-                        )
-
-                        // Card Content Structure
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 22.dp, vertical = 20.dp),
-                            verticalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            // Top Row: VISA Brand & Commercial Bank Tag
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        text = "PULSE",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontStyle = FontStyle.Italic,
-                                        fontSize = 19.sp,
-                                        letterSpacing = 1.sp
-                                    )
-                                    Text(
-                                        text = "|",
-                                        color = Color.White.copy(alpha = 0.4f),
-                                        fontSize = 11.sp
-                                    )
-                                    Text(
-                                        text = state.monthLabel.uppercase(),
-                                        color = Color.White.copy(alpha = 0.9f),
-                                        fontSize = 10.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 0.8.sp
-                                    )
-                                }
-                            }
-
-                            // Center: this month's net cash flow across every income source
-                            Column {
-                                Text(
-                                    text = if (isBalanceMasked)
-                                        "LKR ••••••••"
-                                    else
-                                        signedLkr(state.summary.netSavingsLkr),
-                                    color = Color.White,
-                                    fontSize = 26.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = (-0.5).sp
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "Net cash flow this month",
-                                    color = Color.White.copy(alpha = 0.85f),
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    letterSpacing = 0.3.sp
-                                )
-                            }
-
-                            // Bottom: money in vs money out
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = if (isBalanceMasked) "In •••• · Out ••••" else
-                                        "In ${compactAmount(state.summary.totalRealizedIncomeLkr)} · Out ${compactAmount(state.summary.totalExpensesLkr)}",
-                                    color = Color.White.copy(alpha = 0.9f),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    letterSpacing = 0.5.sp
-                                )
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    // Contactless Wave Glyph (rotated 90°)
-                                    Icon(
-                                        imageVector = Icons.Default.WifiTethering,
-                                        contentDescription = "Contactless",
-                                        tint = Color.White.copy(alpha = 0.9f),
-                                        modifier = Modifier
-                                            .size(18.dp)
-                                            .rotate(90f)
-                                    )
-
-                                    // EMV Microchip Emblem
-                                    Surface(
-                                        modifier = Modifier.size(width = 30.dp, height = 22.dp),
-                                        shape = RoundedCornerShape(5.dp),
-                                        color = Color.White.copy(alpha = 0.22f),
-                                        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.4f))
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(2.dp),
-                                            verticalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(2.dp)
-                                                    .background(Color.White.copy(alpha = 0.4f))
-                                            )
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(width = 10.dp, height = 8.dp)
-                                                        .background(Color.White.copy(alpha = 0.5f))
-                                                )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(width = 10.dp, height = 8.dp)
-                                                        .background(Color.White.copy(alpha = 0.5f))
-                                                )
-                                            }
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(2.dp)
-                                                    .background(Color.White.copy(alpha = 0.4f))
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                SafeToSpendHero(
+                    dailyAllowanceLkr = state.summary.safeToSpendDailyLkr,
+                    daysRemaining = state.summary.daysRemainingInMonth,
+                    monthLabel = state.monthLabel,
+                    netLkr = state.summary.netSavingsLkr,
+                    inLkr = state.summary.totalRealizedIncomeLkr,
+                    outLkr = state.summary.totalExpensesLkr,
+                    incomeBasisNote = if (state.summary.incomeBasisIsAverage)
+                        "Based on your 3-month average income (${lkr(state.summary.incomeBasisLkr)}) until this month's salary lands."
+                    else null,
+                    masked = isBalanceMasked,
+                    isLoading = state.isLoading
+                )
             }
 
             // =========================================================================
-            // 3. Overdue Milestone Reconcile Banner
+            // 3. Money waiting: unpaid invoices framed as money owed to him, not an alarm
             // =========================================================================
             if (state.unpaidInvoices.isNotEmpty()) item {
                 val firstUnpaid = state.unpaidInvoices.first()
                 val hasOverdue = state.overdueInvoiceCount > 0
-                val bannerTitle = if (hasOverdue)
-                    "${state.overdueInvoiceCount} invoice${if (state.overdueInvoiceCount > 1) "s" else ""} overdue: ${firstUnpaid.title}"
-                else
-                    "${state.unpaidInvoices.size} invoice${if (state.unpaidInvoices.size > 1) "s" else ""} awaiting payment"
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(
-                            elevation = 3.dp,
-                            shape = RoundedCornerShape(16.dp),
-                            ambientColor = Color(0x1FBA1A1A),
-                            spotColor = Color(0x1FBA1A1A)
-                        )
-                        .clickable { onNavigateToIncome() },
-                    shape = RoundedCornerShape(16.dp),
-                    color = NeoErrorContainer,
-                    border = BorderStroke(1.dp, NeoRose.copy(alpha = 0.2f))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .clip(CircleShape)
-                                    .background(NeoRose.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Warning,
-                                    contentDescription = "Alert",
-                                    tint = NeoRose,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = bannerTitle,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = NeoRose
-                                )
-                                Text(
-                                    text = "${lkr(state.summary.pendingIncomeLkr)} unpaid — tap to follow up",
-                                    fontSize = 11.sp,
-                                    color = NeoRose.copy(alpha = 0.85f),
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
+                MoneyWaitingCard(
+                    amount = lkr(state.summary.pendingIncomeLkr),
+                    detail = if (hasOverdue)
+                        "${firstUnpaid.clientOrPlatform.ifBlank { firstUnpaid.title }} is past the due date. Tap to follow up."
+                    else
+                        "${state.unpaidInvoices.size} invoice${if (state.unpaidInvoices.size > 1) "s" else ""} not paid yet. Tap to review.",
+                    onClick = onNavigateToIncome
+                )
+            }
 
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = "Reconcile",
-                            tint = NeoRose.copy(alpha = 0.7f),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+            // =========================================================================
+            // 3b. MacBook Quest
+            // =========================================================================
+            item {
+                val quest = state.quest
+                if (quest != null) {
+                    QuestCard(quest = quest, initials = state.initials, onClick = onNavigateToGoal)
+                } else if (!state.isLoading) {
+                    SetGoalPromptCard(onClick = onNavigateToGoal)
                 }
             }
 
@@ -574,14 +250,14 @@ fun DashboardScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Frequent Transfers",
+                            text = "Log it in one tap",
                             style = MaterialTheme.typography.titleMedium,
                             color = NeoTextPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp
                         )
                         Text(
-                            text = "3-Tap Presets",
+                            text = "Your usual spends",
                             fontSize = 11.5.sp,
                             color = NeoTextSecondary,
                             fontWeight = FontWeight.Medium
@@ -602,8 +278,8 @@ fun DashboardScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(52.dp)
-                                    .clip(CircleShape)
+                                    .size(56.dp)
+                                    .clip(RoundedCornerShape(18.dp))
                                     .background(NeoContainer),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -650,7 +326,7 @@ fun DashboardScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Recent Transactions",
+                            text = "Lately",
                             style = MaterialTheme.typography.titleMedium,
                             color = NeoTextPrimary,
                             fontWeight = FontWeight.Bold,
@@ -812,32 +488,6 @@ fun DashboardScreen(
             }
 
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    SafeToSpendGauge(
-                        dailyAllowanceLkr = state.summary.safeToSpendDailyLkr,
-                        daysRemainingInMonth = state.summary.daysRemainingInMonth
-                    )
-                    if (state.summary.incomeBasisIsAverage) {
-                        Text(
-                            text = "Using your 3-month average income (${lkr(state.summary.incomeBasisLkr)}) until this month's income arrives.",
-                            fontSize = 11.sp,
-                            color = NeoTextSecondary,
-                            modifier = Modifier.padding(horizontal = 6.dp)
-                        )
-                    }
-                }
-            }
-
-            item {
-                val goal = state.primaryGoal
-                if (goal != null) {
-                    MacBookGoalCard(goal = goal, onMoreClick = onNavigateToGoal)
-                } else if (!state.isLoading) {
-                    SetGoalPromptCard(onClick = onNavigateToGoal)
-                }
-            }
-
-            item {
                 CommittedVsDiscretionaryBar(
                     committedAmountLkr = state.summary.committedExpensesLkr,
                     discretionaryAmountLkr = state.summary.discretionaryExpensesLkr
@@ -848,7 +498,7 @@ fun DashboardScreen(
             if (state.recentExpenses.isNotEmpty()) {
                 item {
                     Text(
-                        text = "Ledger History",
+                        text = "Everything you logged",
                         style = MaterialTheme.typography.titleMedium,
                         color = NeoTextPrimary,
                         fontWeight = FontWeight.Bold,
@@ -941,7 +591,7 @@ private fun GettingStartedStep(number: String, text: String, onClick: () -> Unit
                 .background(NeoGreen),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = number, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(text = number, color = OnAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
         Text(text = text, fontSize = 12.5.sp, color = NeoTextPrimary, modifier = Modifier.weight(1f))
         Icon(
@@ -1001,8 +651,8 @@ fun QuickPresetBadge(
     ) {
         Box(
             modifier = Modifier
-                .size(52.dp)
-                .clip(CircleShape)
+                .size(56.dp)
+                .clip(RoundedCornerShape(18.dp))
                 .background(visual.container)
         ) {
             Box(
@@ -1016,20 +666,6 @@ fun QuickPresetBadge(
                     modifier = Modifier.size(24.dp)
                 )
             }
-            // Bottom-Right Pill Badge
-            Surface(
-                modifier = Modifier.align(Alignment.BottomEnd),
-                shape = CircleShape,
-                color = NeoContainerHigh
-            ) {
-                Text(
-                    text = amount,
-                    fontSize = 8.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = NeoTextPrimary,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                )
-            }
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -1039,6 +675,13 @@ fun QuickPresetBadge(
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = amount,
+            fontFamily = Numeric,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = NeoTextTertiary
         )
     }
 }
@@ -1140,6 +783,157 @@ fun TransactionSquareCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
+        }
+    }
+}
+
+/**
+ * The first thing Kavindu sees: one number he can act on today. Net cash flow for the month
+ * sits underneath as context rather than as the headline.
+ */
+@Composable
+private fun SafeToSpendHero(
+    dailyAllowanceLkr: Double,
+    daysRemaining: Int,
+    monthLabel: String,
+    netLkr: Double,
+    inLkr: Double,
+    outLkr: Double,
+    incomeBasisNote: String?,
+    masked: Boolean,
+    isLoading: Boolean
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(16.dp, RoundedCornerShape(28.dp), ambientColor = NeoGreenGlow, spotColor = NeoGreenGlow),
+        shape = RoundedCornerShape(28.dp),
+        color = NeoGreen
+    ) {
+        Box(
+            modifier = Modifier.background(
+                Brush.linearGradient(listOf(NeoGreen, Color(0xFF00A844)))
+            )
+        ) {
+            // A rising sun of saffron arcs in the corner: decoration only.
+            Canvas(
+                modifier = Modifier
+                    .size(180.dp)
+                    .align(Alignment.TopEnd)
+            ) {
+                val c = Offset(size.width * 0.85f, size.height * 0.15f)
+                for (i in 1..4) {
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.22f - i * 0.04f),
+                        radius = size.minDimension * 0.18f * i,
+                        center = c,
+                        style = Stroke(width = 2.dp.toPx())
+                    )
+                }
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(Color.White.copy(alpha = 0.55f), Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0f)),
+                        center = c,
+                        radius = size.minDimension * 0.16f
+                    ),
+                    radius = size.minDimension * 0.16f,
+                    center = c
+                )
+            }
+
+            Column(
+                modifier = Modifier.padding(22.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "SAFE TO SPEND TODAY",
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.4.sp
+                )
+                Text(
+                    text = when {
+                        isLoading -> "LKR —"
+                        masked -> "LKR ••••"
+                        else -> lkr(dailyAllowanceLkr)
+                    },
+                    fontFamily = Numeric,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 42.sp,
+                    letterSpacing = (-1).sp,
+                    color = Color.White
+                )
+                Text(
+                    text = if (isLoading) "Working out today's number…"
+                    else "after rent, bills and your MacBook saving · $daysRemaining days left in $monthLabel",
+                    fontSize = 13.sp,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+                incomeBasisNote?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = it, fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
+                }
+                if (!isLoading) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        HeroStat("This month", if (masked) "••••" else signedLkr(netLkr), Color.White)
+                        HeroStat("In", if (masked) "••••" else compactAmount(inLkr), Color.White)
+                        HeroStat("Out", if (masked) "••••" else compactAmount(outLkr), Color.White)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroStat(label: String, value: String, color: Color) {
+    Column {
+        Text(text = label, fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+        Text(text = value, fontFamily = Numeric, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = color)
+    }
+}
+
+/** Unpaid invoices are money owed to Kavindu, so they are framed as an opportunity, not a warning. */
+@Composable
+private fun MoneyWaitingCard(amount: String, detail: String, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        color = WarmAmber.copy(alpha = 0.10f),
+        border = BorderStroke(1.dp, WarmAmber.copy(alpha = 0.35f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(WarmAmber.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.HourglassTop, contentDescription = null, tint = WarmAmber, modifier = Modifier.size(20.dp))
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "$amount is waiting for you",
+                    fontFamily = Display,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = NeoTextPrimary
+                )
+                Text(text = detail, fontSize = 12.sp, color = NeoTextSecondary)
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = "Follow up", tint = WarmAmber)
         }
     }
 }

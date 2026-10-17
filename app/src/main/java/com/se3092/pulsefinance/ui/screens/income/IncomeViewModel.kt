@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.income
 
+import com.se3092.pulsefinance.ui.common.initialsFor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.se3092.pulsefinance.domain.model.Currency
@@ -16,6 +17,7 @@ import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.signedLkr
 import com.se3092.pulsefinance.ui.common.whenSignedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +48,7 @@ data class IncomeFormState(
 )
 
 data class IncomeScreenUiState(
+    val initials: String = "",
     val isLoading: Boolean = true,
     val monthLabel: String = "",
     val filterSource: IncomeSource? = null,
@@ -81,9 +84,11 @@ class IncomeViewModel @Inject constructor(
         incomeRepository.getIncomeStreams(userId)
     }
 
+    private val initials = initialsFor(authRepository.userDisplayName, authRepository.userEmail)
+
     val uiState: StateFlow<IncomeScreenUiState> = combine(incomes, filter, form, toast) { incomes, filter, form, toast ->
         buildState(incomes, filter, form, toast)
-    }.stateIn(
+    }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = IncomeScreenUiState()

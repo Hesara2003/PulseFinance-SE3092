@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.expense
 
+import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import com.se3092.pulsefinance.R
@@ -80,6 +81,7 @@ import com.se3092.pulsefinance.domain.model.SubscriptionStatus
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.components.EmptyStateView
+import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
@@ -179,24 +181,7 @@ fun ExpenseScreen(
                             .background(NeoContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.linearGradient(
-                                        listOf(NeoGreenDark, NeoGreen)
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile",
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                        ProfileAvatar(initials = state.initials, size = 34.dp)
                     }
                 }
             }
@@ -299,7 +284,7 @@ fun ExpenseScreen(
                                     Icon(
                                         imageVector = Icons.Default.Warning,
                                         contentDescription = "Warning",
-                                        tint = Color.White,
+                                        tint = OnAccent,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -318,7 +303,7 @@ fun ExpenseScreen(
                                     text = "${state.flaggedCount} subscription${if (state.flaggedCount > 1) "s" else ""} to review",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF93000A),
+                                    color = NeoRose,
                                     fontSize = 16.sp
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -331,7 +316,7 @@ fun ExpenseScreen(
                                         append(". Keep the ones you use; cancel the rest with the provider.")
                                     },
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF93000A).copy(alpha = 0.9f),
+                                    color = NeoRose.copy(alpha = 0.9f),
                                     fontSize = 13.sp,
                                     lineHeight = 18.sp
                                 )
@@ -613,8 +598,8 @@ private fun ZombieCardItem(
     onKeep: () -> Unit
 ) {
     val (tagLabel, tagBg, tagText) = when (sub.status) {
-        SubscriptionStatus.NEEDS_REVIEW -> Triple("Needs review", NeoErrorContainer, Color(0xFF93000A))
-        SubscriptionStatus.STILL_CHARGING -> Triple("Still charging", NeoErrorContainer, Color(0xFF93000A))
+        SubscriptionStatus.NEEDS_REVIEW -> Triple("Needs review", NeoErrorContainer, NeoRose)
+        SubscriptionStatus.STILL_CHARGING -> Triple("Still charging", NeoErrorContainer, NeoRose)
         SubscriptionStatus.KEPT -> Triple("Kept", NeoGreenFixed, NeoOnPrimaryFixed)
         SubscriptionStatus.CANCELLED -> Triple("Cancelled", NeoSecondaryContainer, NeoOnSecondaryFixed)
     }
@@ -775,7 +760,7 @@ private fun ZombieCardItem(
                             shape = CircleShape,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = NeoRose,
-                                contentColor = Color.White
+                                contentColor = OnAccent
                             ),
                             modifier = Modifier.height(40.dp)
                         ) {

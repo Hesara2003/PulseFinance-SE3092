@@ -3,7 +3,9 @@ package com.se3092.pulsefinance.ui.screens.dashboard
 import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.FinancialSummary
+import com.se3092.pulsefinance.domain.model.GoalQuest
 import com.se3092.pulsefinance.domain.model.IncomeStream
+import com.se3092.pulsefinance.domain.model.QuestProgress
 import com.se3092.pulsefinance.domain.model.SavingsGoal
 import com.se3092.pulsefinance.ui.common.TransactionItem
 import com.se3092.pulsefinance.ui.screens.expense.AddExpenseFormState
@@ -37,4 +39,7 @@ data class DashboardUiState(
     val overdueInvoiceCount: Int = 0,
     val addExpense: AddExpenseFormState = AddExpenseFormState(),
     val message: String? = null
-)
+) {
+    /** The goal as a level-by-level journey, derived from [primaryGoal]. */
+    val quest: QuestProgress? = primaryGoal?.let(GoalQuest::of)
+}

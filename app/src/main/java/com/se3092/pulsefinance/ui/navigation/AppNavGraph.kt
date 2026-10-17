@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.LaptopMac
@@ -56,6 +56,7 @@ import com.se3092.pulsefinance.ui.screens.goal.GoalScreen
 import com.se3092.pulsefinance.ui.screens.goal.GoalViewModel
 import com.se3092.pulsefinance.ui.screens.income.IncomeScreen
 import com.se3092.pulsefinance.ui.screens.income.IncomeViewModel
+import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoGreen
@@ -128,12 +129,12 @@ fun AppNavGraph(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Dashboard,
-                                    contentDescription = "Cockpit",
+                                    contentDescription = "Today",
                                     tint = if (isCockpit) NeoGreen else NeoTextTertiary,
                                     modifier = Modifier.size(21.dp)
                                 )
                                 Text(
-                                    text = "Cockpit",
+                                    text = "Today",
                                     fontSize = 10.sp,
                                     fontWeight = if (isCockpit) FontWeight.Bold else FontWeight.Medium,
                                     color = if (isCockpit) NeoGreen else NeoTextTertiary
@@ -191,9 +192,9 @@ fun AppNavGraph(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Add,
+                                    imageVector = Icons.Default.Payments,
                                     contentDescription = "Income Hub",
-                                    tint = Color.White,
+                                    tint = OnAccent,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -217,12 +218,12 @@ fun AppNavGraph(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.RocketLaunch,
-                                    contentDescription = "Goals",
+                                    contentDescription = "Quest",
                                     tint = if (isGoals) NeoGreen else NeoTextTertiary,
                                     modifier = Modifier.size(21.dp)
                                 )
                                 Text(
-                                    text = "Goals",
+                                    text = "Quest",
                                     fontSize = 10.sp,
                                     fontWeight = if (isGoals) FontWeight.Bold else FontWeight.Medium,
                                     color = if (isGoals) NeoGreen else NeoTextTertiary

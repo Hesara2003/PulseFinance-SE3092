@@ -1,17 +1,11 @@
 package com.se3092.pulsefinance.ui.theme
 
-import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
 
-// Vivid Neo-Fintech Light Color Scheme
+// Vivid Neo-Fintech Light Color Scheme. System bars are drawn edge-to-edge (see MainActivity).
 private val NeoFintechColorScheme = lightColorScheme(
     primary = NeoGreenDark,
     onPrimary = Color.White,
@@ -27,29 +21,20 @@ private val NeoFintechColorScheme = lightColorScheme(
     onSurface = NeoTextPrimary,
     surfaceVariant = NeoCardLow,
     onSurfaceVariant = NeoTextSecondary,
+    surfaceContainerLowest = NeoCard,
+    surfaceContainerLow = NeoCard,
+    surfaceContainer = NeoCard,
+    surfaceContainerHigh = NeoCard,
+    surfaceContainerHighest = NeoContainer,
     outline = NeoBorder,
     error = NeoRose,
     onError = Color.White
 )
 
 @Composable
-fun PulseFinanceTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
-) {
-    val colorScheme = NeoFintechColorScheme
-
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = NeoSurface.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
-        }
-    }
-
+fun PulseFinanceTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = NeoFintechColorScheme,
         typography = Typography,
         content = content
     )

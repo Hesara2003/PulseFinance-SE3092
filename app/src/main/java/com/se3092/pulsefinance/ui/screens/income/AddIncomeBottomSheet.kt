@@ -50,6 +50,10 @@ import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.Currency
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
+import com.se3092.pulsefinance.ui.theme.Dusk
+import com.se3092.pulsefinance.ui.theme.InkHigher
+import com.se3092.pulsefinance.ui.theme.Mist
+import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
@@ -95,7 +99,7 @@ fun AddIncomeBottomSheet(
     )
     val chipColors = FilterChipDefaults.filterChipColors(
         selectedContainerColor = NeoGreen,
-        selectedLabelColor = Color.White,
+        selectedLabelColor = OnAccent,
         containerColor = NeoCardLow,
         labelColor = NeoTextSecondary
     )
@@ -327,11 +331,11 @@ fun AddIncomeBottomSheet(
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = NeoGreen,
-                    contentColor = Color.White
+                    contentColor = OnAccent
                 )
             ) {
                 if (form.isSubmitting) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = OnAccent, strokeWidth = 2.dp)
                 } else {
                     Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.size(8.dp))
@@ -377,7 +381,7 @@ private fun ToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = accent)
+            colors = SwitchDefaults.colors(checkedThumbColor = OnAccent, checkedTrackColor = accent, uncheckedThumbColor = Mist, uncheckedTrackColor = InkHigher, uncheckedBorderColor = Dusk)
         )
     }
 }

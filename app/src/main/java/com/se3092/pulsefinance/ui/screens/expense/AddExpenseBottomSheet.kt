@@ -53,6 +53,8 @@ import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.ui.common.compactAmount
+import com.se3092.pulsefinance.ui.theme.OnAccent
+import com.se3092.pulsefinance.ui.theme.NeoContainer
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
@@ -91,7 +93,7 @@ fun AddExpenseBottomSheet(
     )
     val chipColors = FilterChipDefaults.filterChipColors(
         selectedContainerColor = NeoGreen,
-        selectedLabelColor = Color.White,
+        selectedLabelColor = OnAccent,
         labelColor = NeoTextSecondary
     )
 
@@ -256,8 +258,11 @@ fun AddExpenseBottomSheet(
                     checked = form.isCommitted,
                     onCheckedChange = onCommittedToggle,
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = RentColor
+                        checkedThumbColor = OnAccent,
+                        checkedTrackColor = RentColor,
+                        uncheckedThumbColor = NeoTextSecondary,
+                        uncheckedTrackColor = NeoContainer,
+                        uncheckedBorderColor = NeoTextTertiary
                     )
                 )
             }
@@ -305,10 +310,10 @@ fun AddExpenseBottomSheet(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = Color.White)
+                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent)
             ) {
                 if (form.isSubmitting) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = OnAccent, strokeWidth = 2.dp)
                 } else {
                     Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.size(8.dp))

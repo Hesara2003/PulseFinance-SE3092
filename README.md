@@ -107,5 +107,6 @@ The project follows clean architecture principles with unidirectional data flow 
 ## 5. Credits
 
 - Illustrations (onboarding pages, goal setup and pacing, empty states): [Storyset](https://storyset.com) by Freepik, used under the Storyset free licence with attribution.
+- Fonts: [Bricolage Grotesque](https://fonts.google.com/specimen/Bricolage+Grotesque) and [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk), bundled in `app/src/main/res/font`, used under the SIL Open Font License 1.1.
 - App logo (piggy bank with coin): icon by **[AUTHOR NAME]** from [Flaticon](https://www.flaticon.com), used under the Flaticon free licence with attribution.
 - In-app icons: [Material Symbols](https://fonts.google.com/icons) (Apache 2.0).
