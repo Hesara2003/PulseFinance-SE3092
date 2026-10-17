@@ -30,17 +30,34 @@ val NeoInverseSurface = Color(0xFF2D3133)     // inverse-surface
 val NeoInverseOnSurface = Color(0xFFEFF1F3)   // inverse-on-surface
 val NeoBorder = Color(0xFFE2E8F0)           // card border / divider
 
-// Status & Semantic Accents
+// Status & Semantic Accents. Attention states use amber rather than red: Kavindu is
+// avoidant about money, and alarm colours make avoiders look away.
 val NeoAmber = Color(0xFFF59E0B)            // Warning / Overdue
-val NeoRose = Color(0xFFBA1A1A)             // error: Alert / Negative
-val NeoErrorContainer = Color(0xFFFFDAD6)   // error-container
+val NeoRose = Color(0xFFB45309)             // attention text (deep amber, readable on white)
+val NeoErrorContainer = Color(0xFFFEF3C7)   // attention container (pale amber)
+
+/** Text and icons drawn on top of a green fill. */
+val OnAccent = Color.White
 
 // Category Visual Tokens
 val FoodColor = Color(0xFFF97316)
 val TransportColor = Color(0xFF3B82F6)
-val RentColor = Color(0xFFEF4444)
+val RentColor = Color(0xFF8B5CF6)
 val TechColor = Color(0xFF8B5CF6)
 val CryptoColor = Color(0xFFEAB308)
+
+// Role names used by the newer components (avatar, Quest map, hero), mapped onto the palette
+val Saffron = NeoGreen                      // accent fill: progress, the Quest road
+val SaffronSoft = NeoGreenLight
+val Teal = NeoGreenDark                     // accent text, money in
+val WarmAmber = NeoAmber
+val WarmWhite = NeoTextPrimary              // primary text
+val Mist = NeoTextSecondary
+val Dusk = Color(0xFF8A93A3)                // quiet text
+val Ink = NeoTextPrimary
+val InkRaised = NeoCard
+val InkHigh = NeoCardLow
+val InkHigher = NeoContainerHigh
 
 // Compatibility Aliases for existing components
 val EmeraldPrimary = NeoGreen

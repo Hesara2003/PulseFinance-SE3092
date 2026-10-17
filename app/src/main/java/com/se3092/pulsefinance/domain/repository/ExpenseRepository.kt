@@ -7,5 +7,4 @@ interface ExpenseRepository {
     fun getExpenses(userId: String): Flow<List<Expense>>
     suspend fun addExpense(expense: Expense): Result<Unit>
     suspend fun deleteExpense(expenseId: String, userId: String): Result<Unit>
-    suspend fun syncExpenses(userId: String)
 }

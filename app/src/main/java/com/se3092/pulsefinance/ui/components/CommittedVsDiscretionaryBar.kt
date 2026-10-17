@@ -75,7 +75,7 @@ fun CommittedVsDiscretionaryBar(
                     letterSpacing = 0.5.sp
                 )
                 Text(
-                    text = "Total LKR ${String.format("%,.0f", total)}",
+                    text = "Total LKR ${String.format("%,.0f", committedAmountLkr + discretionaryAmountLkr)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = NeoTextSecondary,
                     fontSize = 12.sp,

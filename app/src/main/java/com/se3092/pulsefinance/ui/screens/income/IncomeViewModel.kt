@@ -9,6 +9,8 @@ import com.se3092.pulsefinance.domain.model.InvoiceStatus
 import com.se3092.pulsefinance.domain.repository.AuthRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
 import com.se3092.pulsefinance.domain.usecase.ConvertCurrencyUseCase
+import com.se3092.pulsefinance.ui.util.Formatters
+import com.se3092.pulsefinance.ui.util.userScopedFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,11 +23,15 @@ import javax.inject.Inject
 
 data class IncomeScreenUiState(
     val filterCategory: String = "all", // "all", "contracts", "usd", "yield"
-    val isMilestoneRealized: Boolean = false,
+    val streams: List<IncomeStream> = emptyList(),
     val toastNotification: Pair<String, String>? = null, // (title, subtitle)
-    val totalProjectedLkr: Double = 412600.0,
-    val totalRealizedLkr: Double = 347600.0,
-    val totalPendingLkr: Double = 65000.0,
+    val totalProjectedLkr: Double = 0.0,
+    val totalRealizedLkr: Double = 0.0,
+    val totalPendingLkr: Double = 0.0,
+    /** Realized foreign-currency inflow (USD/USDT/ETH) in LKR, for the sweep suggestion. */
+    val foreignRealizedLkr: Double = 0.0,
+    val userInitials: String = "",
+    val isLoading: Boolean = true,
     val isAddSheetVisible: Boolean = false,
     val titleInput: String = "",
     val clientInput: String = "",
@@ -36,8 +42,17 @@ data class IncomeScreenUiState(
     val selectedStatus: InvoiceStatus = InvoiceStatus.RECEIVED,
     val isSubmitting: Boolean = false
 ) {
-    val realizedRatio: Float get() = if (totalProjectedLkr > 0) (totalRealizedLkr / totalProjectedLkr).toFloat().coerceIn(0f, 1f) else 0.842f
-    val pendingRatio: Float get() = if (totalProjectedLkr > 0) (totalPendingLkr / totalProjectedLkr).toFloat().coerceIn(0f, 1f) else 0.158f
+    val realizedRatio: Float get() = if (totalProjectedLkr > 0) (totalRealizedLkr / totalProjectedLkr).toFloat().coerceIn(0f, 1f) else 0f
+    val pendingRatio: Float get() = if (totalProjectedLkr > 0) (totalPendingLkr / totalProjectedLkr).toFloat().coerceIn(0f, 1f) else 0f
+
+    val visibleStreams: List<IncomeStream> get() = streams.filter { stream ->
+        when (filterCategory) {
+            "contracts" -> stream.source == IncomeSource.SALARY || stream.source == IncomeSource.FREELANCE
+            "usd" -> stream.currency == Currency.USD
+            "yield" -> stream.source == IncomeSource.CRYPTO
+            else -> true
+        }
+    }
 }
 
 @HiltViewModel
@@ -47,16 +62,35 @@ class IncomeViewModel @Inject constructor(
     private val convertCurrencyUseCase: ConvertCurrencyUseCase
 ) : ViewModel() {
 
-    private val userId: String
-        get() = authRepository.currentUserId ?: "guest_kavindu"
-
     private val _screenState = MutableStateFlow(IncomeScreenUiState())
 
-    val uiState: StateFlow<IncomeScreenUiState> = combine(
-        incomeRepository.getIncomeStreams(userId),
-        _screenState
-    ) { incomes, state ->
-        state
+    private val incomeFlow = authRepository.userScopedFlow(emptyList()) { incomeRepository.getIncomeStreams(it) }
+
+    val uiState: StateFlow<IncomeScreenUiState> = combine(incomeFlow, _screenState) { incomes, state ->
+        // Overdue items first so they get attention, then pending, then realized by date
+        val ordered = incomes.sortedWith(
+            compareBy<IncomeStream> {
+                when (it.status) {
+                    InvoiceStatus.OVERDUE -> 0
+                    InvoiceStatus.PENDING_INVOICE -> 1
+                    InvoiceStatus.RECEIVED -> 2
+                }
+            }.thenByDescending { it.dateReceivedOrExpected }
+        )
+        val realized = incomes.filter { it.isRealized }.sumOf { it.amountInLkr }
+        val pending = incomes.filterNot { it.isRealized }.sumOf { it.amountInLkr }
+
+        state.copy(
+            streams = ordered,
+            totalRealizedLkr = realized,
+            totalPendingLkr = pending,
+            totalProjectedLkr = realized + pending,
+            foreignRealizedLkr = incomes
+                .filter { it.isRealized && it.currency != Currency.LKR }
+                .sumOf { it.amountInLkr },
+            userInitials = Formatters.initials(authRepository.currentUser),
+            isLoading = false
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -67,18 +101,25 @@ class IncomeViewModel @Inject constructor(
         _screenState.update { it.copy(filterCategory = category) }
     }
 
-    fun markMilestoneReceived() {
-        _screenState.update {
-            it.copy(
-                isMilestoneRealized = true,
-                totalRealizedLkr = 412600.0,
-                totalPendingLkr = 0.0,
-                toastNotification = Pair(
-                    "Milestone marked as realized!",
-                    "+LKR 65,000.00 added to vault"
+    fun markReceived(incomeId: String) {
+        val uid = authRepository.currentUserId ?: return
+        val stream = uiState.value.streams.find { it.id == incomeId } ?: return
+        viewModelScope.launch {
+            incomeRepository.updateInvoiceStatus(incomeId, uid, InvoiceStatus.RECEIVED)
+            _screenState.update {
+                it.copy(
+                    toastNotification = Pair(
+                        "Milestone marked as realized!",
+                        "+${Formatters.lkr(stream.amountInLkr, decimals = 2)} added to vault"
+                    )
                 )
-            )
+            }
         }
+    }
+
+    fun deleteStream(incomeId: String) {
+        val uid = authRepository.currentUserId ?: return
+        viewModelScope.launch { incomeRepository.deleteIncomeStream(incomeId, uid) }
     }
 
     fun dismissToast() {
@@ -129,33 +170,36 @@ class IncomeViewModel @Inject constructor(
     fun onStatusChanged(status: InvoiceStatus) = _screenState.update { it.copy(selectedStatus = status) }
 
     fun submitIncome() {
+        val uid = authRepository.currentUserId ?: return
         val state = uiState.value
-        val amount = state.amountInput.toDoubleOrNull() ?: return
+        val amount = state.amountInput.toDoubleOrNull()?.takeIf { it > 0 } ?: return
         val rate = state.exchangeRateInput.toDoubleOrNull() ?: 1.0
         val amountInLkr = convertCurrencyUseCase.toLkr(amount, state.selectedCurrency, rate)
 
-        val title = if (state.titleInput.isNotBlank()) state.titleInput else "${state.selectedSource.displayName} Income"
-        val client = if (state.clientInput.isNotBlank()) state.clientInput else state.selectedSource.displayName
+        val title = state.titleInput.ifBlank { "${state.selectedSource.displayName} Income" }
+        val client = state.clientInput.ifBlank { state.selectedSource.displayName }
 
         viewModelScope.launch {
             _screenState.update { it.copy(isSubmitting = true) }
-            val newIncome = IncomeStream(
-                userId = userId,
-                source = state.selectedSource,
-                title = title,
-                clientOrPlatform = client,
-                originalAmount = amount,
-                currency = state.selectedCurrency,
-                exchangeRateToLkr = rate,
-                amountInLkr = amountInLkr,
-                status = state.selectedStatus
+            incomeRepository.addIncomeStream(
+                IncomeStream(
+                    userId = uid,
+                    source = state.selectedSource,
+                    title = title,
+                    clientOrPlatform = client,
+                    originalAmount = amount,
+                    currency = state.selectedCurrency,
+                    exchangeRateToLkr = rate,
+                    amountInLkr = amountInLkr,
+                    status = state.selectedStatus,
+                    isRecurringMonthly = state.selectedSource == IncomeSource.SALARY
+                )
             )
-            incomeRepository.addIncomeStream(newIncome)
             hideAddSheet()
             _screenState.update {
                 it.copy(
                     isSubmitting = false,
-                    toastNotification = Pair("Income Stream Added!", "+LKR ${String.format("%,.0f", amountInLkr)} recorded")
+                    toastNotification = Pair("Income Stream Added!", "+${Formatters.lkr(amountInLkr)} recorded")
                 )
             }
         }

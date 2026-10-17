@@ -1,16 +1,18 @@
 package com.se3092.pulsefinance.data.remote.dto
 
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.PropertyName
 import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.AccountType
 
 data class AccountDto(
-    @DocumentId val id: String = "",
-    val userId: String = "",
-    val name: String = "",
-    val type: String = "BANK_PRIMARY",
-    val balanceLkr: Double = 0.0,
-    val isAutoDebitSource: Boolean = false
+    @DocumentId var id: String = "",
+    var userId: String = "",
+    var name: String = "",
+    var type: String = "BANK_PRIMARY",
+    var balanceLkr: Double = 0.0,
+    @get:PropertyName("isAutoDebitSource") @set:PropertyName("isAutoDebitSource")
+    var isAutoDebitSource: Boolean = false
 ) {
     fun toDomain(): Account = Account(
         id = id,

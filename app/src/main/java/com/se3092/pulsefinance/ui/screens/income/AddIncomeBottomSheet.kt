@@ -10,16 +10,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -29,6 +33,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -44,12 +50,17 @@ import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.Currency
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
+import com.se3092.pulsefinance.ui.theme.Dusk
+import com.se3092.pulsefinance.ui.theme.InkHigher
+import com.se3092.pulsefinance.ui.theme.Mist
+import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
 import com.se3092.pulsefinance.ui.theme.NeoGreen
 import com.se3092.pulsefinance.ui.theme.NeoGreenDark
 import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
+import com.se3092.pulsefinance.ui.theme.NeoRose
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
@@ -70,9 +81,22 @@ fun AddIncomeBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val amount = state.amountInput.toDoubleOrNull() ?: 0.0
-    val rate = state.exchangeRateInput.toDoubleOrNull() ?: 1.0
+    val amount = state.amountInput.replace(",", "").toDoubleOrNull() ?: 0.0
+    val rate = state.exchangeRateInput.toDoubleOrNull() ?: 0.0
     val convertedLkr = amount * rate
+
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = NeoGreen,
+        unfocusedBorderColor = NeoBorder,
+        focusedTextColor = NeoTextPrimary,
+        unfocusedTextColor = NeoTextPrimary
+    )
+    val chipColors = FilterChipDefaults.filterChipColors(
+        selectedContainerColor = NeoGreen,
+        selectedLabelColor = OnAccent,
+        containerColor = NeoCardLow,
+        labelColor = NeoTextSecondary
+    )
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -91,6 +115,8 @@ fun AddIncomeBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 36.dp)
         ) {
@@ -101,14 +127,14 @@ fun AddIncomeBottomSheet(
             ) {
                 Column {
                     Text(
-                        text = "Record Income Stream",
+                        text = "Record Income",
                         style = MaterialTheme.typography.titleLarge,
                         color = NeoTextPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
                     Text(
-                        text = "Realized cash or milestone invoice",
+                        text = "Money received, or an invoice you're waiting on",
                         style = MaterialTheme.typography.bodySmall,
                         color = NeoTextSecondary,
                         fontSize = 13.sp
@@ -121,18 +147,11 @@ fun AddIncomeBottomSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Income Source Chips
-            Text(
-                text = "INCOME SOURCE",
-                style = MaterialTheme.typography.labelSmall,
-                color = NeoTextTertiary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 11.sp
-            )
+            SectionLabel("INCOME SOURCE")
             Spacer(modifier = Modifier.height(6.dp))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 IncomeSource.entries.forEach { source ->
                     val isSelected = state.selectedSource == source
@@ -141,70 +160,63 @@ fun AddIncomeBottomSheet(
                         onClick = { onSourceChange(source) },
                         label = { Text(source.displayName, fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium) },
                         shape = CircleShape,
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = NeoGreen,
-                            selectedLabelColor = Color.White,
-                            containerColor = NeoCardLow,
-                            labelColor = NeoTextSecondary
-                        )
+                        colors = chipColors
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Project / Invoice Description
             OutlinedTextField(
                 value = state.titleInput,
                 onValueChange = onTitleChange,
-                label = { Text("Income Title (e.g. Milestone 2 / AdSense Sept)", fontSize = 13.sp) },
+                label = { Text("Title (e.g. Milestone 2 / AdSense Sept)", fontSize = 13.sp) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = NeoGreen,
-                    unfocusedBorderColor = NeoBorder,
-                    focusedTextColor = NeoTextPrimary,
-                    unfocusedTextColor = NeoTextPrimary
-                )
+                colors = fieldColors
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Client or Platform
             OutlinedTextField(
                 value = state.clientInput,
                 onValueChange = onClientChange,
-                label = { Text("Client or Platform (e.g. LankaRetail / Binance)", fontSize = 13.sp) },
+                label = { Text("Client or platform (e.g. LankaRetail / Binance)", fontSize = 13.sp) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = NeoGreen,
-                    unfocusedBorderColor = NeoBorder,
-                    focusedTextColor = NeoTextPrimary,
-                    unfocusedTextColor = NeoTextPrimary
-                )
+                colors = fieldColors
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Currency & Amount Row
+            SectionLabel("CURRENCY")
+            Spacer(modifier = Modifier.height(6.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Currency.entries.forEach { currency ->
+                    FilterChip(
+                        selected = state.selectedCurrency == currency,
+                        onClick = { onCurrencyChange(currency) },
+                        label = { Text(currency.name, fontSize = 12.sp) },
+                        shape = CircleShape,
+                        colors = chipColors
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = state.amountInput,
                     onValueChange = onAmountChange,
                     label = { Text("Amount (${state.selectedCurrency.name})", fontSize = 13.sp) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.weight(1.5f),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = NeoGreen,
-                        unfocusedBorderColor = NeoBorder,
-                        focusedTextColor = NeoTextPrimary,
-                        unfocusedTextColor = NeoTextPrimary
-                    )
+                    colors = fieldColors
                 )
 
                 if (state.selectedCurrency != Currency.LKR) {
@@ -212,22 +224,17 @@ fun AddIncomeBottomSheet(
                         value = state.exchangeRateInput,
                         onValueChange = onRateChange,
                         label = { Text("Rate to LKR", fontSize = 13.sp) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = NeoGreen,
-                            unfocusedBorderColor = NeoBorder,
-                            focusedTextColor = NeoTextPrimary,
-                            unfocusedTextColor = NeoTextPrimary
-                        )
+                        colors = fieldColors
                     )
                 }
             }
 
-            // Converted Preview
-            if (state.selectedCurrency != Currency.LKR && amount > 0) {
+            // The rate actually received is stored with the entry, so history never shifts with the market.
+            if (state.selectedCurrency != Currency.LKR && amount > 0 && rate > 0) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Box(
                     modifier = Modifier
@@ -237,7 +244,7 @@ fun AddIncomeBottomSheet(
                         .padding(10.dp)
                 ) {
                     Text(
-                        text = "Normalized in LKR: ≈ LKR ${String.format("%,.0f", convertedLkr)}",
+                        text = "Recorded as ≈ LKR ${String.format("%,.0f", convertedLkr)} at the rate you entered",
                         style = MaterialTheme.typography.bodyMedium,
                         color = NeoGreenDark,
                         fontWeight = FontWeight.Bold,
@@ -248,36 +255,22 @@ fun AddIncomeBottomSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Invoice Status Selector
-            Text(
-                text = "INVOICE STATUS",
-                style = MaterialTheme.typography.labelSmall,
-                color = NeoTextTertiary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 11.sp
-            )
+            SectionLabel("STATUS")
             Spacer(modifier = Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                InvoiceStatus.entries.forEach { status ->
-                    val isSelected = state.selectedStatus == status
+                listOf(InvoiceStatus.RECEIVED to "Received", InvoiceStatus.PENDING_INVOICE to "Invoiced, not paid").forEach { (status, label) ->
                     FilterChip(
-                        selected = isSelected,
+                        selected = state.selectedStatus == status,
                         onClick = { onStatusChange(status) },
-                        label = { Text(status.displayName, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium) },
+                        label = { Text(label, fontSize = 12.sp) },
                         shape = CircleShape,
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = NeoGreen,
-                            selectedLabelColor = Color.White,
-                            containerColor = NeoCardLow,
-                            labelColor = NeoTextSecondary
-                        )
+                        colors = chipColors
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Submit Button
             Button(
                 onClick = onSubmit,
                 enabled = state.amountInput.isNotBlank() && !state.isSubmitting,
@@ -288,13 +281,28 @@ fun AddIncomeBottomSheet(
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = NeoGreen,
-                    contentColor = Color.White
+                    contentColor = OnAccent
                 )
             ) {
-                Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.size(8.dp))
-                Text(text = "Save Income Stream", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                if (state.isSubmitting) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = OnAccent, strokeWidth = 2.dp)
+                } else {
+                    Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(text = "Save", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
             }
         }
     }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = NeoTextTertiary,
+        fontWeight = FontWeight.Bold,
+        fontSize = 11.sp
+    )
 }
