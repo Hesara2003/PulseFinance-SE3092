@@ -5,6 +5,7 @@ import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.IncomeStream
+import com.se3092.pulsefinance.domain.model.Period
 
 /** One row of the combined income + expense ledger, already normalised to LKR. */
 data class TransactionItem(
@@ -17,7 +18,9 @@ data class TransactionItem(
     val originalAmountLabel: String?,
     val timestamp: Long,
     val expenseCategory: ExpenseCategory? = null,
-    val incomeSource: IncomeSource? = null
+    val incomeSource: IncomeSource? = null,
+    /** Account the expense was paid from; null for income, which isn't tied to an account. */
+    val accountId: String? = null
 ) {
     val isIncoming: Boolean get() = amountLkr >= 0
 }
@@ -29,7 +32,8 @@ fun Expense.toTransactionItem() = TransactionItem(
     amountLkr = -amountLkr,
     originalAmountLabel = null,
     timestamp = timestamp,
-    expenseCategory = category
+    expenseCategory = category,
+    accountId = paymentAccountId.ifBlank { null }
 )
 
 fun IncomeStream.toTransactionItem() = TransactionItem(
@@ -46,3 +50,20 @@ fun IncomeStream.toTransactionItem() = TransactionItem(
 fun buildLedger(incomes: List<IncomeStream>, expenses: List<Expense>): List<TransactionItem> =
     (incomes.filter { it.isRealized }.map { it.toTransactionItem() } + expenses.map { it.toTransactionItem() })
         .sortedByDescending { it.timestamp }
+
+/**
+ * FR-ANA-5: keyword search plus category, account and date filters. A null filter matches everything.
+ * Category and account filters only ever match expenses, since income has neither.
+ */
+fun filterLedger(
+    items: List<TransactionItem>,
+    query: String = "",
+    category: ExpenseCategory? = null,
+    accountId: String? = null,
+    dateRange: Period? = null
+): List<TransactionItem> = items.filter { item ->
+    (query.isBlank() || item.title.contains(query, ignoreCase = true) || item.subtitle.contains(query, ignoreCase = true)) &&
+        (category == null || item.expenseCategory == category) &&
+        (accountId == null || item.accountId == accountId) &&
+        (dateRange == null || item.timestamp in dateRange)
+}
