@@ -13,7 +13,8 @@ data class GoalEntity(
     val currentSavedLkr: Double,
     val targetDateMillis: Long,
     val createdDateMillis: Long,
-    val notes: String
+    val notes: String,
+    val usdReferencePrice: Double? = null
 ) {
     fun toDomain(): SavingsGoal = SavingsGoal(
         id = id,
@@ -23,7 +24,8 @@ data class GoalEntity(
         currentSavedLkr = currentSavedLkr,
         targetDateMillis = targetDateMillis,
         createdDateMillis = createdDateMillis,
-        notes = notes
+        notes = notes,
+        usdReferencePrice = usdReferencePrice
     )
 
     companion object {
@@ -35,7 +37,8 @@ data class GoalEntity(
             currentSavedLkr = domain.currentSavedLkr,
             targetDateMillis = domain.targetDateMillis,
             createdDateMillis = domain.createdDateMillis,
-            notes = domain.notes
+            notes = domain.notes,
+            usdReferencePrice = domain.usdReferencePrice
         )
     }
 }

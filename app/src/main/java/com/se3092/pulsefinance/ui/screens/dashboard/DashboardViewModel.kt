@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.se3092.pulsefinance.domain.model.Account
@@ -15,7 +16,10 @@ import com.se3092.pulsefinance.domain.repository.AuthRepository
 import com.se3092.pulsefinance.domain.repository.ExpenseRepository
 import com.se3092.pulsefinance.domain.repository.GoalRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
+import com.se3092.pulsefinance.domain.usecase.BankSmsParser
 import com.se3092.pulsefinance.domain.usecase.CalculateFinancialSummaryUseCase
+import com.se3092.pulsefinance.domain.usecase.ExportDataToCsvUseCase
+import com.se3092.pulsefinance.domain.usecase.SeasonalPeakChecker
 import com.se3092.pulsefinance.ui.common.buildLedger
 import com.se3092.pulsefinance.ui.common.displayNameFor
 import com.se3092.pulsefinance.ui.common.formatDate
@@ -48,14 +52,20 @@ private data class DashboardData(
 class DashboardViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val expenseRepository: ExpenseRepository,
-    incomeRepository: IncomeRepository,
-    goalRepository: GoalRepository,
-    accountRepository: AccountRepository,
-    private val calculateFinancialSummaryUseCase: CalculateFinancialSummaryUseCase
+    private val incomeRepository: IncomeRepository,
+    private val goalRepository: GoalRepository,
+    private val accountRepository: AccountRepository,
+    private val calculateFinancialSummaryUseCase: CalculateFinancialSummaryUseCase,
+    private val bankSmsParser: BankSmsParser,
+    private val seasonalPeakChecker: SeasonalPeakChecker,
+    private val exportDataToCsvUseCase: ExportDataToCsvUseCase
 ) : ViewModel() {
 
     private val form = MutableStateFlow(AddExpenseFormState())
     private val message = MutableStateFlow<String?>(null)
+    private val frozenWarning = MutableStateFlow<FrozenExpenseWarning?>(null)
+    private val revealedAccountIds = MutableStateFlow<Set<String>>(emptySet())
+    private var lastData: DashboardData? = null
 
     private val data = authRepository.whenSignedIn<DashboardData?>(signedOut = null) { userId ->
         combine(
@@ -63,18 +73,32 @@ class DashboardViewModel @Inject constructor(
             incomeRepository.getIncomeStreams(userId),
             goalRepository.getPrimaryGoal(userId),
             accountRepository.getAccounts(userId)
-        ) { expenses, incomes, goal, accounts -> DashboardData(expenses, incomes, goal, accounts) }
+        ) { expenses, incomes, goal, accounts ->
+            DashboardData(expenses, incomes, goal, accounts).also { lastData = it }
+        }
     }
 
-    val uiState: StateFlow<DashboardUiState> = combine(data, form, message) { data, form, message ->
-        buildState(data, form, message)
+    val uiState: StateFlow<DashboardUiState> = combine(
+        data,
+        form,
+        message,
+        frozenWarning,
+        revealedAccountIds
+    ) { data, form, msg, warning, revealed ->
+        buildState(data, form, msg, warning, revealed)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = DashboardUiState()
     )
 
-    private fun buildState(data: DashboardData?, form: AddExpenseFormState, message: String?): DashboardUiState {
+    private fun buildState(
+        data: DashboardData?,
+        form: AddExpenseFormState,
+        message: String?,
+        warning: FrozenExpenseWarning?,
+        revealed: Set<String>
+    ): DashboardUiState {
         val now = System.currentTimeMillis()
         val email = authRepository.userEmail
         val displayName = authRepository.userDisplayName
@@ -85,7 +109,9 @@ class DashboardViewModel @Inject constructor(
             greeting = greetingFor(now),
             monthLabel = formatDate(now, "MMMM yyyy"),
             addExpense = form,
-            message = message
+            message = message,
+            frozenWarning = warning,
+            revealedAccountIds = revealed
         )
         if (data == null) return header
 
@@ -93,6 +119,8 @@ class DashboardViewModel @Inject constructor(
             .filter { !it.isRealized }
             .sortedWith(compareByDescending<IncomeStream> { it.effectiveStatus(now) == InvoiceStatus.OVERDUE }.thenBy { it.dateReceivedOrExpected })
         val (weekBars, weekTotal, weekChange) = weeklyDiscretionary(data.expenses, now)
+
+        val seasonal = seasonalPeakChecker(data.expenses, now)
 
         return header.copy(
             summary = calculateFinancialSummaryUseCase(data.incomes, data.expenses, data.goal, now),
@@ -106,7 +134,8 @@ class DashboardViewModel @Inject constructor(
             weekChangePct = weekChange,
             unpaidInvoices = unpaid,
             overdueInvoiceCount = unpaid.count { it.effectiveStatus(now) == InvoiceStatus.OVERDUE },
-            addExpense = form.copy(accountId = form.accountId.ifBlank { data.accounts.firstOrNull()?.id.orEmpty() })
+            addExpense = form.copy(accountId = form.accountId.ifBlank { data.accounts.firstOrNull()?.id.orEmpty() }),
+            seasonalAlert = seasonal
         )
     }
 
@@ -137,7 +166,34 @@ class DashboardViewModel @Inject constructor(
         return Triple(bars, thisWeek, change)
     }
 
-    // ---------------- Add expense sheet ----------------
+    // ---------------- Spending Freeze & Account Security ----------------
+
+    fun freezeAccount(account: Account, days: Int = 14) {
+        val untilMillis = System.currentTimeMillis() + days * DAY_MILLIS
+        viewModelScope.launch {
+            accountRepository.freezeAccount(account, untilMillis).fold(
+                onSuccess = { message.value = "${account.name} frozen until ${formatDate(untilMillis, "dd MMM")} 🔒" },
+                onFailure = { message.value = "Failed to freeze account: ${it.localizedMessage}" }
+            )
+        }
+    }
+
+    fun unfreezeAccount(account: Account) {
+        viewModelScope.launch {
+            accountRepository.unfreezeAccount(account).fold(
+                onSuccess = { message.value = "${account.name} spending freeze lifted 🔓" },
+                onFailure = { message.value = "Failed to unlock: ${it.localizedMessage}" }
+            )
+        }
+    }
+
+    fun setAccountRevealed(accountId: String, revealed: Boolean) {
+        revealedAccountIds.update { current ->
+            if (revealed) current + accountId else current - accountId
+        }
+    }
+
+    // ---------------- Add expense sheet & Spending Freeze friction ----------------
 
     fun openAddExpense(preset: ExpensePreset? = null) {
         form.update {
@@ -173,6 +229,26 @@ class DashboardViewModel @Inject constructor(
         )
     }
 
+    fun handleSharedBankSms(smsText: String) {
+        val parsed = bankSmsParser.parse(smsText) ?: return
+        val currentAccounts = uiState.value.accounts
+        val matchedAccount = currentAccounts.find { acct ->
+            parsed.bankName.isNotBlank() && acct.name.contains(parsed.bankName, ignoreCase = true)
+        }
+        form.update {
+            it.copy(
+                isVisible = true,
+                titleInput = parsed.merchant,
+                amountInput = "%.0f".format(parsed.amountLkr),
+                category = parsed.suggestedCategory,
+                isCommitted = parsed.isCommitted,
+                accountId = matchedAccount?.id ?: it.accountId,
+                errorMessage = null
+            )
+        }
+        message.value = "Draft expense parsed from bank alert: ${parsed.merchant}"
+    }
+
     fun submitExpense() {
         val state = uiState.value
         val current = state.addExpense
@@ -188,6 +264,49 @@ class DashboardViewModel @Inject constructor(
         val account = state.accounts.find { it.id == current.accountId }
         val title = current.titleInput.trim().ifBlank { current.category.displayName }
 
+        // Check if account is frozen (FR-ACC-3, FR-ACC-4)
+        if (account?.isFrozen == true) {
+            val dailyPace = state.primaryGoal?.requiredDailySavingsLkr?.takeIf { it > 0 }
+                ?: (state.primaryGoal?.targetAmountLkr?.div(90) ?: 1000.0)
+            val delayDays = (amount / dailyPace).roundToInt().coerceAtLeast(1)
+            frozenWarning.value = FrozenExpenseWarning(
+                account = account,
+                amountLkr = amount,
+                title = title,
+                goalDaysDelayed = delayDays
+            )
+            return
+        }
+
+        saveExpenseRecord(userId, account, title, amount, current.category, current.isCommitted, current.daysAgo)
+    }
+
+    fun confirmFrozenExpenseBreak() {
+        val warning = frozenWarning.value ?: return
+        val state = uiState.value
+        val current = state.addExpense
+        val userId = authRepository.currentUserId ?: return
+
+        frozenWarning.value = null
+        viewModelScope.launch {
+            accountRepository.recordFreezeBreak(warning.account)
+        }
+        saveExpenseRecord(userId, warning.account, warning.title, warning.amountLkr, current.category, current.isCommitted, current.daysAgo)
+    }
+
+    fun dismissFrozenWarning() {
+        frozenWarning.value = null
+    }
+
+    private fun saveExpenseRecord(
+        userId: String,
+        account: Account?,
+        title: String,
+        amount: Double,
+        category: ExpenseCategory,
+        isCommitted: Boolean,
+        daysAgo: Int
+    ) {
         viewModelScope.launch {
             form.update { it.copy(isSubmitting = true) }
             val result = expenseRepository.saveExpense(
@@ -195,11 +314,11 @@ class DashboardViewModel @Inject constructor(
                     userId = userId,
                     title = title,
                     amountLkr = amount,
-                    category = current.category,
-                    isCommitted = current.isCommitted,
+                    category = category,
+                    isCommitted = isCommitted,
                     paymentAccountId = account?.id.orEmpty(),
                     paymentAccountName = account?.name.orEmpty(),
-                    timestamp = System.currentTimeMillis() - current.daysAgo * DAY_MILLIS
+                    timestamp = System.currentTimeMillis() - daysAgo * DAY_MILLIS
                 )
             )
             result.fold(
@@ -212,6 +331,22 @@ class DashboardViewModel @Inject constructor(
                 }
             )
         }
+    }
+
+    // ---------------- CSV Data Export ----------------
+
+    fun exportCsv(context: Context) {
+        val d = lastData
+        val incomes = d?.incomes ?: uiState.value.unpaidInvoices
+        val expenses = d?.expenses ?: uiState.value.recentExpenses
+        val goals = listOfNotNull(d?.goal ?: uiState.value.primaryGoal)
+        val csv = exportDataToCsvUseCase.generateCsv(
+            incomes = incomes,
+            expenses = expenses,
+            goals = goals
+        )
+        exportDataToCsvUseCase.shareCsv(context, csv)
+        message.value = "CSV ready for export via Share Sheet"
     }
 
     // ---------------- Other actions ----------------

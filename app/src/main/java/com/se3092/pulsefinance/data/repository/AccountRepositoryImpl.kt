@@ -35,6 +35,29 @@ class AccountRepositoryImpl @Inject constructor(
         firestoreDataSource.saveAccount(prepared.userId, AccountDto.fromDomain(prepared))
     }
 
+    override suspend fun freezeAccount(account: Account, untilMillis: Long): Result<Unit> {
+        val updated = account.copy(
+            isFrozen = true,
+            frozenUntilMillis = untilMillis
+        )
+        return saveAccount(updated)
+    }
+
+    override suspend fun unfreezeAccount(account: Account): Result<Unit> {
+        val updated = account.copy(
+            isFrozen = false,
+            frozenUntilMillis = null
+        )
+        return saveAccount(updated)
+    }
+
+    override suspend fun recordFreezeBreak(account: Account): Result<Unit> {
+        val updated = account.copy(
+            freezeBreakCount = account.freezeBreakCount + 1
+        )
+        return saveAccount(updated)
+    }
+
     /**
      * Gives a brand-new user one payment channel per place money leaves from — the scenario's
      * card, auto-debit account, cash and exchange wallet — so expenses can be attributed from the
@@ -51,7 +74,12 @@ class AccountRepositoryImpl @Inject constructor(
                     name = type.displayName,
                     type = type,
                     balanceLkr = 0.0,
-                    isAutoDebitSource = type == AccountType.BANK_SECONDARY
+                    isAutoDebitSource = type == AccountType.BANK_SECONDARY,
+                    accountNumber = when (type) {
+                        AccountType.BANK_PRIMARY -> "8001452178"
+                        AccountType.BANK_SECONDARY -> "1002938472"
+                        else -> ""
+                    }
                 )
             ).getOrThrow()
         }

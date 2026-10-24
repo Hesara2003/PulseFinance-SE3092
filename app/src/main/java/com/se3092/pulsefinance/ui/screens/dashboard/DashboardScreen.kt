@@ -35,6 +35,15 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WifiTethering
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,7 +53,14 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
+import com.se3092.pulsefinance.domain.model.Account
+import com.se3092.pulsefinance.domain.model.AccountType
+import com.se3092.pulsefinance.ui.common.BiometricHelper
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -94,6 +110,8 @@ import com.se3092.pulsefinance.ui.theme.NeoContainerHigh
 import com.se3092.pulsefinance.ui.theme.NeoErrorContainer
 import com.se3092.pulsefinance.ui.theme.NeoGreen
 import com.se3092.pulsefinance.ui.theme.NeoGreenDark
+import com.se3092.pulsefinance.ui.theme.NeoGreenFixed
+import com.se3092.pulsefinance.ui.theme.NeoOnPrimaryFixed
 import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
 import com.se3092.pulsefinance.ui.theme.NeoRose
 import com.se3092.pulsefinance.ui.theme.NeoSurface
@@ -113,6 +131,8 @@ fun DashboardScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var isBalanceMasked by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -177,6 +197,13 @@ fun DashboardScreen(
                             tint = NeoTextSecondary
                         )
                     }
+                    IconButton(onClick = { viewModel.exportCsv(context) }) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = "Export CSV",
+                            tint = NeoTextSecondary
+                        )
+                    }
                     IconButton(onClick = {
                         viewModel.signOut()
                         onSignOut()
@@ -207,6 +234,155 @@ fun DashboardScreen(
                     masked = isBalanceMasked,
                     isLoading = state.isLoading
                 )
+            }
+
+            // =========================================================================
+            // 2b. Sri Lankan Seasonal Peaks Proactive Alert (FR-LK-4, FR-LK-5)
+            // =========================================================================
+            state.seasonalAlert?.let { alert ->
+                item {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        color = NeoCard,
+                        border = BorderStroke(1.dp, Saffron.copy(alpha = 0.5f)),
+                        shadowElevation = 3.dp
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(SaffronSoft),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AcUnit,
+                                        contentDescription = null,
+                                        tint = Saffron,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Column {
+                                    Text(
+                                        text = alert.festivalName,
+                                        fontSize = 14.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = NeoTextPrimary
+                                    )
+                                    Text(
+                                        text = "Peak in ${alert.daysUntilPeak} days · Set aside ${lkr(alert.suggestedSetAsideLkr)}",
+                                        fontSize = 12.sp,
+                                        color = Saffron,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                            Text(
+                                text = alert.message,
+                                fontSize = 12.sp,
+                                color = NeoTextSecondary,
+                                lineHeight = 17.sp
+                            )
+                        }
+                    }
+                }
+            }
+
+            // =========================================================================
+            // 2c. Recorded Accounts & Spending Freeze Section (FR-ACC-1...7)
+            // =========================================================================
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Accounts & Channels",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = NeoTextPrimary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 17.sp
+                            )
+                            Text(
+                                text = "Combined balance: ${if (isBalanceMasked) "••••••" else lkr(state.combinedBalanceLkr)}",
+                                fontSize = 12.sp,
+                                color = NeoTextSecondary
+                            )
+                        }
+                        if (state.totalFreezeBreaks > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(NeoErrorContainer)
+                                    .padding(horizontal = 9.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = "${state.totalFreezeBreaks} Freeze Break${if (state.totalFreezeBreaks > 1) "s" else ""}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeoRose
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        state.accounts.forEach { account ->
+                            AccountCardItem(
+                                account = account,
+                                isBalanceMasked = isBalanceMasked,
+                                isRevealed = state.revealedAccountIds.contains(account.id),
+                                onRevealClick = {
+                                    val activity = context as? FragmentActivity
+                                    if (activity != null) {
+                                        BiometricHelper.authenticate(
+                                            activity = activity,
+                                            title = "Reveal ${account.name} Number",
+                                            subtitle = "Device authentication required to view sensitive account details",
+                                            onSuccess = { viewModel.setAccountRevealed(account.id, true) },
+                                            onError = { /* keep masked on error */ }
+                                        )
+                                    } else {
+                                        viewModel.setAccountRevealed(account.id, true)
+                                    }
+                                },
+                                onCopyClick = {
+                                    BiometricHelper.copyWithAutoWipe(
+                                        context = context,
+                                        label = "${account.name} Account Number",
+                                        text = account.accountNumber,
+                                        scope = coroutineScope,
+                                        wipeDelaySeconds = 60L
+                                    ) {
+                                        viewModel.setAccountRevealed(account.id, false)
+                                    }
+                                },
+                                onFreezeToggle = {
+                                    if (account.isFrozen) viewModel.unfreezeAccount(account)
+                                    else viewModel.freezeAccount(account, 14)
+                                }
+                            )
+                        }
+                    }
+                }
             }
 
             // =========================================================================
@@ -532,6 +708,56 @@ fun DashboardScreen(
                 onPresetSelect = viewModel::onPresetSelected,
                 onSubmit = viewModel::submitExpense,
                 onDismiss = viewModel::dismissAddExpense
+            )
+        }
+
+        state.frozenWarning?.let { warning ->
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissFrozenWarning() },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = NeoRose)
+                        Text("Spending Freeze Active", fontWeight = FontWeight.Bold)
+                    }
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "You placed a Spending Freeze on ${warning.account.name} to curb impulsive spending.",
+                            fontSize = 13.5.sp,
+                            color = NeoTextPrimary
+                        )
+                        Text(
+                            text = "Spending ${lkr(warning.amountLkr)} on '${warning.title}' will delay your savings goal by ~${warning.goalDaysDelayed} day${if (warning.goalDaysDelayed > 1) "s" else ""}.",
+                            fontSize = 13.sp,
+                            color = NeoRose,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "We will never block your expense, but this will be recorded as a Freeze Break.",
+                            fontSize = 12.sp,
+                            color = NeoTextSecondary
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { viewModel.confirmFrozenExpenseBreak() },
+                        colors = ButtonDefaults.buttonColors(containerColor = NeoRose, contentColor = OnAccent)
+                    ) {
+                        Text("Log anyway", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissFrozenWarning() }) {
+                        Text("Cancel", color = NeoTextSecondary)
+                    }
+                },
+                containerColor = NeoCard,
+                shape = RoundedCornerShape(24.dp)
             )
         }
     }
@@ -937,3 +1163,161 @@ private fun MoneyWaitingCard(amount: String, detail: String, onClick: () -> Unit
         }
     }
 }
+
+@Composable
+private fun AccountCardItem(
+    account: Account,
+    isBalanceMasked: Boolean,
+    isRevealed: Boolean,
+    onRevealClick: () -> Unit,
+    onCopyClick: () -> Unit,
+    onFreezeToggle: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .width(260.dp)
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = Color(0x080F172A),
+                spotColor = Color(0x080F172A)
+            ),
+        shape = RoundedCornerShape(20.dp),
+        color = if (account.isFrozen) NeoCardLow else NeoCard,
+        border = BorderStroke(1.dp, if (account.isFrozen) NeoRose.copy(alpha = 0.5f) else NeoBorder)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(if (account.isFrozen) NeoErrorContainer else NeoGreenFixed),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = when {
+                                account.isFrozen -> Icons.Default.Lock
+                                account.type == AccountType.BANK_PRIMARY -> Icons.Default.AccountBalance
+                                account.type == AccountType.BANK_SECONDARY -> Icons.Default.AccountBalance
+                                account.type == AccountType.CRYPTO_EXCHANGE -> Icons.Default.WifiTethering
+                                else -> Icons.Default.SouthWest
+                            },
+                            contentDescription = null,
+                            tint = if (account.isFrozen) NeoRose else NeoOnPrimaryFixed,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = account.name,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeoTextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = account.type.displayName,
+                            fontSize = 11.sp,
+                            color = NeoTextSecondary
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = CircleShape,
+                    color = if (account.isFrozen) NeoRose else NeoContainer,
+                    modifier = Modifier.clickable(onClick = onFreezeToggle)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (account.isFrozen) Icons.Default.Lock else Icons.Default.LockOpen,
+                            contentDescription = null,
+                            tint = if (account.isFrozen) OnAccent else NeoTextSecondary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = if (account.isFrozen) "Frozen" else "Freeze",
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (account.isFrozen) OnAccent else NeoTextSecondary
+                        )
+                    }
+                }
+            }
+
+            // Balance
+            Text(
+                text = if (isBalanceMasked) "••••••" else lkr(account.balanceLkr),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = NeoTextPrimary
+            )
+
+            // Sensitive Account Number Row (FR-ACC-6, FR-ACC-7)
+            if (account.accountNumber.isNotBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = NeoCardLow,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (isRevealed) account.accountNumber else account.maskedAccountNumber,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = NeoTextPrimary
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (!isRevealed) {
+                                IconButton(onClick = onRevealClick, modifier = Modifier.size(24.dp)) {
+                                    Icon(
+                                        imageVector = Icons.Default.Visibility,
+                                        contentDescription = "Reveal with biometric",
+                                        tint = NeoGreenDark,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            } else {
+                                IconButton(onClick = onCopyClick, modifier = Modifier.size(24.dp)) {
+                                    Icon(
+                                        imageVector = Icons.Default.ContentCopy,
+                                        contentDescription = "Copy number (60s auto-wipe)",
+                                        tint = NeoGreenDark,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

@@ -2,6 +2,7 @@ package com.se3092.pulsefinance.ui.navigation
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -72,7 +73,8 @@ data class NavItem(
 
 @Composable
 fun AppNavGraph(
-    startDestination: String = Screen.Dashboard.route
+    startDestination: String = Screen.Dashboard.route,
+    sharedSms: String? = null
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -285,6 +287,9 @@ fun AppNavGraph(
 
             composable(Screen.Dashboard.route) {
                 val dashboardViewModel: DashboardViewModel = hiltViewModel()
+                LaunchedEffect(sharedSms) {
+                    sharedSms?.let { dashboardViewModel.handleSharedBankSms(it) }
+                }
                 fun goToTab(route: String) {
                     navController.navigate(route) {
                         popUpTo(navController.graph.findStartDestination().id) { saveState = true }

@@ -39,6 +39,9 @@ data class IncomeFormState(
     val selectedSource: IncomeSource = IncomeSource.FREELANCE,
     val selectedCurrency: Currency = Currency.LKR,
     val exchangeRateInput: String = "1",
+    val receivedLkrInput: String = "",
+    val isCreditedLkrMode: Boolean = false,
+    val rateSourceInfo: String = "",
     val selectedStatus: InvoiceStatus = InvoiceStatus.RECEIVED,
     val dayOffset: Int = 0,
     val isCryptoLoss: Boolean = false,
@@ -61,6 +64,8 @@ data class IncomeScreenUiState(
     val sourceBreakdown: List<SourceTotal> = emptyList(),
     val cryptoNetYtdLkr: Double = 0.0,
     val cryptoEntriesYtd: Int = 0,
+    val isPayslipSheetVisible: Boolean = false,
+    val totalEpfAccumulatedLkr: Double = 0.0,
     val form: IncomeFormState = IncomeFormState(),
     val toastNotification: Pair<String, String>? = null
 ) {
@@ -73,11 +78,13 @@ data class IncomeScreenUiState(
 class IncomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val incomeRepository: IncomeRepository,
-    private val convertCurrencyUseCase: ConvertCurrencyUseCase
+    private val convertCurrencyUseCase: ConvertCurrencyUseCase,
+    val calculatePayslipUseCase: com.se3092.pulsefinance.domain.usecase.CalculatePayslipUseCase
 ) : ViewModel() {
 
     private val filter = MutableStateFlow<IncomeSource?>(null)
     private val form = MutableStateFlow(IncomeFormState())
+    private val isPayslipVisible = MutableStateFlow(false)
     private val toast = MutableStateFlow<Pair<String, String>?>(null)
 
     private val incomes = authRepository.whenSignedIn<List<IncomeStream>?>(signedOut = null) { userId ->
@@ -86,8 +93,8 @@ class IncomeViewModel @Inject constructor(
 
     private val initials = initialsFor(authRepository.userDisplayName, authRepository.userEmail)
 
-    val uiState: StateFlow<IncomeScreenUiState> = combine(incomes, filter, form, toast) { incomes, filter, form, toast ->
-        buildState(incomes, filter, form, toast)
+    val uiState: StateFlow<IncomeScreenUiState> = combine(incomes, filter, form, isPayslipVisible, toast) { incomes, filter, form, isPayslip, toast ->
+        buildState(incomes, filter, form, isPayslip, toast)
     }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -98,6 +105,7 @@ class IncomeViewModel @Inject constructor(
         incomes: List<IncomeStream>?,
         filter: IncomeSource?,
         form: IncomeFormState,
+        isPayslip: Boolean,
         toast: Pair<String, String>?
     ): IncomeScreenUiState {
         val now = System.currentTimeMillis()
@@ -105,6 +113,7 @@ class IncomeViewModel @Inject constructor(
             isLoading = incomes == null,
             monthLabel = formatDate(now, "MMMM yyyy"),
             filterSource = filter,
+            isPayslipSheetVisible = isPayslip,
             form = form,
             toastNotification = toast
         )
@@ -118,6 +127,8 @@ class IncomeViewModel @Inject constructor(
             set(Calendar.MONTH, Calendar.JANUARY)
         }.timeInMillis
         val cryptoYtd = incomes.filter { it.source == IncomeSource.CRYPTO && it.isRealized && it.dateReceivedOrExpected >= yearStart }
+        val totalEpfAccumulated = incomes.filter { it.source == IncomeSource.SALARY && it.isRealized }
+            .sumOf { (it.amountInLkr / 0.86) * 0.20 }
 
         // Unpaid first (overdue at the very top) so follow-ups can't be missed, then newest first.
         val sorted = incomes.sortedWith(
@@ -142,8 +153,42 @@ class IncomeViewModel @Inject constructor(
                 SourceTotal(source, items.sumOf { it.amountInLkr }, items.size)
             },
             cryptoNetYtdLkr = cryptoYtd.sumOf { it.amountInLkr },
-            cryptoEntriesYtd = cryptoYtd.size
+            cryptoEntriesYtd = cryptoYtd.size,
+            totalEpfAccumulatedLkr = totalEpfAccumulated
         )
+    }
+
+    fun openPayslipSheet() { isPayslipVisible.value = true }
+    fun closePayslipSheet() { isPayslipVisible.value = false }
+
+    fun savePayslipSalary(gross: Double, takeHome: Double, employeeEpf: Double, employerEpf: Double) {
+        val userId = authRepository.currentUserId ?: return
+        viewModelScope.launch {
+            incomeRepository.saveIncomeStream(
+                IncomeStream(
+                    userId = userId,
+                    source = IncomeSource.SALARY,
+                    title = "Tech Company Monthly Salary",
+                    clientOrPlatform = "Primary Tech Employer",
+                    originalAmount = takeHome,
+                    currency = Currency.LKR,
+                    exchangeRateToLkr = 1.0,
+                    amountInLkr = takeHome,
+                    status = InvoiceStatus.RECEIVED,
+                    dateReceivedOrExpected = System.currentTimeMillis(),
+                    isRecurringMonthly = true,
+                    notes = "Gross: LKR ${gross.toLong()} · EPF: LKR ${(employeeEpf + employerEpf).toLong()}"
+                )
+            ).fold(
+                onSuccess = {
+                    isPayslipVisible.value = false
+                    toast.value = "Salary recorded" to "+${lkr(takeHome)} Take-home · ${lkr(employeeEpf + employerEpf)} EPF saved"
+                },
+                onFailure = { e ->
+                    toast.value = "Couldn't save salary" to (e.localizedMessage ?: "Try again")
+                }
+            )
+        }
     }
 
     fun setFilter(source: IncomeSource?) {
@@ -174,13 +219,40 @@ class IncomeViewModel @Inject constructor(
 
     // ---------------- Add income sheet ----------------
 
-    fun showAddSheet() = form.update { IncomeFormState(isVisible = true) }
+    init {
+        viewModelScope.launch {
+            convertCurrencyUseCase.refreshRates()
+        }
+    }
+
+    fun showAddSheet() {
+        val rateInfo = convertCurrencyUseCase.getSuggestedRateInfo(Currency.LKR)
+        form.update { IncomeFormState(isVisible = true, rateSourceInfo = rateInfo.sourceDescription) }
+    }
     fun hideAddSheet() = form.update { it.copy(isVisible = false, errorMessage = null) }
 
     fun onTitleChanged(title: String) = form.update { it.copy(titleInput = title) }
     fun onClientChanged(client: String) = form.update { it.copy(clientInput = client) }
-    fun onAmountChanged(amount: String) = form.update { it.copy(amountInput = amount, errorMessage = null) }
+    fun onAmountChanged(amount: String) = form.update {
+        val parsedAmount = amount.replace(",", "").trim().toDoubleOrNull()
+        val parsedCredited = it.receivedLkrInput.replace(",", "").trim().toDoubleOrNull()
+        val derivedRate = if (it.isCreditedLkrMode && parsedAmount != null && parsedAmount > 0 && parsedCredited != null) {
+            formatRate(parsedCredited / parsedAmount)
+        } else it.exchangeRateInput
+        it.copy(amountInput = amount, exchangeRateInput = derivedRate, errorMessage = null)
+    }
     fun onRateChanged(rate: String) = form.update { it.copy(exchangeRateInput = rate, errorMessage = null) }
+    fun onCreditedLkrChanged(creditedLkr: String) = form.update {
+        val parsedCredited = creditedLkr.replace(",", "").trim().toDoubleOrNull()
+        val parsedAmount = it.amountInput.replace(",", "").trim().toDoubleOrNull()
+        val derivedRate = if (parsedAmount != null && parsedAmount > 0 && parsedCredited != null) {
+            formatRate(parsedCredited / parsedAmount)
+        } else it.exchangeRateInput
+        it.copy(receivedLkrInput = creditedLkr, exchangeRateInput = derivedRate, errorMessage = null)
+    }
+    fun onToggleCreditedLkrMode(useCreditedLkr: Boolean) = form.update {
+        it.copy(isCreditedLkrMode = useCreditedLkr)
+    }
     fun onDayOffsetChanged(offset: Int) = form.update { it.copy(dayOffset = offset) }
     fun onCryptoLossToggled(isLoss: Boolean) = form.update { it.copy(isCryptoLoss = isLoss) }
     fun onRecurringToggled(isRecurring: Boolean) = form.update { it.copy(isRecurringMonthly = isRecurring) }
@@ -196,19 +268,28 @@ class IncomeViewModel @Inject constructor(
             IncomeSource.CRYPTO -> Currency.USDT
             else -> Currency.LKR
         }
+        val rateInfo = convertCurrencyUseCase.getSuggestedRateInfo(currency)
         form.update {
             it.copy(
                 selectedSource = source,
                 selectedCurrency = currency,
-                exchangeRateInput = formatRate(convertCurrencyUseCase.getBenchmarkRate(currency)),
+                exchangeRateInput = formatRate(rateInfo.rate),
+                rateSourceInfo = "${formatRate(rateInfo.rate)} LKR/${currency.name} · ${rateInfo.sourceDescription}",
                 isRecurringMonthly = source == IncomeSource.SALARY,
                 isCryptoLoss = false
             )
         }
     }
 
-    fun onCurrencyChanged(currency: Currency) = form.update {
-        it.copy(selectedCurrency = currency, exchangeRateInput = formatRate(convertCurrencyUseCase.getBenchmarkRate(currency)))
+    fun onCurrencyChanged(currency: Currency) {
+        val rateInfo = convertCurrencyUseCase.getSuggestedRateInfo(currency)
+        form.update {
+            it.copy(
+                selectedCurrency = currency,
+                exchangeRateInput = formatRate(rateInfo.rate),
+                rateSourceInfo = "${formatRate(rateInfo.rate)} LKR/${currency.name} · ${rateInfo.sourceDescription}"
+            )
+        }
     }
 
     fun submitIncome() {

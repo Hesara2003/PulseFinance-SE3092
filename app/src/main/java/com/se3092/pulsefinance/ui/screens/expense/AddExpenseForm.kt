@@ -25,11 +25,14 @@ data class AddExpenseFormState(
     val errorMessage: String? = null
 )
 
-/** Starter templates drawn from the scenario's recurring spends; replaced by real habits as they appear. */
+/** Starter templates drawn from the scenario's recurring spends; replaced by real habits as they appear (FR-EXP-4). */
 private val starterPresets = listOf(
     ExpensePreset("Coffee", 850.0, ExpenseCategory.FOOD_DINING, false),
     ExpensePreset("PickMe ride", 1450.0, ExpenseCategory.TRANSPORT, false),
     ExpensePreset("UberEats", 2400.0, ExpenseCategory.FOOD_DINING, false),
+    ExpensePreset("Dialog Reload", 1000.0, ExpenseCategory.UTILITIES, false),
+    ExpensePreset("Mobitel Data Package", 950.0, ExpenseCategory.UTILITIES, false),
+    ExpensePreset("Fiber Broadband", 4800.0, ExpenseCategory.UTILITIES, true),
     ExpensePreset("Rent", 34000.0, ExpenseCategory.RENT, true)
 )
 
@@ -37,7 +40,7 @@ private val starterPresets = listOf(
  * The user's own most repeated expenses in the last 60 days (latest amount wins), topped up
  * with starter templates. Logging a habitual spend becomes a single tap plus confirm.
  */
-fun deriveExpensePresets(expenses: List<Expense>, now: Long = System.currentTimeMillis(), limit: Int = 4): List<ExpensePreset> {
+fun deriveExpensePresets(expenses: List<Expense>, now: Long = System.currentTimeMillis(), limit: Int = 6): List<ExpensePreset> {
     val frequent = expenses
         .filter { it.timestamp >= now - 60 * DAY_MILLIS }
         .groupBy { it.title.trim().lowercase() }

@@ -11,7 +11,8 @@ data class GoalDto(
     val currentSavedLkr: Double = 0.0,
     val targetDateMillis: Long = System.currentTimeMillis() + (365L * 24 * 60 * 60 * 1000),
     val createdDateMillis: Long = System.currentTimeMillis(),
-    val notes: String = ""
+    val notes: String = "",
+    val usdReferencePrice: Double? = null
 ) {
     fun toDomain(): SavingsGoal = SavingsGoal(
         id = id,
@@ -21,7 +22,8 @@ data class GoalDto(
         currentSavedLkr = currentSavedLkr,
         targetDateMillis = targetDateMillis,
         createdDateMillis = createdDateMillis,
-        notes = notes
+        notes = notes,
+        usdReferencePrice = usdReferencePrice
     )
 
     companion object {
@@ -33,7 +35,8 @@ data class GoalDto(
             currentSavedLkr = domain.currentSavedLkr,
             targetDateMillis = domain.targetDateMillis,
             createdDateMillis = domain.createdDateMillis,
-            notes = domain.notes
+            notes = domain.notes,
+            usdReferencePrice = domain.usdReferencePrice
         )
     }
 }

@@ -160,7 +160,8 @@ class FirestoreDataSource @Inject constructor(
                     ?.let { runCatching { SubscriptionDecision.valueOf(it) }.getOrNull() }
                     ?: return@mapNotNull null
                 val decidedAt = (value["decidedAt"] as? Number)?.toLong() ?: 0L
-                key to SubscriptionReview(key, decision, decidedAt)
+                val consecutiveUnusedMonths = (value["consecutiveUnusedMonths"] as? Number)?.toInt() ?: 0
+                key to SubscriptionReview(key, decision, decidedAt, consecutiveUnusedMonths)
             }.toMap()
             trySend(reviews)
         }
@@ -172,7 +173,8 @@ class FirestoreDataSource @Inject constructor(
             FIELD_SUBSCRIPTION_REVIEWS to mapOf(
                 review.key to mapOf(
                     "decision" to review.decision.name,
-                    "decidedAt" to review.decidedAt
+                    "decidedAt" to review.decidedAt,
+                    "consecutiveUnusedMonths" to review.consecutiveUnusedMonths
                 )
             )
         )

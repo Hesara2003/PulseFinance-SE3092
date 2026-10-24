@@ -24,11 +24,11 @@ class CalculateGoalVelocityUseCase @Inject constructor() {
         actualMonthlySavingsRateLkr: Double,
         now: Long = System.currentTimeMillis()
     ): GoalVelocityReport {
-        val requiredMonthly = goal.requiredMonthlySavingsLkr
-        val requiredDaily = goal.requiredDailySavingsLkr
+        val requiredMonthly = goal.requiredMonthlySavingsLkr(now)
+        val requiredDaily = goal.requiredDailySavingsLkr(now)
         val isPacing = goal.isComplete || actualMonthlySavingsRateLkr >= requiredMonthly
 
-        val monthsLeft = (goal.daysRemaining / 30.0).coerceAtLeast(1.0)
+        val monthsLeft = (goal.daysRemaining(now) / 30.0).coerceAtLeast(1.0)
         val shortfall = if (isPacing) 0.0 else (requiredMonthly - actualMonthlySavingsRateLkr.coerceAtLeast(0.0)) * monthsLeft
 
         val projectedArrival = when {

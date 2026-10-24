@@ -42,11 +42,18 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.LocalTaxi
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.RocketLaunch
-import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.lazy.LazyRow
+import com.se3092.pulsefinance.domain.model.ExpenseCategory
+import com.se3092.pulsefinance.ui.components.CategoryDonutChart
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -88,6 +95,7 @@ import com.se3092.pulsefinance.ui.components.EmptyStateView
 import com.se3092.pulsefinance.ui.theme.NeoSurface
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
+import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 
 @Composable
 fun AnalyticsScreen(
@@ -173,7 +181,7 @@ fun AnalyticsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                // 1. Segmented Control: Weekly / Monthly
+                // 1. Segmented Control: Daily / Weekly / Monthly / Yearly (FR-ANA-2, FR-ANA-4)
                 item {
                     Surface(
                         shape = CircleShape,
@@ -186,59 +194,37 @@ fun AnalyticsScreen(
                                 .padding(4.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            val isWeekly = state.interval == AnalyticsInterval.WEEKLY
-
-                            // Weekly Button
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(CircleShape)
-                                    .then(
-                                        if (isWeekly) {
-                                            Modifier
-                                                .shadow(6.dp, CircleShape, spotColor = NeoGreenGlow)
-                                                .background(NeoGreen)
-                                        } else {
-                                            Modifier.background(Color.Transparent)
-                                        }
+                            listOf(
+                                AnalyticsInterval.DAILY to "Daily",
+                                AnalyticsInterval.WEEKLY to "Weekly",
+                                AnalyticsInterval.MONTHLY to "Monthly",
+                                AnalyticsInterval.YEARLY to "Yearly"
+                            ).forEach { (interval, label) ->
+                                val isSelected = state.interval == interval
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(CircleShape)
+                                        .then(
+                                            if (isSelected) {
+                                                Modifier
+                                                    .shadow(6.dp, CircleShape, spotColor = NeoGreenGlow)
+                                                    .background(NeoGreen)
+                                            } else {
+                                                Modifier.background(Color.Transparent)
+                                            }
+                                        )
+                                        .clickable { viewModel.switchInterval(interval) }
+                                        .padding(vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                        fontSize = 12.sp,
+                                        color = if (isSelected) OnAccent else NeoTextSecondary
                                     )
-                                    .clickable { viewModel.switchInterval(AnalyticsInterval.WEEKLY) }
-                                    .padding(vertical = 10.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Weekly",
-                                    fontWeight = if (isWeekly) FontWeight.Bold else FontWeight.SemiBold,
-                                    fontSize = 13.sp,
-                                    color = if (isWeekly) OnAccent else NeoTextSecondary
-                                )
-                            }
-
-                            // Monthly Button
-                            val isMonthly = state.interval == AnalyticsInterval.MONTHLY
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(CircleShape)
-                                    .then(
-                                        if (isMonthly) {
-                                            Modifier
-                                                .shadow(6.dp, CircleShape, spotColor = NeoGreenGlow)
-                                                .background(NeoGreen)
-                                        } else {
-                                            Modifier.background(Color.Transparent)
-                                        }
-                                    )
-                                    .clickable { viewModel.switchInterval(AnalyticsInterval.MONTHLY) }
-                                    .padding(vertical = 10.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Monthly",
-                                    fontWeight = if (isMonthly) FontWeight.Bold else FontWeight.SemiBold,
-                                    fontSize = 13.sp,
-                                    color = if (isMonthly) OnAccent else NeoTextSecondary
-                                )
+                                }
                             }
                         }
                     }
@@ -484,39 +470,104 @@ fun AnalyticsScreen(
                     )
                 }
 
-                // 4. Where the money went, by category
-                if (state.categoryTotals.isNotEmpty()) item {
-                    CategoryBreakdownCard(state.categoryTotals)
+                // 4. Where the money went: Category Donut Chart (FR-ANA-1) & Linear Breakdown
+                if (state.categoryTotals.isNotEmpty()) {
+                    item {
+                        CategoryDonutChart(
+                            categoryTotals = state.categoryTotals,
+                            totalSpentLkr = state.totalSpentLkr
+                        )
+                    }
+                    item {
+                        CategoryBreakdownCard(state.categoryTotals)
+                    }
                 }
 
-                // 5. Transactions Header
+                // 5. Transactions Header with Search & Category Filter (FR-ANA-5)
                 item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Transactions",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = NeoTextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Transactions",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = NeoTextPrimary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+
+                            if (state.transactions.size > 3) {
+                                Text(
+                                    text = if (state.showAllTransactions) "Show less" else "View all (${state.transactions.size})",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeoGreenDark,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { viewModel.toggleViewAll() }
+                                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                        // Search Bar
+                        OutlinedTextField(
+                            value = state.searchQuery,
+                            onValueChange = viewModel::onSearchQueryChanged,
+                            placeholder = { Text("Search by merchant or note...", fontSize = 13.sp, color = NeoTextTertiary) },
+                            leadingIcon = {
+                                Icon(imageVector = Icons.Default.Search, contentDescription = "Search", tint = NeoTextSecondary, modifier = Modifier.size(18.dp))
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = NeoGreen,
+                                unfocusedBorderColor = NeoBorder,
+                                focusedTextColor = NeoTextPrimary,
+                                unfocusedTextColor = NeoTextPrimary
+                            )
                         )
 
-                        if (state.transactions.size > 3) {
-                            Text(
-                                text = if (state.showAllTransactions) "Show less" else "View all (${state.transactions.size})",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeoGreenDark,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable { viewModel.toggleViewAll() }
-                                    .padding(horizontal = 4.dp, vertical = 2.dp)
-                            )
+                        // Category Filter Chips
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            item {
+                                FilterChip(
+                                    selected = state.filterCategory == null,
+                                    onClick = { viewModel.onCategoryFilterChanged(null) },
+                                    label = { Text("All", fontSize = 11.5.sp) },
+                                    shape = CircleShape,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = NeoGreen,
+                                        selectedLabelColor = OnAccent,
+                                        labelColor = NeoTextSecondary
+                                    )
+                                )
+                            }
+                            items(ExpenseCategory.entries.size) { idx ->
+                                val cat = ExpenseCategory.entries[idx]
+                                FilterChip(
+                                    selected = state.filterCategory == cat,
+                                    onClick = {
+                                        viewModel.onCategoryFilterChanged(if (state.filterCategory == cat) null else cat)
+                                    },
+                                    label = { Text(cat.displayName, fontSize = 11.5.sp) },
+                                    shape = CircleShape,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = NeoGreen,
+                                        selectedLabelColor = OnAccent,
+                                        labelColor = NeoTextSecondary
+                                    )
+                                )
+                            }
                         }
                     }
                 }

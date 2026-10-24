@@ -1,7 +1,7 @@
 package com.se3092.pulsefinance
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -17,7 +17,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     @Inject
     lateinit var authRepository: AuthRepository
@@ -35,13 +35,17 @@ class MainActivity : ComponentActivity() {
             Screen.Auth.route
         }
 
+        val sharedSms = if (intent?.action == android.content.Intent.ACTION_SEND && intent?.type == "text/plain") {
+            intent.getStringExtra(android.content.Intent.EXTRA_TEXT)
+        } else null
+
         setContent {
             PulseFinanceTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = NeoSurface
                 ) {
-                    AppNavGraph(startDestination = startDestination)
+                    AppNavGraph(startDestination = startDestination, sharedSms = sharedSms)
                 }
             }
         }

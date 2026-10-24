@@ -41,6 +41,23 @@ object Periods {
         return Period(start.timeInMillis, start.timeInMillis + 7 * DAY_MILLIS)
     }
 
+    /** 24-hour day containing [millis], shifted by [offset] days. */
+    fun day(millis: Long, offset: Int = 0): Period {
+        val start = startOfDay(millis) + offset * DAY_MILLIS
+        return Period(start, start + DAY_MILLIS)
+    }
+
+    /** Calendar year containing [millis], shifted by [offset] years. */
+    fun year(millis: Long, offset: Int = 0): Period {
+        val start = Calendar.getInstance().apply {
+            timeInMillis = startOfDay(millis)
+            set(Calendar.DAY_OF_YEAR, 1)
+            add(Calendar.YEAR, offset)
+        }
+        val end = (start.clone() as Calendar).apply { add(Calendar.YEAR, 1) }
+        return Period(start.timeInMillis, end.timeInMillis)
+    }
+
     fun daysRemainingInMonth(now: Long): Int {
         val calendar = Calendar.getInstance().apply { timeInMillis = now }
         val maxDays = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)

@@ -45,6 +45,7 @@ data class GoalEditorState(
     val targetInput: String = "",
     val savedInput: String = "",
     val monthsInput: String = "12",
+    val usdPriceInput: String = "",
     val notesInput: String = "",
     val errorMessage: String? = null
 )
@@ -196,7 +197,7 @@ class GoalViewModel @Inject constructor(
         val goal = uiState.value.goal
         local.update {
             it.copy(
-                editor = if (goal == null) GoalEditorState(isVisible = true)
+                editor = if (goal == null) GoalEditorState(isVisible = true, usdPriceInput = "1599")
                 else GoalEditorState(
                     isVisible = true,
                     isNew = false,
@@ -204,6 +205,7 @@ class GoalViewModel @Inject constructor(
                     targetInput = goal.targetAmountLkr.roundToInt().toString(),
                     savedInput = goal.currentSavedLkr.roundToInt().toString(),
                     monthsInput = ((goal.daysRemaining + 15) / 30).coerceAtLeast(1).toString(),
+                    usdPriceInput = goal.usdReferencePrice?.roundToInt()?.toString().orEmpty(),
                     notesInput = goal.notes
                 )
             )
@@ -220,6 +222,7 @@ class GoalViewModel @Inject constructor(
         val target = editor.targetInput.replace(",", "").trim().toDoubleOrNull()
         val saved = editor.savedInput.replace(",", "").trim().ifBlank { "0" }.toDoubleOrNull()
         val months = editor.monthsInput.trim().toIntOrNull()
+        val usdPrice = editor.usdPriceInput.replace(",", "").trim().toDoubleOrNull()
         val error = when {
             editor.titleInput.isBlank() -> "Give the goal a name"
             target == null || target <= 0 -> "Enter the target amount"
@@ -239,7 +242,8 @@ class GoalViewModel @Inject constructor(
             targetAmountLkr = target!!,
             currentSavedLkr = saved!!,
             targetDateMillis = System.currentTimeMillis() + months!! * 30L * DAY_MILLIS,
-            notes = editor.notesInput.trim()
+            notes = editor.notesInput.trim(),
+            usdReferencePrice = usdPrice
         )
         viewModelScope.launch {
             goalRepository.saveGoal(goal).fold(

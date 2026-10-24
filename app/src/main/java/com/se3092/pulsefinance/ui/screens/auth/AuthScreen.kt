@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.se3092.pulsefinance.BuildConfig
 import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
@@ -336,6 +337,47 @@ fun AuthScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
+                    }
+                }
+            }
+
+            if (BuildConfig.DEBUG && BuildConfig.DEMO_EMAIL.isNotBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = NeoCardLow,
+                    border = BorderStroke(1.dp, NeoGreen.copy(alpha = 0.5f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                        .clickable {
+                            viewModel.fillDemoCredentials(BuildConfig.DEMO_EMAIL, BuildConfig.DEMO_PASSWORD)
+                            showCustomCredentials = true
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "🧪 Demo Drawer (Debug Only)",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeoGreenDark
+                            )
+                            Text(
+                                text = "Kavindu (Sri Lanka) • ${BuildConfig.DEMO_EMAIL}",
+                                fontSize = 11.sp,
+                                color = NeoTextTertiary
+                            )
+                        }
+                        Text(
+                            text = "Auto Fill",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = NeoGreenDark
+                        )
                     }
                 }
             }

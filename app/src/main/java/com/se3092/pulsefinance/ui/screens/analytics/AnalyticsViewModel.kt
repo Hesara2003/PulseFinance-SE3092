@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
-enum class AnalyticsInterval { WEEKLY, MONTHLY }
+enum class AnalyticsInterval { DAILY, WEEKLY, MONTHLY, YEARLY }
 
 /** One capsule in the bar chart: a day (weekly view) or a week of the month (monthly view). */
 data class TimelineBar(
@@ -37,7 +37,12 @@ data class TimelineBar(
     val isPeak: Boolean
 )
 
-data class CategoryTotal(val category: ExpenseCategory, val amountLkr: Double, val share: Float)
+data class CategoryTotal(
+    val category: ExpenseCategory,
+    val amountLkr: Double,
+    val share: Float,
+    val isCommitted: Boolean
+)
 
 data class AnalyticsUiState(
     val initials: String = "",
@@ -54,7 +59,9 @@ data class AnalyticsUiState(
     val incomeLkr: Double = 0.0,
     val categoryTotals: List<CategoryTotal> = emptyList(),
     val transactions: List<TransactionItem> = emptyList(),
-    val showAllTransactions: Boolean = false
+    val showAllTransactions: Boolean = false,
+    val searchQuery: String = "",
+    val filterCategory: ExpenseCategory? = null
 ) {
     val canGoForward: Boolean get() = periodOffset < 0
     val selectedBar: TimelineBar? get() = bars.getOrNull(selectedBarIndex)
@@ -64,7 +71,9 @@ private data class AnalyticsControls(
     val interval: AnalyticsInterval = AnalyticsInterval.WEEKLY,
     val periodOffset: Int = 0,
     val selectedBarIndex: Int? = null,
-    val showAll: Boolean = false
+    val showAll: Boolean = false,
+    val searchQuery: String = "",
+    val filterCategory: ExpenseCategory? = null
 )
 
 @HiltViewModel
@@ -94,13 +103,21 @@ class AnalyticsViewModel @Inject constructor(
     private fun buildState(expenses: List<Expense>, incomes: List<IncomeStream>, controls: AnalyticsControls): AnalyticsUiState {
         val now = System.currentTimeMillis()
         val period = when (controls.interval) {
+            AnalyticsInterval.DAILY -> Periods.day(now, controls.periodOffset)
             AnalyticsInterval.WEEKLY -> Periods.week(now, controls.periodOffset)
             AnalyticsInterval.MONTHLY -> Periods.month(now, controls.periodOffset)
+            AnalyticsInterval.YEARLY -> Periods.year(now, controls.periodOffset)
         }
         val periodExpenses = expenses.filter { it.timestamp in period }
         val periodIncomes = incomes.filter { it.isRealized && it.dateReceivedOrExpected in period }
 
         val buckets = when (controls.interval) {
+            AnalyticsInterval.DAILY -> listOf(
+                Triple("Morning", "00-06h", Period(period.startMillis, period.startMillis + 6 * 3600_000L)),
+                Triple("Day", "06-12h", Period(period.startMillis + 6 * 3600_000L, period.startMillis + 12 * 3600_000L)),
+                Triple("Eve", "12-18h", Period(period.startMillis + 12 * 3600_000L, period.startMillis + 18 * 3600_000L)),
+                Triple("Night", "18-24h", Period(period.startMillis + 18 * 3600_000L, period.endMillis))
+            )
             AnalyticsInterval.WEEKLY -> (0 until 7).map { i ->
                 val start = period.startMillis + i * DAY_MILLIS
                 Triple(formatDate(start, "dd"), formatDate(start, "EEE"), Period(start, start + DAY_MILLIS))
@@ -112,6 +129,15 @@ class AnalyticsViewModel @Inject constructor(
                     Triple("W${i + 1}", "${formatDate(start, "d")}–${formatDate(end - 1, "d")}", Period(start, end))
                 }
                 .toList()
+            AnalyticsInterval.YEARLY -> (0 until 12).map { monthIdx ->
+                val startCal = java.util.Calendar.getInstance().apply {
+                    timeInMillis = period.startMillis
+                    set(java.util.Calendar.MONTH, monthIdx)
+                    set(java.util.Calendar.DAY_OF_MONTH, 1)
+                }
+                val endCal = (startCal.clone() as java.util.Calendar).apply { add(java.util.Calendar.MONTH, 1) }
+                Triple(formatDate(startCal.timeInMillis, "MMM"), formatDate(startCal.timeInMillis, "yy"), Period(startCal.timeInMillis, endCal.timeInMillis))
+            }
         }
         val bucketTotals = buckets.map { (_, _, range) -> periodExpenses.filter { it.timestamp in range }.sumOf { it.amountLkr } }
         val peak = bucketTotals.maxOrNull() ?: 0.0
@@ -131,17 +157,38 @@ class AnalyticsViewModel @Inject constructor(
             .groupBy { it.category }
             .map { (category, items) ->
                 val sum = items.sumOf { it.amountLkr }
-                CategoryTotal(category, sum, if (total > 0) (sum / total).toFloat() else 0f)
+                CategoryTotal(
+                    category = category,
+                    amountLkr = sum,
+                    share = if (total > 0) (sum / total).toFloat() else 0f,
+                    isCommitted = items.any { it.isCommitted }
+                )
             }
             .sortedByDescending { it.amountLkr }
 
         val label = when (controls.interval) {
+            AnalyticsInterval.DAILY -> when (controls.periodOffset) {
+                0 -> "Today"
+                -1 -> "Yesterday"
+                else -> formatDate(period.startMillis, "dd MMMM yyyy")
+            }
             AnalyticsInterval.WEEKLY -> when (controls.periodOffset) {
                 0 -> "This week"
                 -1 -> "Last week"
                 else -> "${formatDate(period.startMillis, "dd MMM")} – ${formatDate(period.endMillis - 1, "dd MMM")}"
             }
             AnalyticsInterval.MONTHLY -> formatDate(period.startMillis, "MMMM yyyy")
+            AnalyticsInterval.YEARLY -> formatDate(period.startMillis, "yyyy")
+        }
+
+        val ledger = buildLedger(periodIncomes, periodExpenses)
+        val filteredTransactions = ledger.filter { item ->
+            val matchesQuery = controls.searchQuery.isBlank() ||
+                item.title.contains(controls.searchQuery, ignoreCase = true) ||
+                item.subtitle.contains(controls.searchQuery, ignoreCase = true)
+            val matchesCategory = controls.filterCategory == null ||
+                item.subtitle.contains(controls.filterCategory.displayName, ignoreCase = true)
+            matchesQuery && matchesCategory
         }
 
         return AnalyticsUiState(
@@ -156,8 +203,10 @@ class AnalyticsViewModel @Inject constructor(
             discretionaryLkr = periodExpenses.filter { !it.isCommitted }.sumOf { it.amountLkr },
             incomeLkr = periodIncomes.sumOf { it.amountInLkr },
             categoryTotals = categoryTotals,
-            transactions = buildLedger(periodIncomes, periodExpenses),
-            showAllTransactions = controls.showAll
+            transactions = filteredTransactions,
+            showAllTransactions = controls.showAll,
+            searchQuery = controls.searchQuery,
+            filterCategory = controls.filterCategory
         )
     }
 
@@ -175,5 +224,13 @@ class AnalyticsViewModel @Inject constructor(
 
     fun toggleViewAll() {
         controls.update { it.copy(showAll = !it.showAll) }
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        controls.update { it.copy(searchQuery = query) }
+    }
+
+    fun onCategoryFilterChanged(category: ExpenseCategory?) {
+        controls.update { it.copy(filterCategory = category) }
     }
 }

@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CorporateFare
 import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SmartDisplay
@@ -103,6 +104,7 @@ import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
 import com.se3092.pulsefinance.ui.theme.NeoSurface
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
+import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import kotlinx.coroutines.delay
 
 @Composable
@@ -222,21 +224,92 @@ fun IncomeScreen(
                             )
                         }
 
-                        // Tune Action Button
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(NeoGreen)
-                                .clickable { viewModel.showAddSheet() },
-                            contentAlignment = Alignment.Center
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Record income",
-                                tint = OnAccent,
-                                modifier = Modifier.size(22.dp)
-                            )
+                            // Payslip & EPF Button (FR-LK-1, FR-LK-3)
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(NeoCardLow)
+                                    .clickable { viewModel.openPayslipSheet() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Description,
+                                    contentDescription = "Payslip & EPF Calculator",
+                                    tint = NeoGreenDark,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            // Add Income Action Button
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(NeoGreen)
+                                    .clickable { viewModel.showAddSheet() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Record income",
+                                    tint = OnAccent,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // EPF Wealth Accumulation Card (FR-LK-3)
+                if (state.totalEpfAccumulatedLkr > 0) item {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        color = NeoGreen.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, NeoGreen.copy(alpha = 0.35f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(NeoGreen),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(imageVector = Icons.Default.Savings, contentDescription = null, tint = OnAccent, modifier = Modifier.size(20.dp))
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Accumulated EPF Wealth",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = NeoTextTertiary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.5.sp,
+                                    letterSpacing = 0.5.sp
+                                )
+                                Text(
+                                    text = lkr(state.totalEpfAccumulatedLkr),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = NeoGreenDark,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 18.sp
+                                )
+                                Text(
+                                    text = "Employer 12% + Employee 8% social savings you already own",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = NeoTextSecondary,
+                                    fontSize = 11.5.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -615,12 +688,25 @@ fun IncomeScreen(
                 onSourceChange = viewModel::onSourceChanged,
                 onCurrencyChange = viewModel::onCurrencyChanged,
                 onRateChange = viewModel::onRateChanged,
+                onCreditedLkrChange = viewModel::onCreditedLkrChanged,
+                onToggleCreditedLkrMode = viewModel::onToggleCreditedLkrMode,
                 onStatusChange = viewModel::onStatusChanged,
                 onDayOffsetChange = viewModel::onDayOffsetChanged,
                 onCryptoLossToggle = viewModel::onCryptoLossToggled,
                 onRecurringToggle = viewModel::onRecurringToggled,
                 onSubmit = viewModel::submitIncome,
                 onDismiss = viewModel::hideAddSheet
+            )
+        }
+
+        // =============================================================================
+        // Sri Lankan Payslip & EPF Bottom Sheet (FR-LK-1, FR-LK-2, FR-LK-3)
+        // =============================================================================
+        if (state.isPayslipSheetVisible) {
+            PayslipBottomSheet(
+                calculator = viewModel.calculatePayslipUseCase,
+                onSaveSalary = viewModel::savePayslipSalary,
+                onDismiss = viewModel::closePayslipSheet
             )
         }
     }

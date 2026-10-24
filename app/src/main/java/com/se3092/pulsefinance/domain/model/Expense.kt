@@ -6,9 +6,9 @@ data class Expense(
     val title: String,
     val amountLkr: Double,
     val category: ExpenseCategory,
-    val isCommitted: Boolean, // true = Committed/Fixed, false = Discretionary
-    val paymentAccountId: String,
-    val paymentAccountName: String,
+    val isCommitted: Boolean = false, // true = Committed/Fixed, false = Discretionary
+    val paymentAccountId: String = "",
+    val paymentAccountName: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     val notes: String = ""
 )

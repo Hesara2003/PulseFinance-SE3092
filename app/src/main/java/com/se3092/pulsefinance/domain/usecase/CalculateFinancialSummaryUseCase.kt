@@ -37,9 +37,17 @@ class CalculateFinancialSummaryUseCase @Inject constructor() {
 
         // 4. Salary lands on the 25th, so early in the month "this month's income" is near zero.
         //    Until it arrives, base the allowance on the average of the previous three months.
+        //    Per FR-DASH-3, leave out crypto profits from the 3-month average but keep crypto losses
+        //    so one lucky trade does not inflate the Safe-to-Spend allowance of an impulsive spender.
         val recentAverage = (1..3)
             .map { offset -> Periods.month(now, -offset) }
-            .map { period -> incomes.filter { it.isRealized && it.dateReceivedOrExpected in period }.sumOf { it.amountInLkr } }
+            .map { period ->
+                incomes.filter { income ->
+                    income.isRealized &&
+                        income.dateReceivedOrExpected in period &&
+                        !(income.source == com.se3092.pulsefinance.domain.model.IncomeSource.CRYPTO && income.amountInLkr > 0)
+                }.sumOf { it.amountInLkr }
+            }
             .filter { it > 0 }
             .let { if (it.isEmpty()) 0.0 else it.average() }
         val useAverage = recentAverage > realizedThisMonth

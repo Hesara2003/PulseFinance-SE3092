@@ -604,12 +604,6 @@ fun GoalScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         PresetChip(
-                            label = "+2,500",
-                            sublabel = "Small",
-                            onClick = { viewModel.onDepositAmountChanged("2500") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        PresetChip(
                             label = "+5,000",
                             sublabel = "Medium",
                             onClick = { viewModel.onDepositAmountChanged("5000") },
@@ -619,6 +613,12 @@ fun GoalScreen(
                             label = "+10,000",
                             sublabel = "Boost",
                             onClick = { viewModel.onDepositAmountChanged("10000") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        PresetChip(
+                            label = "+25,000",
+                            sublabel = "Windfall",
+                            onClick = { viewModel.onDepositAmountChanged("25000") },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -990,6 +990,17 @@ private fun GoalEditorSheet(
                 onValueChange = { v -> onChange { it.copy(targetInput = v) } },
                 label = { Text("Target amount") },
                 prefix = { Text("LKR ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                colors = fieldColors
+            )
+            OutlinedTextField(
+                value = editor.usdPriceInput,
+                onValueChange = { v -> onChange { it.copy(usdPriceInput = v) } },
+                label = { Text("USD Reference Price (optional, e.g. 1599)") },
+                prefix = { Text("$ ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),

@@ -1,6 +1,7 @@
 package com.se3092.pulsefinance.ui.screens.income
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -78,6 +79,8 @@ fun AddIncomeBottomSheet(
     onSourceChange: (IncomeSource) -> Unit,
     onCurrencyChange: (Currency) -> Unit,
     onRateChange: (String) -> Unit,
+    onCreditedLkrChange: (String) -> Unit = {},
+    onToggleCreditedLkrMode: (Boolean) -> Unit = {},
     onStatusChange: (InvoiceStatus) -> Unit,
     onDayOffsetChange: (Int) -> Unit,
     onCryptoLossToggle: (Boolean) -> Unit,
@@ -225,7 +228,10 @@ fun AddIncomeBottomSheet(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 OutlinedTextField(
                     value = form.amountInput,
                     onValueChange = onAmountChange,
@@ -234,20 +240,60 @@ fun AddIncomeBottomSheet(
                     singleLine = true,
                     isError = form.errorMessage != null,
                     shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.weight(1.5f),
+                    modifier = Modifier.weight(1.3f),
                     colors = fieldColors
                 )
 
                 if (form.selectedCurrency != Currency.LKR) {
-                    OutlinedTextField(
-                        value = form.exchangeRateInput,
-                        onValueChange = onRateChange,
-                        label = { Text("Rate to LKR", fontSize = 13.sp) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.weight(1f),
-                        colors = fieldColors
+                    if (form.isCreditedLkrMode) {
+                        OutlinedTextField(
+                            value = form.receivedLkrInput,
+                            onValueChange = onCreditedLkrChange,
+                            label = { Text("Bank LKR Credited", fontSize = 13.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.weight(1.3f),
+                            colors = fieldColors
+                        )
+                    } else {
+                        OutlinedTextField(
+                            value = form.exchangeRateInput,
+                            onValueChange = onRateChange,
+                            label = { Text("Rate to LKR", fontSize = 13.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.weight(1f),
+                            colors = fieldColors
+                        )
+                    }
+                }
+            }
+
+            if (form.selectedCurrency != Currency.LKR) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (form.rateSourceInfo.isNotBlank()) "Suggested: ${form.rateSourceInfo}" else "Suggested: 305 LKR/USD",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = NeoTextTertiary,
+                        fontSize = 11.5.sp
+                    )
+                    Text(
+                        text = if (form.isCreditedLkrMode) "Switch to Rate" else "Type Bank LKR",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = NeoGreenDark,
+                        fontSize = 11.5.sp,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable { onToggleCreditedLkrMode(!form.isCreditedLkrMode) }
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
                     )
                 }
             }
@@ -256,7 +302,7 @@ fun AddIncomeBottomSheet(
                 Text(text = it, color = NeoRose, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
             }
 
-            // The rate actually received is stored with the entry, so history never shifts with the market.
+            // The rate actually received is stored with the entry, so history never shifts with the market (ADR-0001).
             if (form.selectedCurrency != Currency.LKR && amount > 0 && rate > 0) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Box(
@@ -267,11 +313,11 @@ fun AddIncomeBottomSheet(
                         .padding(10.dp)
                 ) {
                     Text(
-                        text = "Recorded as ≈ LKR ${String.format("%,.0f", convertedLkr)} at the rate you entered",
+                        text = "Effective rate: ${String.format("%.2f", rate)} LKR/${form.selectedCurrency.name} → Recorded as ≈ LKR ${String.format("%,.0f", convertedLkr)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = NeoGreenDark,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                        fontSize = 12.5.sp
                     )
                 }
             }

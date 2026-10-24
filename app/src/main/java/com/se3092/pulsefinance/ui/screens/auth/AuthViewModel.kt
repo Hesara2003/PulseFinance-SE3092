@@ -43,6 +43,10 @@ class AuthViewModel @Inject constructor(
         _uiState.update { it.copy(isLoginMode = isLogin, errorMessage = null) }
     }
 
+    fun fillDemoCredentials(email: String, pass: String) {
+        _uiState.update { it.copy(email = email, password = pass, isLoginMode = true, errorMessage = null) }
+    }
+
     fun submit() {
         val email = _uiState.value.email.trim()
         val password = _uiState.value.password

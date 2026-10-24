@@ -5,11 +5,18 @@ enum class SubscriptionDecision {
     CANCELLED
 }
 
-/** The user's verdict on one detected subscription, keyed by its normalised title. */
+enum class SubscriptionRisk {
+    LOW,
+    MEDIUM,
+    HIGH
+}
+
+/** The user's verdict and usage history on one detected subscription, keyed by its normalised title. */
 data class SubscriptionReview(
     val key: String,
     val decision: SubscriptionDecision,
-    val decidedAt: Long
+    val decidedAt: Long,
+    val consecutiveUnusedMonths: Int = 0
 )
 
 enum class SubscriptionStatus {
@@ -31,8 +38,14 @@ data class DetectedSubscription(
     val monthlyCostLkr: Double,
     val lastChargedMillis: Long,
     val chargeCount: Int,
-    val status: SubscriptionStatus
+    val status: SubscriptionStatus,
+    val risk: SubscriptionRisk = SubscriptionRisk.LOW,
+    val consecutiveUnusedMonths: Int = 0,
+    val lastAppOpenedDaysAgo: Int? = null,
+    val isSecondaryAccount: Boolean = false
 ) {
     val annualCostLkr: Double get() = monthlyCostLkr * 12
-    val isFlagged: Boolean get() = status == SubscriptionStatus.NEEDS_REVIEW || status == SubscriptionStatus.STILL_CHARGING
+    val isFlagged: Boolean get() = status == SubscriptionStatus.NEEDS_REVIEW ||
+            status == SubscriptionStatus.STILL_CHARGING ||
+            risk == SubscriptionRisk.HIGH
 }

@@ -11,7 +11,11 @@ data class AccountDto(
     val name: String = "",
     val type: String = "BANK_PRIMARY",
     val balanceLkr: Double = 0.0,
-    @get:PropertyName("isAutoDebitSource") val isAutoDebitSource: Boolean = false
+    @get:PropertyName("isAutoDebitSource") val isAutoDebitSource: Boolean = false,
+    val accountNumber: String = "",
+    @get:PropertyName("isFrozen") val isFrozen: Boolean = false,
+    val frozenUntilMillis: Long? = null,
+    val freezeBreakCount: Int = 0
 ) {
     fun toDomain(): Account = Account(
         id = id,
@@ -19,7 +23,11 @@ data class AccountDto(
         name = name,
         type = try { AccountType.valueOf(type) } catch (e: Exception) { AccountType.BANK_PRIMARY },
         balanceLkr = balanceLkr,
-        isAutoDebitSource = isAutoDebitSource
+        isAutoDebitSource = isAutoDebitSource,
+        accountNumber = accountNumber,
+        isFrozen = isFrozen,
+        frozenUntilMillis = frozenUntilMillis,
+        freezeBreakCount = freezeBreakCount
     )
 
     companion object {
@@ -29,7 +37,11 @@ data class AccountDto(
             name = domain.name,
             type = domain.type.name,
             balanceLkr = domain.balanceLkr,
-            isAutoDebitSource = domain.isAutoDebitSource
+            isAutoDebitSource = domain.isAutoDebitSource,
+            accountNumber = domain.accountNumber,
+            isFrozen = domain.isFrozen,
+            frozenUntilMillis = domain.frozenUntilMillis,
+            freezeBreakCount = domain.freezeBreakCount
         )
     }
 }
