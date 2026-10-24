@@ -43,6 +43,21 @@ import androidx.compose.material.icons.filled.LocalTaxi
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import com.se3092.pulsefinance.domain.model.DAY_MILLIS
+import com.se3092.pulsefinance.domain.model.Period
+import java.util.Calendar
+import java.util.TimeZone
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -102,6 +117,18 @@ fun AnalyticsScreen(
     viewModel: AnalyticsViewModel
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showDateRangePicker by rememberSaveable { mutableStateOf(false) }
+
+    if (showDateRangePicker) {
+        TransactionDateRangeDialog(
+            initialRange = state.filterDateRange,
+            onConfirm = { range ->
+                viewModel.onDateRangeChanged(range)
+                showDateRangePicker = false
+            },
+            onDismiss = { showDateRangePicker = false }
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -569,6 +596,76 @@ fun AnalyticsScreen(
                                 )
                             }
                         }
+
+                        // Date range + account filter chips
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            item {
+                                FilterChip(
+                                    selected = state.filterDateRange != null,
+                                    onClick = { showDateRangePicker = true },
+                                    label = { Text(state.dateRangeLabel ?: "Any date", fontSize = 11.5.sp) },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    },
+                                    trailingIcon = if (state.filterDateRange != null) {
+                                        {
+                                            Icon(
+                                                Icons.Default.Close,
+                                                contentDescription = "Clear date filter",
+                                                modifier = Modifier
+                                                    .size(14.dp)
+                                                    .clickable { viewModel.onDateRangeChanged(null) }
+                                            )
+                                        }
+                                    } else null,
+                                    shape = CircleShape,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = NeoGreen,
+                                        selectedLabelColor = OnAccent,
+                                        selectedLeadingIconColor = OnAccent,
+                                        selectedTrailingIconColor = OnAccent,
+                                        labelColor = NeoTextSecondary,
+                                        iconColor = NeoTextSecondary
+                                    )
+                                )
+                            }
+                            if (state.accounts.isNotEmpty()) item {
+                                FilterChip(
+                                    selected = state.filterAccountId == null,
+                                    onClick = { viewModel.onAccountFilterChanged(null) },
+                                    label = { Text("All accounts", fontSize = 11.5.sp) },
+                                    shape = CircleShape,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = NeoGreen,
+                                        selectedLabelColor = OnAccent,
+                                        labelColor = NeoTextSecondary
+                                    )
+                                )
+                            }
+                            items(state.accounts, key = { it.id }) { account ->
+                                FilterChip(
+                                    selected = state.filterAccountId == account.id,
+                                    onClick = {
+                                        viewModel.onAccountFilterChanged(if (state.filterAccountId == account.id) null else account.id)
+                                    },
+                                    label = { Text(account.name, fontSize = 11.5.sp) },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    },
+                                    shape = CircleShape,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = NeoGreen,
+                                        selectedLabelColor = OnAccent,
+                                        selectedLeadingIconColor = OnAccent,
+                                        labelColor = NeoTextSecondary,
+                                        iconColor = NeoTextSecondary
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -581,8 +678,12 @@ fun AnalyticsScreen(
 
                 if (!state.isLoading && visibleTransactions.isEmpty()) item {
                     EmptyStateView(
-                        title = "Nothing recorded in this period",
-                        message = "Expenses and received income for ${state.periodLabel.lowercase()} will appear here.",
+                        title = if (state.hasActiveFilters) "No matching transactions" else "Nothing recorded in this period",
+                        message = if (state.hasActiveFilters) {
+                            "Try a different keyword, category, account or date range."
+                        } else {
+                            "Expenses and received income for ${state.periodLabel.lowercase()} will appear here."
+                        },
                         icon = Icons.Default.Payments,
                         illustration = R.drawable.illustration_no_data
                     )
@@ -598,6 +699,61 @@ fun AnalyticsScreen(
             }
         }
     }
+}
+
+/** Date-range filter for the transaction list (FR-ANA-5). Returns a local-time [Period]; the end day is inclusive. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TransactionDateRangeDialog(
+    initialRange: Period?,
+    onConfirm: (Period) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val pickerState = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = initialRange?.startMillis?.let(::localDayToUtc),
+        initialSelectedEndDateMillis = initialRange?.let { localDayToUtc(it.endMillis - DAY_MILLIS) }
+    )
+    val start = pickerState.selectedStartDateMillis
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                enabled = start != null,
+                onClick = {
+                    if (start != null) {
+                        val end = pickerState.selectedEndDateMillis ?: start
+                        onConfirm(Period(utcDayToLocal(start), utcDayToLocal(end) + DAY_MILLIS))
+                    }
+                }
+            ) { Text("Apply", color = NeoGreenDark, fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = NeoTextSecondary) }
+        }
+    ) {
+        DateRangePicker(
+            state = pickerState,
+            modifier = Modifier.height(500.dp),
+            title = { Text("Filter by date", modifier = Modifier.padding(start = 24.dp, top = 16.dp)) }
+        )
+    }
+}
+
+/** The picker works in UTC midnights; convert to and from the start of the same calendar day in local time. */
+private fun utcDayToLocal(utcMillis: Long): Long {
+    val utc = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = utcMillis }
+    return Calendar.getInstance().apply {
+        clear()
+        set(utc.get(Calendar.YEAR), utc.get(Calendar.MONTH), utc.get(Calendar.DAY_OF_MONTH))
+    }.timeInMillis
+}
+
+private fun localDayToUtc(localMillis: Long): Long {
+    val local = Calendar.getInstance().apply { timeInMillis = localMillis }
+    return Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+        clear()
+        set(local.get(Calendar.YEAR), local.get(Calendar.MONTH), local.get(Calendar.DAY_OF_MONTH))
+    }.timeInMillis
 }
 
 @Composable
