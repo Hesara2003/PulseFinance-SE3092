@@ -12,6 +12,8 @@ data class FinancialSummary(
     val incomeBasisLkr: Double = 0.0,
     val incomeBasisIsAverage: Boolean = false,
     val goalAllocationLkr: Double = 0.0,
+    /** Set aside for an upcoming Seasonal Peak (FR-LK-5); held back from Safe-to-Spend. */
+    val seasonalReserveLkr: Double = 0.0,
     val safeToSpendDailyLkr: Double = 0.0,
     val daysRemainingInMonth: Int = 30,
     val hasAnyData: Boolean = false
