@@ -31,7 +31,7 @@ It does this without importing anything from a bank. Kavindu stays the source of
 | **Source** | Paragraph of the brief that produced the requirement (§3.2 = Income Problem, §3.3 = Expense Invisibility, §3.4 = Goal, §3.5 = Failed Attempts, §4.3/§5 = brief-imposed) |
 | **Prevents** | Which past failure it is designed against: **F1** Google Sheet · **F2** Play Store budget app · **F3** Notes app · **F4** Bank spending summary (see §2.2) |
 | **Priority** | MoSCoW: **M**ust · **S**hould · **C**ould (for the 30/10/2026 submission) |
-| **Status** | **Done** = implemented in the current codebase · **Planned** = designed, not yet built · **Out** = deliberately excluded (see §8) |
+| **Status** | **Done** = implemented in the current codebase · **Partial** = built, but with a gap listed in §10.1 · **Planned** = designed, not yet built · **Out** = deliberately excluded (see §8) |
 
 ---
 
@@ -257,10 +257,10 @@ flowchart LR
 | FR-AUTH-1 | The system shall let Kavindu register and sign in with email and password through Firebase Authentication. | §4.3, §5 | F2 (no sync) | M | Done |
 | FR-AUTH-2 | The system shall let Kavindu sign in with his Google account. | §5 (bonus) | F2 | S | Done |
 | FR-AUTH-3 | The system shall store every record under the signed-in user's ID, so the same data appears on any device he signs in to. | §3.5 (F2: "no cloud synchronisation") | F2 | M | Done |
-| FR-AUTH-4 | Onboarding shall capture his salary, his active Income Sources (Salary, Freelance, AdSense, Crypto) and his fixed monthly commitments (e.g. rent LKR 34,000) in three short steps. | §3.2, §3.3 | F2 (single source) | M | Done |
+| FR-AUTH-4 | Onboarding shall capture his salary, his active Income Sources (Salary, Freelance, AdSense, Crypto) and his fixed monthly commitments (e.g. rent LKR 34,000) in three short steps. | §3.2, §3.3 | F2 (single source) | M | Partial |
 | FR-AUTH-5 | Onboarding shall let him state each source's expected variability (low / moderate / highly volatile). | §3.2 ("different levels of predictability") | F2 | C | Planned |
 | FR-AUTH-6 | Onboarding shall let him set an emergency-runway buffer of 1–6 months of committed costs. | §3.1 (LKR 11,200 savings) | — | C | Planned |
-| FR-AUTH-7 | A debug-build-only demo drawer shall fill in the credentials of a real, pre-seeded Firebase account; credentials shall come from build configuration, never from source code, and the drawer shall not exist in release builds. | §6.4 (live demo), §4.3 (no hard-coded data) | — | M | Planned |
+| FR-AUTH-7 | A debug-build-only demo drawer shall fill in the credentials of a real, pre-seeded Firebase account; credentials shall come from build configuration, never from source code, and the drawer shall not exist in release builds. | §6.4 (live demo), §4.3 (no hard-coded data) | — | M | Done |
 
 ### 5.2 Income (FR-INC)
 
@@ -270,8 +270,8 @@ flowchart LR
 | FR-INC-2 | Each entry shall store the exchange rate used, and that rate shall never be recomputed after saving, so past months always reconcile with the bank (ADR-0001). | §3.2 ("at the prevailing rate at the time of transfer") | F1, F2 | M | Done |
 | FR-INC-3 | Freelance income shall be recordable as a Pending Invoice with a client name and due date, and marked received in one tap when paid. | §3.2 ("twice forgotten to follow up") | — | M | Done |
 | FR-INC-4 | A Pending Invoice whose due date has passed shall automatically be treated as an Overdue Invoice, without manual relabelling. | §3.2 | — | M | Done |
-| FR-INC-5 | The income form shall pre-fill the day's suggested rate fetched from open.er-api.com (USD→LKR) and CoinGecko (USDT/ETH→USD), cached once per day and usable offline with its age shown. | §3.2 | F1 (manual lookup) | M | Planned |
-| FR-INC-6 | For a foreign-currency entry, Kavindu shall be able to type the LKR amount his bank actually credited instead of a rate; the system shall derive and store the effective rate. | §3.2 (AdSense "never records what he actually receives") | F1 | M | Planned |
+| FR-INC-5 | The income form shall pre-fill the day's suggested rate fetched from open.er-api.com (USD→LKR) and CoinGecko (USDT/ETH→USD), cached once per day and usable offline with its age shown. | §3.2 | F1 (manual lookup) | M | Done |
+| FR-INC-6 | For a foreign-currency entry, Kavindu shall be able to type the LKR amount his bank actually credited instead of a rate; the system shall derive and store the effective rate. | §3.2 (AdSense "never records what he actually receives") | F1 | M | Done |
 | FR-INC-7 | A crypto trade shall be recorded as a Crypto Trading Result: positive for a profit, negative for a loss. | §3.2 ("significant gain in Q1 and a material loss in Q3") | — | M | Done |
 | FR-INC-8 | The system shall show the Crypto YTD Net figure. | §3.2 ("cannot answer" YTD crypto earnings) | — | M | Done |
 | FR-INC-9 | The Income screen shall show Realised Income and pending/overdue amounts separately for the month, by source. | §3.2 ("opens four separate applications") | F2 | M | Done |
@@ -283,10 +283,10 @@ flowchart LR
 | FR-EXP-1 | Each expense shall record amount (LKR), category, committed/discretionary flag, paying account, timestamp and optional note. | §4.1 lens 4 | F3 (unlabelled figures) | M | Done |
 | FR-EXP-2 | The category shall propose committed or discretionary (e.g. Rent → Committed, Food & Dining → Discretionary); Kavindu may flip it per expense in one tap. | §3.3 ("no concept of… discretionary versus committed") | F4 (miscategorisation) | M | Done |
 | FR-EXP-3 | The add-expense sheet shall offer one-tap Sri Lankan presets (café, PickMe, UberEats, rent). | §3.3, §3.5 ("low tolerance for friction") | F1, F3 | M | Done |
-| FR-EXP-4 | Presets shall include Dialog and Mobitel mobile reloads and data packages. | Sri Lankan context (prepaid micro-spend) | F3 | S | Planned |
+| FR-EXP-4 | Presets shall include Dialog and Mobitel mobile reloads and data packages. | Sri Lankan context (prepaid micro-spend) | F3 | S | Done |
 | FR-EXP-5 | Expenses shall be attributable to any of his accounts, including Cash and the secondary auto-debit account. | §3.3 ("cash withdrawals… secondary account") | F4 (card-only coverage) | M | Done |
 | FR-EXP-6 | An expense saved while offline shall appear immediately and sync when the connection returns. | §5 (offline persistence) | F2 | M | Done |
-| FR-EXP-7 | Kavindu shall be able to share a bank transaction SMS into PulseFinance through Android's share sheet; the system shall parse amount, merchant and card last-four digits into a draft expense for one-tap confirmation, without the READ_SMS permission. | §3.3, §4.1 lens 4 | F3, F4 | S | Planned |
+| FR-EXP-7 | Kavindu shall be able to share a bank transaction SMS into PulseFinance through Android's share sheet; the system shall parse amount, merchant and card last-four digits into a draft expense for one-tap confirmation, without the READ_SMS permission. | §3.3, §4.1 lens 4 | F3, F4 | S | Done |
 
 ### 5.4 Subscriptions (FR-SUB)
 
@@ -295,9 +295,9 @@ flowchart LR
 | FR-SUB-1 | The system shall detect recurring subscriptions by grouping subscription-category expenses by merchant over the last 120 days. | §3.3 ("two subscription services he intended to cancel") | F4 | M | Done |
 | FR-SUB-2 | Each detected subscription shall show its monthly and annual cost and the account it is charged to. | §3.3 | F4 | M | Done |
 | FR-SUB-3 | Kavindu shall record a Keep or Cancel decision per subscription; a charge logged after a Cancel shall flag it as "still charging". | §3.3 ("intended to cancel six months ago") | — | M | Done |
-| FR-SUB-4 | When a subscription charge is logged, the system shall ask "Did you use this this month? Yes / No"; two consecutive "No" answers shall set its Subscription Risk to High and prompt cancellation. | §3.3 (gym auto-debit) | — | S | Planned |
-| FR-SUB-5 | For subscriptions tied to an app (Netflix, Spotify), the system shall, with the user's permission, use Android usage statistics to show the last time that app was opened and factor it into Subscription Risk. | §3.3 | — | S | Planned |
-| FR-SUB-6 | The subscription scan shall group results by recorded account and highlight subscriptions charged to the secondary account. | §3.3 ("auto-debited from a secondary account") | F4 | S | Planned |
+| FR-SUB-4 | When a subscription charge is logged, the system shall ask "Did you use this this month? Yes / No"; two consecutive "No" answers shall set its Subscription Risk to High and prompt cancellation. | §3.3 (gym auto-debit) | — | S | Done |
+| FR-SUB-5 | For subscriptions tied to an app (Netflix, Spotify), the system shall, with the user's permission, use Android usage statistics to show the last time that app was opened and factor it into Subscription Risk. | §3.3 | — | S | Partial |
+| FR-SUB-6 | The subscription scan shall group results by recorded account and highlight subscriptions charged to the secondary account. | §3.3 ("auto-debited from a secondary account") | F4 | S | Done |
 
 ### 5.5 Savings goal (FR-GOAL)
 
@@ -308,8 +308,8 @@ flowchart LR
 | FR-GOAL-3 | The system shall calculate his actual savings rate (realised income − spending, averaged over the last 90 days or since his first record). | §3.4 ("does not know what he currently saves") | F1 | M | Done |
 | FR-GOAL-4 | The system shall project the arrival date at the actual savings rate and state whether he is on pace or behind, by how much. | §3.4 ("emotionally present and financially invisible") | F1 | M | Done |
 | FR-GOAL-5 | The system shall translate any amount into "days of MacBook funded" (opportunity cost), with presets for common Sri Lankan purchases. | §3.4, §2 ("impulsive") | — | S | Done |
-| FR-GOAL-6 | The goal shall optionally store a USD reference price; its LKR target shall follow the daily exchange rate, and the change shall be shown to him. | §3.4 (priced "from an authorised reseller"; LKR prices track USD) | F2 | S | Planned |
-| FR-GOAL-7 | Quick-add boosters (+LKR 5,000 / 10,000 / 25,000) shall let him move a windfall (e.g. a freelance milestone) into the goal. | §3.2 (milestone payments) | — | C | Planned |
+| FR-GOAL-6 | The goal shall optionally store a USD reference price; its LKR target shall follow the daily exchange rate, and the change shall be shown to him. | §3.4 (priced "from an authorised reseller"; LKR prices track USD) | F2 | S | Partial |
+| FR-GOAL-7 | Quick-add boosters (+LKR 5,000 / 10,000 / 25,000) shall let him move a windfall (e.g. a freelance milestone) into the goal. | §3.2 (milestone payments) | — | C | Done |
 
 ### 5.6 Dashboard (FR-DASH)
 
@@ -317,7 +317,7 @@ flowchart LR
 |---|---|---|---|---|---|
 | FR-DASH-1 | The dashboard shall show the Safe-to-Spend Allowance per day for the rest of the month: (Income Basis − Committed − goal saving − discretionary so far) ÷ days remaining. | §3.3, §3.4 | F2 (fixed monthly budget) | M | Done |
 | FR-DASH-2 | Pending and overdue invoices shall never be counted as spendable. | §3.2 | — | M | Done |
-| FR-DASH-3 | The three-month average in the Income Basis shall leave out crypto profits but keep crypto losses. | §2 ("optimistic about income"), §3.2 | — | M | Planned |
+| FR-DASH-3 | The three-month average in the Income Basis shall leave out crypto profits but keep crypto losses. | §2 ("optimistic about income"), §3.2 | — | M | Done |
 | FR-DASH-4 | The dashboard shall show the month's Committed vs Discretionary split as a bar with amounts. | §3.3 ("no concept of what proportion") | F4 | M | Done |
 | FR-DASH-5 | The dashboard shall show an Overdue Invoice banner with client and amount, with one-tap "mark received". | §3.2 ("forgotten to follow up") | — | M | Done |
 | FR-DASH-6 | Dashboard figures shall update in real time from Firestore listeners. | §5 ("Real-time listeners on dashboard") | F2 | M | Done |
@@ -326,11 +326,11 @@ flowchart LR
 
 | ID | Requirement | Source | Prevents | Pri | Status |
 |---|---|---|---|---|---|
-| FR-ANA-1 | The system shall show a category donut for the selected period, discretionary categories distinguishable from committed ones. | §3.3 ("never seen a visual representation of how his spending is distributed") | F3, F4 | M | Planned |
-| FR-ANA-2 | Analytics shall switch between Week and Month periods. | §3.3, §4.1 lens 5 | F3 | M | Planned |
+| FR-ANA-1 | The system shall show a category donut for the selected period, discretionary categories distinguishable from committed ones. | §3.3 ("never seen a visual representation of how his spending is distributed") | F3, F4 | M | Done |
+| FR-ANA-2 | Analytics shall switch between Week and Month periods. | §3.3, §4.1 lens 5 | F3 | M | Done |
 | FR-ANA-3 | Analytics shall show a daily spending bar chart and highlight the peak spending day. | §3.3 ("LKR 24,000 on coffee… genuinely shocking") | F3 | S | Done |
-| FR-ANA-4 | Analytics shall additionally offer Day and Year periods. | §4.1 lens 5 | — | C | Planned |
-| FR-ANA-5 | The transaction list shall be searchable by merchant/keyword and filterable by account, category and date. | §3.2 ("could not reconcile which payment corresponded to which project") | F3 | C | Planned |
+| FR-ANA-4 | Analytics shall additionally offer Day and Year periods. | §4.1 lens 5 | — | C | Done |
+| FR-ANA-5 | The transaction list shall be searchable by merchant/keyword and filterable by account, category and date. | §3.2 ("could not reconcile which payment corresponded to which project") | F3 | C | Partial |
 
 ### 5.8 Accounts and Spending Freeze (FR-ACC)
 
@@ -338,28 +338,28 @@ flowchart LR
 |---|---|---|---|---|---|
 | FR-ACC-1 | Kavindu shall be able to record accounts of type Primary Bank, Secondary Bank (auto-debit), Cash and Crypto Exchange. | §3.3 | F4 | M | Done |
 | FR-ACC-2 | The dashboard card shall show combined balance across his recorded accounts. | §3.1 ("cannot articulate where the rest went") | F4 | S | Done |
-| FR-ACC-3 | Kavindu shall be able to place a Spending Freeze on an account until a chosen date; the account shall appear locked on the dashboard. | §2 ("impulsive with discretionary spending") | — | S | Planned |
-| FR-ACC-4 | Logging an expense against a frozen account shall show a reminder with the opportunity cost in goal-days, offering "Log anyway"; the system shall never refuse to record the expense. | §2, §3.4 | F1 (records must stay true) | S | Planned |
-| FR-ACC-5 | The system shall count Freeze Breaks and show them in the weekly summary. | §2 | — | S | Planned |
-| FR-ACC-6 | Account numbers shall be displayed masked (•••• 4521) and revealed only after biometric or device-PIN authentication. | §3.2 (freelance invoicing needs bank details) | — | S | Planned |
-| FR-ACC-7 | A revealed account number shall be copyable for pasting into a freelance invoice; the clipboard shall be cleared after 60 seconds. | §3.2 | — | S | Planned |
+| FR-ACC-3 | Kavindu shall be able to place a Spending Freeze on an account until a chosen date; the account shall appear locked on the dashboard. | §2 ("impulsive with discretionary spending") | — | S | Done |
+| FR-ACC-4 | Logging an expense against a frozen account shall show a reminder with the opportunity cost in goal-days, offering "Log anyway"; the system shall never refuse to record the expense. | §2, §3.4 | F1 (records must stay true) | S | Done |
+| FR-ACC-5 | The system shall count Freeze Breaks and show them in the weekly summary. | §2 | — | S | Done |
+| FR-ACC-6 | Account numbers shall be displayed masked (•••• 4521) and revealed only after biometric or device-PIN authentication. | §3.2 (freelance invoicing needs bank details) | — | S | Done |
+| FR-ACC-7 | A revealed account number shall be copyable for pasting into a freelance invoice; the clipboard shall be cleared after 60 seconds. | §3.2 | — | S | Done |
 
 ### 5.9 Sri Lankan context (FR-LK)
 
 | ID | Requirement | Source | Prevents | Pri | Status |
 |---|---|---|---|---|---|
-| FR-LK-1 | Kavindu shall be able to record a salary payslip as Gross Salary; the system shall calculate employee EPF (8%) and APIT, and show the resulting Take-Home Salary. All three values shall be editable. | §3.2 ("rarely examines his payslip… cannot recall the exact amount deposited") | F2 | M | Planned |
+| FR-LK-1 | Kavindu shall be able to record a salary payslip as Gross Salary; the system shall calculate employee EPF (8%) and APIT, and show the resulting Take-Home Salary. All three values shall be editable. | §3.2 ("rarely examines his payslip… cannot recall the exact amount deposited") | F2 | M | Done |
 | FR-LK-2 | APIT tax bands shall be read from configuration data in Firestore, not compiled into the app. | Sri Lankan APIT bands revised 2023 and 2025 | — | M | Planned |
-| FR-LK-3 | The system shall show his accumulating EPF Balance (employee 8% + employer 12%) as savings he already owns. | §3.1 ("LKR 11,200 in savings") | — | S | Planned |
-| FR-LK-4 | The system shall know Sri Lankan Seasonal Peaks (Avurudu – April, Vesak – May, Poson – June, December) and, after 12 months of history, add months where his own spending was ≥ 20% above average. | §2 ("impulsive"), §3.3 | — | S | Planned |
-| FR-LK-5 | 30 days before a Seasonal Peak, the system shall warn him with last year's excess (if known) and offer to set the amount aside. | §3.4 (goal protection) | — | S | Planned |
+| FR-LK-3 | The system shall show his accumulating EPF Balance (employee 8% + employer 12%) as savings he already owns. | §3.1 ("LKR 11,200 in savings") | — | S | Done |
+| FR-LK-4 | The system shall know Sri Lankan Seasonal Peaks (Avurudu – April, Vesak – May, Poson – June, December) and, after 12 months of history, add months where his own spending was ≥ 20% above average. | §2 ("impulsive"), §3.3 | — | S | Partial |
+| FR-LK-5 | 30 days before a Seasonal Peak, the system shall warn him with last year's excess (if known) and offer to set the amount aside. | §3.4 (goal protection) | — | S | Partial |
 | FR-LK-6 | All amounts shall be formatted in LKR with thousands separators; foreign amounts shall show the original currency beside the LKR equivalent. | §3.2 | F2 (USD-only) | M | Done |
 
 ### 5.10 Data ownership (FR-DATA)
 
 | ID | Requirement | Source | Prevents | Pri | Status |
 |---|---|---|---|---|---|
-| FR-DATA-1 | Kavindu shall be able to export all his income, expenses and goal records to CSV. | §3.5 (four abandoned tools; data should outlive the tool) | F1, F3 | S | Planned |
+| FR-DATA-1 | Kavindu shall be able to export all his income, expenses and goal records to CSV. | §3.5 (four abandoned tools; data should outlive the tool) | F1, F3 | S | Done |
 
 ---
 
@@ -376,9 +376,9 @@ flowchart LR
 | NFR-7 | Compatibility and performance | The app shall install and run on Android 8.0+ and start quickly on a mid-range device. | minSdk 26, targetSdk ≥ 34; cold start ≤ 2 s | §4.3, §5 | — | M | Done |
 | NFR-8 | Accessibility | Status shall never be shown by colour alone; text shall remain usable at large font sizes. | Each red/amber/green state also has an icon or label; layouts usable at 200% font scale | §3.5 ("too unpleasant to open every day") | — | S | Planned |
 | NFR-9 | Robustness: empty and error states | No screen shall crash or appear blank with no data, partial data or a network error. | Every screen has a designed empty state; zero unhandled exceptions in the demo run | §4.3 | F1 | M | Done |
-| NFR-10 | Security: sensitive display | Account numbers shall be masked by default and revealed only after biometric/device-credential check. | Reveal requires `BiometricPrompt` success; clipboard cleared ≤ 60 s | Derived from FR-ACC-6 | — | S | Planned |
-| NFR-11 | Portability | Data shall be exportable in an open format. | CSV readable by Google Sheets/Excel without editing | §3.5 | F1 | S | Planned |
-| NFR-12 | Privacy | The app shall request the minimum permissions; optional permissions (usage access) shall be requested only when the related feature is first used, with an explanation. | No READ_SMS; usage-access requested in context only | Derived from FR-EXP-7, FR-SUB-5 | — | M | Planned |
+| NFR-10 | Security: sensitive display | Account numbers shall be masked by default and revealed only after biometric/device-credential check. | Reveal requires `BiometricPrompt` success; clipboard cleared ≤ 60 s | Derived from FR-ACC-6 | — | S | Done |
+| NFR-11 | Portability | Data shall be exportable in an open format. | CSV readable by Google Sheets/Excel without editing | §3.5 | F1 | S | Done |
+| NFR-12 | Privacy | The app shall request the minimum permissions; optional permissions (usage access) shall be requested only when the related feature is first used, with an explanation. | No READ_SMS; usage-access requested in context only | Derived from FR-EXP-7, FR-SUB-5 | — | M | Partial |
 
 ---
 
@@ -458,11 +458,26 @@ flowchart LR
 
 ## 10. Priority Summary for 30/10/2026
 
-| Priority | Done | Planned |
-|---|---|---|
-| **Must** | FR-AUTH-1, 3, 4 · FR-INC-1–4, 7–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1, 2, 4–6 · FR-ACC-1 · FR-LK-6 · NFR-1, 3–7, 9 | FR-AUTH-7 (demo drawer) · FR-INC-5, 6 · FR-DASH-3 · FR-ANA-1, 2 · FR-LK-1, 2 · NFR-12 |
-| **Should** | FR-AUTH-2 · FR-GOAL-5 · FR-ANA-3 · FR-ACC-2 | FR-EXP-4, 7 · FR-SUB-4–6 · FR-GOAL-6 · FR-ACC-3–7 · FR-LK-3–5 · FR-DATA-1 · NFR-8, 10, 11 |
-| **Could** | — | FR-AUTH-5, 6 · FR-GOAL-7 · FR-ANA-4, 5 |
+Status as of 28/10/2026, checked against the code on `main`.
+
+| Priority | Done | Partial | Planned |
+|---|---|---|---|
+| **Must** | FR-AUTH-1, 3, 7 · FR-INC-1–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1–6 · FR-ANA-1, 2 · FR-ACC-1 · FR-LK-1, 6 · NFR-1, 3–7, 9 | FR-AUTH-4 · NFR-12 · NFR-2 (savings rate only) | FR-LK-2 |
+| **Should** | FR-AUTH-2 · FR-EXP-4, 7 · FR-SUB-4, 6 · FR-GOAL-5 · FR-ANA-3 · FR-ACC-2–7 · FR-LK-3 · FR-DATA-1 · NFR-10, 11 | FR-SUB-5 · FR-GOAL-6 · FR-LK-4, 5 | NFR-8 (not yet verified) |
+| **Could** | FR-GOAL-7 · FR-ANA-4 | FR-ANA-5 | FR-AUTH-5, 6 |
+
+### 10.1 Open gaps
+
+| ID | Gap |
+|---|---|
+| FR-AUTH-4 | The three onboarding steps are informational screens only; they do not capture salary, income sources or fixed commitments. |
+| FR-LK-2 | APIT tax bands are hard-coded in `CalculatePayslipUseCase.defaultTaxBands`, not read from Firestore. |
+| NFR-12 / FR-SUB-5 | `UsageStatsHelper.openUsageSettings()` is never called, so the app never asks for usage access in context; app-usage risk only works if the user grants it manually in Settings. |
+| FR-GOAL-6 | The USD reference price is stored and displayed, but the LKR target does not follow the daily rate and no change is shown. |
+| FR-LK-4 | Only the four fixed Seasonal Peaks are checked; months where his own spending was ≥ 20% above average are not added. The historical-excess average always divides by 12 regardless of how much history exists. |
+| FR-LK-5 | The warning shows a suggested set-aside amount but offers no action to set it aside. |
+| FR-ANA-5 | Search by keyword and filter by category work; filtering by account and date does not exist. |
+| NFR-8 | Colour-only status and 200% font scale have not been checked. |
 
 ---
 
