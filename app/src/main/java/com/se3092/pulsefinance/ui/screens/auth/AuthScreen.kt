@@ -84,7 +84,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AuthScreen(
     viewModel: AuthViewModel,
-    onAuthSuccess: () -> Unit
+    onAuthSuccess: (needsSetup: Boolean) -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = { 3 })
@@ -108,7 +108,7 @@ fun AuthScreen(
 
     LaunchedEffect(state.isAuthenticated) {
         if (state.isAuthenticated) {
-            onAuthSuccess()
+            onAuthSuccess(state.needsSetup)
         }
     }
 

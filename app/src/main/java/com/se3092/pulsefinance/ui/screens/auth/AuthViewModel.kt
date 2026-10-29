@@ -83,8 +83,8 @@ class AuthViewModel @Inject constructor(
                 onSuccess = { uid ->
                     // First sign-in: create the payment channels expenses are attributed to.
                     // Best effort — an offline failure just means it runs on the next sign-in.
-                    accountRepository.ensureDefaultAccounts(uid)
-                    _uiState.update { it.copy(isLoading = false, isAuthenticated = true, password = "") }
+                    val isNewUser = accountRepository.ensureDefaultAccounts(uid).getOrDefault(false)
+                    _uiState.update { it.copy(isLoading = false, isAuthenticated = true, needsSetup = isNewUser, password = "") }
                 },
                 onFailure = { error ->
                     _uiState.update { it.copy(isLoading = false, errorMessage = friendlyMessage(error)) }

@@ -6,5 +6,7 @@ data class AuthUiState(
     val isLoginMode: Boolean = true,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val isAuthenticated: Boolean = false
+    val isAuthenticated: Boolean = false,
+    /** First sign-in of a new account: send him through setup before the dashboard (FR-AUTH-4). */
+    val needsSetup: Boolean = false
 )
