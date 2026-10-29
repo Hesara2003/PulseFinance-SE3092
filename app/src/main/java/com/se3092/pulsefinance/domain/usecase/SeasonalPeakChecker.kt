@@ -17,7 +17,10 @@ data class SeasonalAlert(
     /** How far last year's spending in this month ran above his monthly average, when known (FR-LK-5). */
     val lastYearExcessLkr: Double? = null,
     /** True when the peak comes from his own history rather than the festival calendar. */
-    val isPersonalPeak: Boolean = false
+    val isPersonalPeak: Boolean = false,
+    /** Stable id for this year's occurrence of the peak, used to store a set-aside reserve. */
+    val peakKey: String = "",
+    val peakDateMillis: Long = 0L
 )
 
 /**
@@ -46,11 +49,13 @@ class SeasonalPeakChecker @Inject constructor() {
             .map { month -> SeasonalPeak(monthName(month), month, dayOfMonth = 1, defaultBufferLkr = 0.0, isPersonal = true) }
 
         // Next year too, so a January peak can warn in December.
-        val (peak, daysUntil) = (FESTIVALS + personalPeaks)
-            .flatMap { peak -> listOf(currentYear, currentYear + 1).map { year -> peak to daysUntil(peak, year, todayStart) } }
-            .filter { (_, days) -> days in 1..30 }
-            .minByOrNull { (_, days) -> days }
+        val (peak, year, peakStart) = (FESTIVALS + personalPeaks)
+            .flatMap { peak -> listOf(currentYear, currentYear + 1).map { year -> Triple(peak, year, peakStart(peak, year)) } }
+            .filter { (_, _, start) -> daysUntil(start, todayStart) in 1..30 }
+            .minByOrNull { (_, _, start) -> start }
             ?: return null
+        val daysUntil = daysUntil(peakStart, todayStart)
+        val peakKey = peak.name.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_') + "_$year"
 
         val excess = history.lastYearExcess(peak.month)
         val month = monthName(peak.month)
@@ -62,7 +67,9 @@ class SeasonalPeakChecker @Inject constructor() {
                 suggestedSetAsideLkr = excess ?: 0.0,
                 message = "In $daysUntil days: $month, one of your highest-spending months. Last year it ran ${formatLkr(excess ?: 0.0)} above your monthly average. Set aside a buffer to keep your savings goal safe.",
                 lastYearExcessLkr = excess,
-                isPersonalPeak = true
+                isPersonalPeak = true,
+                peakKey = peakKey,
+                peakDateMillis = peakStart
             )
         } else {
             val lastYear = excess?.let { "Last year you spent ${formatLkr(it)} above your monthly average in $month." }
@@ -73,18 +80,19 @@ class SeasonalPeakChecker @Inject constructor() {
                 daysUntilPeak = daysUntil,
                 suggestedSetAsideLkr = excess ?: peak.defaultBufferLkr,
                 message = "In $daysUntil days: ${peak.name}. $lastYear Set aside an expense buffer to keep your savings goal safe.",
-                lastYearExcessLkr = excess
+                lastYearExcessLkr = excess,
+                peakKey = peakKey,
+                peakDateMillis = peakStart
             )
         }
     }
 
-    private fun daysUntil(peak: SeasonalPeak, year: Int, todayStart: Long): Int {
-        val peakStart = Calendar.getInstance().apply {
-            set(year, peak.month, peak.dayOfMonth, 0, 0, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-        return ((peakStart - todayStart) / DAY_MILLIS).toInt()
-    }
+    private fun peakStart(peak: SeasonalPeak, year: Int): Long = Calendar.getInstance().apply {
+        set(year, peak.month, peak.dayOfMonth, 0, 0, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
+    private fun daysUntil(peakStart: Long, todayStart: Long): Int = ((peakStart - todayStart) / DAY_MILLIS).toInt()
 
     /**
      * Spending per calendar month over the 12 complete months before now, so each month
