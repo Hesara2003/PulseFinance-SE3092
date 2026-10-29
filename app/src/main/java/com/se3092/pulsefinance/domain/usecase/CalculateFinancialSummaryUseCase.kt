@@ -6,6 +6,7 @@ import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
 import com.se3092.pulsefinance.domain.model.Periods
 import com.se3092.pulsefinance.domain.model.SavingsGoal
+import com.se3092.pulsefinance.domain.model.SeasonalReserve
 import javax.inject.Inject
 
 class CalculateFinancialSummaryUseCase @Inject constructor() {
@@ -14,7 +15,8 @@ class CalculateFinancialSummaryUseCase @Inject constructor() {
         incomes: List<IncomeStream>,
         expenses: List<Expense>,
         goal: SavingsGoal?,
-        now: Long = System.currentTimeMillis()
+        now: Long = System.currentTimeMillis(),
+        seasonalReserves: List<SeasonalReserve> = emptyList()
     ): FinancialSummary {
         val month = Periods.month(now)
 
@@ -53,10 +55,11 @@ class CalculateFinancialSummaryUseCase @Inject constructor() {
         val useAverage = recentAverage > realizedThisMonth
         val incomeBasis = if (useAverage) recentAverage else realizedThisMonth
 
-        // 5. Safe-to-spend per day = (income − committed − goal contribution − discretionary so far) / days left.
+        // 5. Safe-to-spend per day = (income − committed − goal contribution − seasonal reserve − discretionary so far) / days left.
         val goalAllocation = goal?.takeUnless { it.isComplete }?.requiredMonthlySavingsLkr ?: 0.0
+        val reserved = seasonalReserves.filter { it.isActive(now) }.sumOf { it.amountLkr }
         val daysRemaining = Periods.daysRemainingInMonth(now)
-        val pool = incomeBasis - committed - goalAllocation - discretionary
+        val pool = incomeBasis - committed - goalAllocation - reserved - discretionary
         val safeToSpendDaily = (pool / daysRemaining).coerceAtLeast(0.0)
 
         return FinancialSummary(
@@ -69,6 +72,7 @@ class CalculateFinancialSummaryUseCase @Inject constructor() {
             incomeBasisLkr = incomeBasis,
             incomeBasisIsAverage = useAverage,
             goalAllocationLkr = goalAllocation,
+            seasonalReserveLkr = reserved,
             safeToSpendDailyLkr = safeToSpendDaily,
             daysRemainingInMonth = daysRemaining,
             hasAnyData = incomes.isNotEmpty() || expenses.isNotEmpty()
