@@ -11,11 +11,13 @@ import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
 import com.se3092.pulsefinance.domain.model.Periods
 import com.se3092.pulsefinance.domain.model.SavingsGoal
+import com.se3092.pulsefinance.domain.model.SeasonalReserve
 import com.se3092.pulsefinance.domain.repository.AccountRepository
 import com.se3092.pulsefinance.domain.repository.AuthRepository
 import com.se3092.pulsefinance.domain.repository.ExpenseRepository
 import com.se3092.pulsefinance.domain.repository.GoalRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
+import com.se3092.pulsefinance.domain.repository.SeasonalReserveRepository
 import com.se3092.pulsefinance.domain.usecase.BankSmsParser
 import com.se3092.pulsefinance.domain.usecase.CalculateFinancialSummaryUseCase
 import com.se3092.pulsefinance.domain.usecase.ExportDataToCsvUseCase
@@ -45,7 +47,8 @@ private data class DashboardData(
     val expenses: List<Expense>,
     val incomes: List<IncomeStream>,
     val goal: SavingsGoal?,
-    val accounts: List<Account>
+    val accounts: List<Account>,
+    val seasonalReserves: Map<String, SeasonalReserve>
 )
 
 @HiltViewModel
@@ -55,6 +58,7 @@ class DashboardViewModel @Inject constructor(
     private val incomeRepository: IncomeRepository,
     private val goalRepository: GoalRepository,
     private val accountRepository: AccountRepository,
+    private val seasonalReserveRepository: SeasonalReserveRepository,
     private val calculateFinancialSummaryUseCase: CalculateFinancialSummaryUseCase,
     private val bankSmsParser: BankSmsParser,
     private val seasonalPeakChecker: SeasonalPeakChecker,
@@ -72,9 +76,10 @@ class DashboardViewModel @Inject constructor(
             expenseRepository.getExpenses(userId),
             incomeRepository.getIncomeStreams(userId),
             goalRepository.getPrimaryGoal(userId),
-            accountRepository.getAccounts(userId)
-        ) { expenses, incomes, goal, accounts ->
-            DashboardData(expenses, incomes, goal, accounts).also { lastData = it }
+            accountRepository.getAccounts(userId),
+            seasonalReserveRepository.getReserves(userId)
+        ) { expenses, incomes, goal, accounts, reserves ->
+            DashboardData(expenses, incomes, goal, accounts, reserves).also { lastData = it }
         }
     }
 
@@ -123,7 +128,7 @@ class DashboardViewModel @Inject constructor(
         val seasonal = seasonalPeakChecker(data.expenses, now)
 
         return header.copy(
-            summary = calculateFinancialSummaryUseCase(data.incomes, data.expenses, data.goal, now),
+            summary = calculateFinancialSummaryUseCase(data.incomes, data.expenses, data.goal, now, data.seasonalReserves.values.toList()),
             primaryGoal = data.goal,
             recentTransactions = buildLedger(data.incomes, data.expenses).take(6),
             recentExpenses = data.expenses.take(5),
@@ -135,7 +140,8 @@ class DashboardViewModel @Inject constructor(
             unpaidInvoices = unpaid,
             overdueInvoiceCount = unpaid.count { it.effectiveStatus(now) == InvoiceStatus.OVERDUE },
             addExpense = form.copy(accountId = form.accountId.ifBlank { data.accounts.firstOrNull()?.id.orEmpty() }),
-            seasonalAlert = seasonal
+            seasonalAlert = seasonal,
+            seasonalReserve = seasonal?.let { data.seasonalReserves[it.peakKey] }
         )
     }
 
@@ -185,6 +191,31 @@ class DashboardViewModel @Inject constructor(
                 onFailure = { message.value = "Failed to unlock: ${it.localizedMessage}" }
             )
         }
+    }
+
+    // ---------------- Seasonal Peak set-aside (FR-LK-5) ----------------
+
+    fun setAsideForSeasonalPeak() {
+        val userId = authRepository.currentUserId ?: return
+        val alert = uiState.value.seasonalAlert ?: return
+        if (alert.suggestedSetAsideLkr <= 0) return
+        seasonalReserveRepository.setAside(
+            userId,
+            SeasonalReserve(
+                peakKey = alert.peakKey,
+                amountLkr = alert.suggestedSetAsideLkr,
+                setAsideAt = System.currentTimeMillis(),
+                peakDateMillis = alert.peakDateMillis
+            )
+        )
+        message.value = "${lkr(alert.suggestedSetAsideLkr)} set aside for ${alert.festivalName} · Safe-to-Spend updated"
+    }
+
+    fun undoSeasonalSetAside() {
+        val userId = authRepository.currentUserId ?: return
+        val reserve = uiState.value.seasonalReserve ?: return
+        seasonalReserveRepository.release(userId, reserve.peakKey)
+        message.value = "Set-aside released · ${lkr(reserve.amountLkr)} back in Safe-to-Spend"
     }
 
     fun setAccountRevealed(accountId: String, revealed: Boolean) {
