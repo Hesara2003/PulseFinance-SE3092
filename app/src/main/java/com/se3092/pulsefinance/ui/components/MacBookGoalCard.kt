@@ -38,7 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.SavingsGoal
-import com.se3092.pulsefinance.ui.util.formatDate
+import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
@@ -46,6 +46,7 @@ import com.se3092.pulsefinance.ui.theme.NeoContainer
 import com.se3092.pulsefinance.ui.theme.NeoGreen
 import com.se3092.pulsefinance.ui.theme.NeoGreenDark
 import com.se3092.pulsefinance.ui.theme.NeoGreenFixed
+import com.se3092.pulsefinance.ui.theme.NeoOnPrimaryFixed
 import com.se3092.pulsefinance.ui.theme.NeoOnSecondaryFixed
 import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
 import com.se3092.pulsefinance.ui.theme.NeoSurfaceHighest
@@ -277,6 +278,34 @@ fun MacBookGoalCard(
                                     fontSize = 17.sp
                                 )
                             }
+                        }
+                    }
+                }
+
+                if (goal.usdReferencePrice != null) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(NeoGreenFixed)
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "💵 USD Ref:",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeoOnPrimaryFixed
+                            )
+                            Text(
+                                text = "$${String.format("%,.0f", goal.usdReferencePrice)} · Reseller LKR price floats with daily FX rate",
+                                fontSize = 11.sp,
+                                color = NeoOnPrimaryFixed
+                            )
                         }
                     }
                 }

@@ -51,24 +51,38 @@ graph LR
 
 The central mission control for daily financial decision-making.
 
-### 3.1. Topographic Titanium Debit Card
+### 3.1. Topographic Titanium Debit Card & Account Security
 - **Visual Design**: Sleek dark navy/slate gradient with gold EMV chip geometry and contour wireframes.
 - **Dynamic Balance**: Displays aggregated net liquidity across all connected accounts.
-- **Card Actions**: One-tap toggles to freeze card, reveal CVV, or copy account number.
+- **Spending Freeze (FR-ACC-3)**: One-tap toggle to freeze an account for 14 days. Any attempt to spend from a frozen account calculates the exact delay in achieving the primary savings goal and prompts confirmation (FR-ACC-4). Broken freeze count is persistently tracked (FR-ACC-5).
+- **Biometric Account Number Reveal (FR-ACC-6)**: Account numbers are masked (`•••• 1234`). Tapping the reveal icon triggers Android `BiometricPrompt` (fingerprint or device PIN/pattern).
+- **Secure Clipboard Auto-Wipe (FR-ACC-7)**: Sensitive account numbers copied to the clipboard are automatically wiped after 60 seconds with live notification. Per PCI-DSS / C-13 constraints, CVV numbers are never stored, transmitted, or displayed.
 
 ### 3.2. Live Safe-To-Spend Arc Gauge (`SafeToSpendGauge.kt`)
 - Solves Kavindu's most acute problem: *“Can I afford this without compromising rent?”*
 - Formula:
-  $$\text{Safe-To-Spend} = \text{Liquid Cash} - (\text{Committed Fixed Rent \& Bills} + \text{MacBook Goal Allocation})$$
+  $$\text{Safe-To-Spend} = \frac{\text{Income Basis} - \text{Committed Fixed Rent \& Bills} - \text{Goal Allocation} - \text{Discretionary Spent}}{\text{Days Remaining in Month}}$$
 - Visual Arc: Dynamically transitions from Electric Green (Healthy $>60\%$) to Amber Warning ($25\% - 60\%$) to Danger Red ($<25\%$).
 
-### 3.3. Committed vs. Discretionary Split Bar (`CommittedVsDiscretionaryBar.kt`)
+### 3.3. Sri Lankan Seasonal Peak Warning (FR-LK-4, FR-LK-5)
+- Automatically checks for upcoming Sri Lankan seasonal expense surges within a 30-day window:
+  - **Sinhala & Tamil New Year (Avurudu)** (April 14 — LKR 35,000 buffer)
+  - **Vesak Festival** (May 15 — LKR 20,000 buffer)
+  - **Poson Festival** (June 15 — LKR 15,000 buffer)
+  - **December Holiday Season** (December 25 — LKR 45,000 buffer)
+- Computes historical excess spending if 12+ months of history exist, or applies the calibrated cultural default to protect the user's savings goal pace.
+
+### 3.4. CSV Data Export (FR-DATA-1)
+- One-tap "Export Data (CSV)" action in the Cockpit header.
+- Generates a full RFC-4180 compliant CSV including Incomes, Expenses, and Goals, and dispatches it via Android Share Sheet to any external app, email, or cloud storage.
+
+### 3.5. Committed vs. Discretionary Split Bar (`CommittedVsDiscretionaryBar.kt`)
 - Visualizes spending ratios in real time:
   - **Committed**: Non-negotiable costs (Rent LKR 34,000, WiFi LKR 4,800).
-  - **Discretionary**: Variable lifestyle spending (Cafe LKR 24,000, PickMe rides, dining out).
+  - **Discretionary**: Variable lifestyle spending (Cafe, PickMe rides, dining out).
 - Provides immediate awareness of lifestyle creep before month-end.
 
-### 3.4. Overdue Freelance Milestone Banner
+### 3.6. Overdue Freelance Milestone Banner
 - Prominently surfaces unbilled or unpaid client invoices (e.g., *“SME E-Commerce Milestone: LKR 185,000 is 4 days overdue”*).
 - One-tap "Reconcile / Mark Received" button that instantly shifts the invoice from *Pending Pipeline* to *Realized Liquid Cash*.
 
@@ -91,9 +105,10 @@ Solves the psychological disconnect between micro-purchases and macro-goals:
   - `🍔 Weekend Restaurant Dining (LKR 2,500)` $\implies$ **1.88 Days of MacBook Funded**
 - Real-time slider allows the user to slide any arbitrary LKR amount and immediately observe the impact on target completion date.
 
-### 4.3. Dynamic Allocation Controller
+### 4.3. Dynamic Allocation Controller & Windfall Booster
 - Interactive slider with haptic feedback adjusting monthly savings contribution between LKR 0 and LKR 100,000.
-- Quick +LKR 5,000, +LKR 10,000, and +LKR 25,000 booster pills for instant windfall allocation from client milestones.
+- Quick **+LKR 5,000**, **+LKR 10,000**, and **+LKR 25,000 Windfall Booster (FR-GOAL-7)** chips for instant allocation from freelance client payouts.
+- **USD Reference Price (FR-GOAL-6)**: Users can store and display a USD benchmark price (e.g., `USD $1,999`) on tech hardware goals to track inflation and exchange rate drift against LKR depreciation.
 
 ---
 
@@ -112,33 +127,36 @@ Engineered specifically for non-linear, hybrid modern tech workers.
 3. **YouTube & Blog AdSense**: USD $180.00 $\implies$ LKR 55,500 (Expected 21st of each month).
 4. **Crypto Yield / USDT Staking**: USDT 270.00 $\implies$ LKR 83,000 (Binance Earn liquid distribution).
 
-### 5.3. Currency Normalization Engine
+### 5.3. Currency Normalization & Payslip Engine
 - Automatically fetches and normalizes foreign currencies to LKR while storing and displaying the original foreign denomination.
-- Prevents manual spreadsheet exchange rate calculation errors.
+- **Sri Lanka APIT & EPF/ETF Calculator**: Includes progressive tax bands (6% to 36%), 8% Employee EPF, 12% Employer EPF, and 3% Employer ETF with net take-home pay breakdown.
 
 ---
 
-## 6. Zombie Subscription Audit (`ExpenseScreen.kt`)
+## 6. Zombie Subscription Audit & Intelligent Detection (`ExpenseScreen.kt`)
 
 Eliminates silent wealth erosion from forgotten recurring debits.
 
-### 6.1. Multi-Account Leak Scanner
-Scans across all aggregated accounts:
+### 6.1. Multi-Account Leak Scanner & Grouping (FR-SUB-6)
+Scans across all accounts and explicitly groups debits by payment account:
 - Commercial Bank Primary Checking
-- Secondary Bank Account (often forgotten source of auto-debits)
+- Secondary Bank Account (specifically flagged as auto-debit source per FR-SUB-6)
 - Cash Physical Wallet
 - Binance Web3 Custody
 
-### 6.2. Risk-Classified Subscription Cards
-- **High Risk (Red)**: Gym Membership (LKR 8,500/mo — Unused for 68 days on secondary bank card).
-- **Medium Risk (Amber)**: Cloud VPS Test Instance (LKR 6,200/mo — Abandoned dev sandbox).
-- **Low Risk (Blue)**: Spotify & Netflix Family (Active utility).
+### 6.2. Risk Classification & Usage Verification (FR-SUB-4, FR-SUB-5)
+- **High Risk (Red)**: Still charging after cancellation, 2+ consecutive unused months, or 30+ days since the mobile app was opened.
+- **Medium Risk (Amber)**: 1 unused month, 14–29 days inactive, or unreviewed recurring charge.
+- **Low Risk (Green)**: Verified active monthly utility.
+- **Monthly Usage Verification Prompts (FR-SUB-4)**: Users are prompted *"Did you use this this month? [Yes 👍] [No 👎]"*, updating consecutive unused streaks and surfacing leak warnings.
+- **Android App Usage Stats (FR-SUB-5)**: Leverages `UsageStatsManager` / `PACKAGE_USAGE_STATS` to automatically inspect when apps like Netflix or Spotify were last launched.
 
 ### 6.3. Annual Drag & One-Tap Nuke
 - Prominent header banner calculating total annual leakage: **LKR 176,400 / year**.
 - **One-Tap "Nuke" Action**: Instantly marks the subscription cancelled, logs savings to the goal velocity engine, and triggers celebratory visual feedback.
 
-### 6.4. 3-Tap Speed Expense Logger (`AddExpenseBottomSheet.kt`)
+### 6.4. Bank SMS Parsing & 3-Tap Speed Expense Logger (`BankSmsParser.kt`)
+- **Native Bank SMS Parser (FR-EXP-2)**: Automatically parses transaction SMS messages from Commercial Bank, Sampath Bank, and Hatton National Bank (HNB) without reading user SMS directly (uses clipboard / share-sheet intent).
 - Fast-entry modal with 1-tap Sri Lankan tech presets:
   - `☕ Cafe LKR 850`
   - `🚗 PickMe LKR 1,450`

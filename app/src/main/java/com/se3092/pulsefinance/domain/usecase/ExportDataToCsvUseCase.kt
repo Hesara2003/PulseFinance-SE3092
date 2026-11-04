@@ -1,0 +1,106 @@
+package com.se3092.pulsefinance.domain.usecase
+
+import android.content.Context
+import android.content.Intent
+import com.se3092.pulsefinance.domain.model.Expense
+import com.se3092.pulsefinance.domain.model.IncomeStream
+import com.se3092.pulsefinance.domain.model.SavingsGoal
+import com.se3092.pulsefinance.ui.common.formatDate
+import javax.inject.Inject
+
+/**
+ * Exports all user financial records (Incomes, Expenses, Goals) to CSV (FR-DATA-1, UC15).
+ * Ensures Kavindu's financial records outlive any individual tool or platform.
+ */
+class ExportDataToCsvUseCase @Inject constructor() {
+
+    fun generateCsv(
+        incomes: List<IncomeStream>,
+        expenses: List<Expense>,
+        goals: List<SavingsGoal>
+    ): String {
+        val sb = StringBuilder()
+
+        // 1. Incomes Section
+        sb.appendLine("=== INCOMES & INVOICES ===")
+        sb.appendLine("Date,Source Title,Source,Amount LKR,Status,Currency,Original Amount,Client or Platform,Exchange Rate")
+        for (inc in incomes) {
+            val dateStr = formatDate(inc.dateReceivedOrExpected, "yyyy-MM-dd")
+            val status = if (inc.isRealized) "REALIZED" else inc.status.name
+            val rate = inc.exchangeRateToLkr.toString()
+            sb.appendLine(
+                listOf(
+                    dateStr,
+                    escape(inc.title),
+                    inc.source.name,
+                    inc.amountInLkr.toString(),
+                    status,
+                    inc.currency.name,
+                    inc.originalAmount.toString(),
+                    escape(inc.clientOrPlatform),
+                    rate
+                ).joinToString(",")
+            )
+        }
+        sb.appendLine()
+
+        // 2. Expenses Section
+        sb.appendLine("=== EXPENSES & TRANSACTIONS ===")
+        sb.appendLine("Date,Merchant/Title,Category,Amount LKR,Committed,Payment Account")
+        for (exp in expenses) {
+            val dateStr = formatDate(exp.timestamp, "yyyy-MM-dd")
+            sb.appendLine(
+                listOf(
+                    dateStr,
+                    escape(exp.title),
+                    exp.category.name,
+                    exp.amountLkr.toString(),
+                    if (exp.isCommitted) "COMMITTED" else "DISCRETIONARY",
+                    escape(exp.paymentAccountName)
+                ).joinToString(",")
+            )
+        }
+        sb.appendLine()
+
+        // 3. Goals Section
+        sb.appendLine("=== SAVINGS GOALS ===")
+        sb.appendLine("Goal Title,Target LKR,Current Saved LKR,Progress %,Target Date,Status,USD Reference")
+        for (g in goals) {
+            val dateStr = formatDate(g.targetDateMillis, "yyyy-MM-dd")
+            val usdRef = g.usdReferencePrice?.toString() ?: "N/A"
+            sb.appendLine(
+                listOf(
+                    escape(g.title),
+                    g.targetAmountLkr.toString(),
+                    g.currentSavedLkr.toString(),
+                    "%.1f%%".format(g.progressPercentage * 100),
+                    dateStr,
+                    if (g.isComplete) "COMPLETED" else "ACTIVE",
+                    usdRef
+                ).joinToString(",")
+            )
+        }
+
+        return sb.toString()
+    }
+
+    fun shareCsv(context: Context, csvContent: String, title: String = "PulseFinance_Export.csv") {
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/csv"
+            putExtra(Intent.EXTRA_SUBJECT, title)
+            putExtra(Intent.EXTRA_TEXT, csvContent)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        val chooser = Intent.createChooser(shareIntent, "Export PulseFinance Data (CSV)")
+        chooser.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        context.startActivity(chooser)
+    }
+
+    private fun escape(value: String): String {
+        return if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            "\"" + value.replace("\"", "\"\"") + "\""
+        } else {
+            value
+        }
+    }
+}

@@ -33,7 +33,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Button
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -67,6 +66,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.se3092.pulsefinance.BuildConfig
 import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
@@ -92,18 +92,15 @@ fun AuthScreen(
     var showCustomCredentials by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    val googleIdTokenRequester = remember(context) { GoogleIdTokenRequester(context) }
-
     fun openCredentials(isLogin: Boolean) {
-        if (state.isLoginMode != isLogin) viewModel.toggleAuthMode()
+        viewModel.setLoginMode(isLogin)
         showCustomCredentials = true
     }
 
     fun startGoogleSignIn() {
-        viewModel.onGoogleSignInStarted()
         coroutineScope.launch {
-            googleIdTokenRequester.requestIdToken().fold(
-                onSuccess = viewModel::signInWithGoogle,
+            GoogleIdTokenRequester.request(context).fold(
+                onSuccess = { token -> token?.let(viewModel::onGoogleIdToken) },
                 onFailure = viewModel::onGoogleSignInFailed
             )
         }
@@ -290,37 +287,6 @@ fun AuthScreen(
                             fontSize = 16.sp
                         )
 
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // 1-tap examiner shortcut: Kavindu's scenario is seeded on first sign-in
-                        Surface(
-                            shape = CircleShape,
-                            color = NeoGreen.copy(alpha = 0.10f),
-                            border = BorderStroke(1.dp, NeoGreen.copy(alpha = 0.35f)),
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .clickable(onClick = viewModel::fillDemoPersona)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AutoAwesome,
-                                    contentDescription = null,
-                                    tint = NeoGreenDark,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Text(
-                                    text = "Fill Demo Persona (Kavindu)",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = NeoGreenDark
-                                )
-                            }
-                        }
-
                         Spacer(modifier = Modifier.height(14.dp))
 
                         OutlinedTextField(
@@ -371,6 +337,47 @@ fun AuthScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
+                    }
+                }
+            }
+
+            if (BuildConfig.DEBUG && BuildConfig.DEMO_EMAIL.isNotBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = NeoCardLow,
+                    border = BorderStroke(1.dp, NeoGreen.copy(alpha = 0.5f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                        .clickable {
+                            viewModel.fillDemoCredentials(BuildConfig.DEMO_EMAIL, BuildConfig.DEMO_PASSWORD)
+                            showCustomCredentials = true
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "🧪 Demo Drawer (Debug Only)",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeoGreenDark
+                            )
+                            Text(
+                                text = "Kavindu (Sri Lanka) • ${BuildConfig.DEMO_EMAIL}",
+                                fontSize = 11.sp,
+                                color = NeoTextTertiary
+                            )
+                        }
+                        Text(
+                            text = "Auto Fill",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = NeoGreenDark
+                        )
                     }
                 }
             }

@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.domain.model
 
+/** Current-month position, normalised to LKR. */
 data class FinancialSummary(
     val totalRealizedIncomeLkr: Double = 0.0,
     val pendingIncomeLkr: Double = 0.0,
@@ -7,11 +8,13 @@ data class FinancialSummary(
     val totalExpensesLkr: Double = 0.0,
     val committedExpensesLkr: Double = 0.0,
     val discretionaryExpensesLkr: Double = 0.0,
-    val totalLiquidBalanceLkr: Double = 0.0,
-    val monthlyGoalAllocationLkr: Double = 0.0,
-    val discretionaryPoolRemainingLkr: Double = 0.0,
+    /** Income figure the allowance is based on: this month's, or the recent average if higher. */
+    val incomeBasisLkr: Double = 0.0,
+    val incomeBasisIsAverage: Boolean = false,
+    val goalAllocationLkr: Double = 0.0,
     val safeToSpendDailyLkr: Double = 0.0,
-    val daysRemainingInMonth: Int = 30
+    val daysRemainingInMonth: Int = 30,
+    val hasAnyData: Boolean = false
 ) {
     val discretionaryPercentage: Float
         get() = if (totalExpensesLkr > 0) ((discretionaryExpensesLkr / totalExpensesLkr).toFloat()).coerceIn(0f, 1f) else 0f
@@ -21,10 +24,4 @@ data class FinancialSummary(
 
     val netSavingsLkr: Double
         get() = totalRealizedIncomeLkr - totalExpensesLkr
-
-    val totalPipelineLkr: Double
-        get() = totalRealizedIncomeLkr + pendingIncomeLkr
-
-    val isOverBudget: Boolean
-        get() = discretionaryPoolRemainingLkr < 0
 }

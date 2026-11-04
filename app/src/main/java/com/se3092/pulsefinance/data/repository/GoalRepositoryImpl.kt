@@ -8,31 +8,31 @@ import com.se3092.pulsefinance.domain.model.SavingsGoal
 import com.se3092.pulsefinance.domain.repository.GoalRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class GoalRepositoryImpl @Inject constructor(
     private val goalDao: GoalDao,
-    private val firestoreDataSource: FirestoreDataSource,
-    private val remoteWriter: RemoteWriter
+    private val firestoreDataSource: FirestoreDataSource
 ) : GoalRepository {
 
+    /** Emits null until the user has created a goal — no goal is invented on their behalf. */
     override fun getPrimaryGoal(userId: String): Flow<SavingsGoal?> = cacheBackedFlow(
-        label = "goals",
-        local = goalDao.getPrimaryGoal(userId),
-        remote = firestoreDataSource.observeGoals(userId),
-        persist = { dtos ->
-            goalDao.replaceUserGoals(userId, dtos.map { GoalEntity.fromDomain(it.toDomain()) })
+        tag = TAG,
+        local = goalDao.getPrimaryGoal(userId).map { it?.toDomain() },
+        sync = {
+            firestoreDataSource.observeGoals(userId).collect { dtos ->
+                goalDao.replaceAll(userId, dtos.map { GoalEntity.fromDomain(it.toDomain()) })
+            }
         }
-    ).map { entity -> entity?.toDomain() }
+    )
 
     override suspend fun saveGoal(goal: SavingsGoal): Result<Unit> = runCatching {
-        val prepared = goal.copy(id = goal.id.ifBlank { PRIMARY_GOAL_ID })
-        goalDao.upsertGoal(GoalEntity.fromDomain(prepared))
-        remoteWriter.enqueue("saveGoal") {
-            firestoreDataSource.saveGoal(prepared.userId, GoalDto.fromDomain(prepared))
-        }
+        val prepared = goal.copy(id = goal.id.ifBlank { UUID.randomUUID().toString() })
+        goalDao.insertGoal(GoalEntity.fromDomain(prepared))
+        firestoreDataSource.saveGoal(prepared.userId, GoalDto.fromDomain(prepared))
     }
 
     override suspend fun updateSavedAmount(
@@ -41,12 +41,10 @@ class GoalRepositoryImpl @Inject constructor(
         newAmountLkr: Double
     ): Result<Unit> = runCatching {
         goalDao.updateSavedAmount(goalId, userId, newAmountLkr)
-        remoteWriter.enqueue("updateGoalSavedAmount") {
-            firestoreDataSource.updateGoalSavedAmount(userId, goalId, newAmountLkr)
-        }
+        firestoreDataSource.updateGoalSavedAmount(userId, goalId, newAmountLkr)
     }
 
-    companion object {
-        const val PRIMARY_GOAL_ID = "macbook_pro_m4_primary"
+    private companion object {
+        const val TAG = "GoalRepository"
     }
 }

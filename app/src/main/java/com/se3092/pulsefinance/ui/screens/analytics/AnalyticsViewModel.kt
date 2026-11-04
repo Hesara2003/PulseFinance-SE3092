@@ -1,272 +1,236 @@
 package com.se3092.pulsefinance.ui.screens.analytics
 
+import com.se3092.pulsefinance.ui.common.initialsFor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.IncomeStream
-import com.se3092.pulsefinance.domain.repository.AccountRepository
+import com.se3092.pulsefinance.domain.model.Period
+import com.se3092.pulsefinance.domain.model.Periods
 import com.se3092.pulsefinance.domain.repository.AuthRepository
 import com.se3092.pulsefinance.domain.repository.ExpenseRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
-import com.se3092.pulsefinance.domain.repository.SubscriptionReviewRepository
-import com.se3092.pulsefinance.domain.usecase.DetectSubscriptionsUseCase
-import com.se3092.pulsefinance.ui.util.Formatters
-import com.se3092.pulsefinance.ui.util.TransactionVisual
-import com.se3092.pulsefinance.ui.util.TransactionVisuals
-import com.se3092.pulsefinance.ui.util.userScopedFlow
+import com.se3092.pulsefinance.ui.common.TransactionItem
+import com.se3092.pulsefinance.ui.common.buildLedger
+import com.se3092.pulsefinance.ui.common.formatDate
+import com.se3092.pulsefinance.ui.common.whenSignedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
 
-data class TimelineDay(
-    val dayNumber: String,
-    val dayOfWeek: String,
+enum class AnalyticsInterval { DAILY, WEEKLY, MONTHLY, YEARLY }
+
+/** One capsule in the bar chart: a day (weekly view) or a week of the month (monthly view). */
+data class TimelineBar(
+    val primaryLabel: String,
+    val secondaryLabel: String,
     val fillRatio: Float,
     val amountLkr: Double,
-    val isPeak: Boolean = false
+    val isPeak: Boolean
 )
 
-data class CategorySlice(
+data class CategoryTotal(
     val category: ExpenseCategory,
     val amountLkr: Double,
     val share: Float,
-    val visual: TransactionVisual
-)
-
-data class TransactionDisplayItem(
-    val id: String,
-    val title: String,
-    val subtitle: String,
-    val amountText: String,
-    val isPositive: Boolean,
-    val timeLabel: String,
-    val visual: TransactionVisual,
-    val isZombie: Boolean = false
-)
-
-/** User-controlled selections; everything else in [AnalyticsUiState] is derived from data. */
-private data class AnalyticsSelection(
-    val selectedInterval: String = "weekly",
-    /** 0 = current week/month, -1 = previous, … */
-    val periodOffset: Int = 0,
-    val selectedBarIndex: Int? = null,
-    val showAllTransactions: Boolean = false
+    val isCommitted: Boolean
 )
 
 data class AnalyticsUiState(
-    val selectedInterval: String = "weekly", // "weekly" or "monthly"
+    val initials: String = "",
+    val isLoading: Boolean = true,
+    val interval: AnalyticsInterval = AnalyticsInterval.WEEKLY,
+    /** 0 = current period, -1 = previous, ... */
     val periodOffset: Int = 0,
-    val currentPeriod: String = "",
-    val selectedBarIndex: Int = 6,
-    val showAllTransactions: Boolean = false,
-    val timelineDays: List<TimelineDay> = emptyList(),
+    val periodLabel: String = "",
+    val bars: List<TimelineBar> = emptyList(),
+    val selectedBarIndex: Int = 0,
     val totalSpentLkr: Double = 0.0,
     val committedLkr: Double = 0.0,
     val discretionaryLkr: Double = 0.0,
-    val categoryBreakdown: List<CategorySlice> = emptyList(),
-    val transactions: List<TransactionDisplayItem> = emptyList(),
-    val userInitials: String = ""
+    val incomeLkr: Double = 0.0,
+    val categoryTotals: List<CategoryTotal> = emptyList(),
+    val transactions: List<TransactionItem> = emptyList(),
+    val showAllTransactions: Boolean = false,
+    val searchQuery: String = "",
+    val filterCategory: ExpenseCategory? = null
 ) {
-    val committedPercentage: Float get() = if (totalSpentLkr > 0) (committedLkr / totalSpentLkr).toFloat() else 0f
-    val discretionaryPercentage: Float get() = if (totalSpentLkr > 0) (discretionaryLkr / totalSpentLkr).toFloat() else 0f
-    val heroAmountFormatted: String get() = Formatters.lkr(totalSpentLkr, decimals = 2)
-    val canShiftForward: Boolean get() = periodOffset < 0
-    val selectedDayStat: TimelineDay
-        get() = timelineDays.getOrElse(selectedBarIndex) { timelineDays.lastOrNull() ?: TimelineDay("", "", 0f, 0.0) }
+    val canGoForward: Boolean get() = periodOffset < 0
+    val selectedBar: TimelineBar? get() = bars.getOrNull(selectedBarIndex)
 }
+
+private data class AnalyticsControls(
+    val interval: AnalyticsInterval = AnalyticsInterval.WEEKLY,
+    val periodOffset: Int = 0,
+    val selectedBarIndex: Int? = null,
+    val showAll: Boolean = false,
+    val searchQuery: String = "",
+    val filterCategory: ExpenseCategory? = null
+)
 
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
+    authRepository: AuthRepository,
     expenseRepository: ExpenseRepository,
-    incomeRepository: IncomeRepository,
-    accountRepository: AccountRepository,
-    subscriptionReviewRepository: SubscriptionReviewRepository,
-    private val detectSubscriptions: DetectSubscriptionsUseCase
+    incomeRepository: IncomeRepository
 ) : ViewModel() {
 
-    private val selection = MutableStateFlow(AnalyticsSelection())
+    private val controls = MutableStateFlow(AnalyticsControls())
 
-    private val expensesFlow = authRepository.userScopedFlow(emptyList()) { expenseRepository.getExpenses(it) }
-    private val incomeFlow = authRepository.userScopedFlow(emptyList()) { incomeRepository.getIncomeStreams(it) }
-    private val zombieKeysFlow = combine(
-        expensesFlow,
-        authRepository.userScopedFlow(emptyList()) { accountRepository.getAccounts(it) },
-        authRepository.userScopedFlow(emptyMap()) { subscriptionReviewRepository.observeReviews(it) }
-    ) { expenses, accounts, reviews ->
-        detectSubscriptions(expenses, accounts, reviews).filter { it.isFlagged }.map { it.key }.toSet()
+    private val data = authRepository.whenSignedIn<Pair<List<Expense>, List<IncomeStream>>?>(signedOut = null) { userId ->
+        combine(expenseRepository.getExpenses(userId), incomeRepository.getIncomeStreams(userId)) { e, i -> e to i }
     }
 
-    val uiState: StateFlow<AnalyticsUiState> = combine(
-        expensesFlow,
-        incomeFlow,
-        zombieKeysFlow,
-        selection
-    ) { expenses, incomes, zombieKeys, sel ->
-        buildState(expenses, incomes, zombieKeys, sel)
-    }.stateIn(
+    private val initials = initialsFor(authRepository.userDisplayName, authRepository.userEmail)
+
+    val uiState: StateFlow<AnalyticsUiState> = combine(data, controls) { data, controls ->
+        if (data == null) AnalyticsUiState(interval = controls.interval)
+        else buildState(data.first, data.second, controls)
+    }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = AnalyticsUiState()
     )
 
-    private fun buildState(
-        expenses: List<Expense>,
-        incomes: List<IncomeStream>,
-        zombieKeys: Set<String>,
-        sel: AnalyticsSelection
-    ): AnalyticsUiState {
-        val buckets = if (sel.selectedInterval == "monthly") monthlyBuckets(sel.periodOffset) else weeklyBuckets(sel.periodOffset)
-        val periodStart = buckets.first().start
-        val periodEnd = buckets.last().end
-
-        val periodExpenses = expenses.filter { it.timestamp in periodStart until periodEnd }
-        val total = periodExpenses.sumOf { it.amountLkr }
-        val committed = periodExpenses.filter { it.isCommitted }.sumOf { it.amountLkr }
-
-        val bucketTotals = buckets.map { bucket ->
-            periodExpenses.filter { it.timestamp in bucket.start until bucket.end }.sumOf { it.amountLkr }
+    private fun buildState(expenses: List<Expense>, incomes: List<IncomeStream>, controls: AnalyticsControls): AnalyticsUiState {
+        val now = System.currentTimeMillis()
+        val period = when (controls.interval) {
+            AnalyticsInterval.DAILY -> Periods.day(now, controls.periodOffset)
+            AnalyticsInterval.WEEKLY -> Periods.week(now, controls.periodOffset)
+            AnalyticsInterval.MONTHLY -> Periods.month(now, controls.periodOffset)
+            AnalyticsInterval.YEARLY -> Periods.year(now, controls.periodOffset)
         }
+        val periodExpenses = expenses.filter { it.timestamp in period }
+        val periodIncomes = incomes.filter { it.isRealized && it.dateReceivedOrExpected in period }
+
+        val buckets = when (controls.interval) {
+            AnalyticsInterval.DAILY -> listOf(
+                Triple("Morning", "00-06h", Period(period.startMillis, period.startMillis + 6 * 3600_000L)),
+                Triple("Day", "06-12h", Period(period.startMillis + 6 * 3600_000L, period.startMillis + 12 * 3600_000L)),
+                Triple("Eve", "12-18h", Period(period.startMillis + 12 * 3600_000L, period.startMillis + 18 * 3600_000L)),
+                Triple("Night", "18-24h", Period(period.startMillis + 18 * 3600_000L, period.endMillis))
+            )
+            AnalyticsInterval.WEEKLY -> (0 until 7).map { i ->
+                val start = period.startMillis + i * DAY_MILLIS
+                Triple(formatDate(start, "dd"), formatDate(start, "EEE"), Period(start, start + DAY_MILLIS))
+            }
+            AnalyticsInterval.MONTHLY -> generateSequence(period.startMillis) { it + 7 * DAY_MILLIS }
+                .takeWhile { it < period.endMillis }
+                .mapIndexed { i, start ->
+                    val end = minOf(start + 7 * DAY_MILLIS, period.endMillis)
+                    Triple("W${i + 1}", "${formatDate(start, "d")}–${formatDate(end - 1, "d")}", Period(start, end))
+                }
+                .toList()
+            AnalyticsInterval.YEARLY -> (0 until 12).map { monthIdx ->
+                val startCal = java.util.Calendar.getInstance().apply {
+                    timeInMillis = period.startMillis
+                    set(java.util.Calendar.MONTH, monthIdx)
+                    set(java.util.Calendar.DAY_OF_MONTH, 1)
+                }
+                val endCal = (startCal.clone() as java.util.Calendar).apply { add(java.util.Calendar.MONTH, 1) }
+                Triple(formatDate(startCal.timeInMillis, "MMM"), formatDate(startCal.timeInMillis, "yy"), Period(startCal.timeInMillis, endCal.timeInMillis))
+            }
+        }
+        val bucketTotals = buckets.map { (_, _, range) -> periodExpenses.filter { it.timestamp in range }.sumOf { it.amountLkr } }
         val peak = bucketTotals.maxOrNull() ?: 0.0
-        val timeline = buckets.mapIndexed { i, bucket ->
-            TimelineDay(
-                dayNumber = bucket.primaryLabel,
-                dayOfWeek = bucket.secondaryLabel,
-                fillRatio = if (peak > 0) (bucketTotals[i] / peak).toFloat().coerceIn(0.04f, 1f) else 0.04f,
+        val peakIndex = if (peak > 0) bucketTotals.indexOf(peak) else -1
+        val bars = buckets.mapIndexed { i, (primary, secondary, _) ->
+            TimelineBar(
+                primaryLabel = primary,
+                secondaryLabel = secondary,
+                fillRatio = if (peak > 0) (bucketTotals[i] / peak).toFloat() else 0f,
                 amountLkr = bucketTotals[i],
-                isPeak = peak > 0 && bucketTotals[i] == peak
+                isPeak = i == peakIndex
             )
         }
-        val defaultBar = timeline.indexOfFirst { it.isPeak }.takeIf { it >= 0 } ?: timeline.lastIndex
 
-        val breakdown = periodExpenses
+        val total = periodExpenses.sumOf { it.amountLkr }
+        val categoryTotals = periodExpenses
             .groupBy { it.category }
-            .map { (category, list) ->
-                val amount = list.sumOf { it.amountLkr }
-                CategorySlice(
+            .map { (category, items) ->
+                val sum = items.sumOf { it.amountLkr }
+                CategoryTotal(
                     category = category,
-                    amountLkr = amount,
-                    share = if (total > 0) (amount / total).toFloat() else 0f,
-                    visual = TransactionVisuals.forCategory(category)
+                    amountLkr = sum,
+                    share = if (total > 0) (sum / total).toFloat() else 0f,
+                    isCommitted = items.any { it.isCommitted }
                 )
             }
             .sortedByDescending { it.amountLkr }
 
-        val now = System.currentTimeMillis()
-        val ledger = periodExpenses.map { expense ->
-            val isZombie = DetectSubscriptionsUseCase.subscriptionKeyFor(expense.title) in zombieKeys
-            TransactionDisplayItem(
-                id = "exp_${expense.id}",
-                title = expense.title,
-                subtitle = when {
-                    isZombie -> "Auto-Debit (Zombie Subscription)"
-                    expense.isCommitted -> "${expense.category.displayName} · Fixed"
-                    else -> "${expense.category.displayName} · ${expense.paymentAccountName}"
-                },
-                amountText = Formatters.signedLkr(expense.amountLkr, isPositive = false, decimals = 2),
-                isPositive = false,
-                timeLabel = Formatters.relativeDay(expense.timestamp, now),
-                visual = TransactionVisuals.forCategory(expense.category),
-                isZombie = isZombie
-            ) to expense.timestamp
-        } + incomes
-            .filter { it.isRealized && it.dateReceivedOrExpected in periodStart until periodEnd }
-            .map { income ->
-                TransactionDisplayItem(
-                    id = "inc_${income.id}",
-                    title = income.title,
-                    subtitle = income.clientOrPlatform,
-                    amountText = "+ ${Formatters.original(income.originalAmount, income.currency)}",
-                    isPositive = true,
-                    timeLabel = Formatters.relativeDay(income.dateReceivedOrExpected, now),
-                    visual = TransactionVisuals.forIncome(income.source)
-                ) to income.dateReceivedOrExpected
+        val label = when (controls.interval) {
+            AnalyticsInterval.DAILY -> when (controls.periodOffset) {
+                0 -> "Today"
+                -1 -> "Yesterday"
+                else -> formatDate(period.startMillis, "dd MMMM yyyy")
             }
+            AnalyticsInterval.WEEKLY -> when (controls.periodOffset) {
+                0 -> "This week"
+                -1 -> "Last week"
+                else -> "${formatDate(period.startMillis, "dd MMM")} – ${formatDate(period.endMillis - 1, "dd MMM")}"
+            }
+            AnalyticsInterval.MONTHLY -> formatDate(period.startMillis, "MMMM yyyy")
+            AnalyticsInterval.YEARLY -> formatDate(period.startMillis, "yyyy")
+        }
+
+        val ledger = buildLedger(periodIncomes, periodExpenses)
+        val filteredTransactions = ledger.filter { item ->
+            val matchesQuery = controls.searchQuery.isBlank() ||
+                item.title.contains(controls.searchQuery, ignoreCase = true) ||
+                item.subtitle.contains(controls.searchQuery, ignoreCase = true)
+            val matchesCategory = controls.filterCategory == null ||
+                item.subtitle.contains(controls.filterCategory.displayName, ignoreCase = true)
+            matchesQuery && matchesCategory
+        }
 
         return AnalyticsUiState(
-            selectedInterval = sel.selectedInterval,
-            periodOffset = sel.periodOffset,
-            currentPeriod = periodLabel(sel, periodStart, periodEnd),
-            selectedBarIndex = (sel.selectedBarIndex ?: defaultBar).coerceIn(0, timeline.lastIndex),
-            showAllTransactions = sel.showAllTransactions,
-            timelineDays = timeline,
+            isLoading = false,
+            interval = controls.interval,
+            periodOffset = controls.periodOffset,
+            periodLabel = label,
+            bars = bars,
+            selectedBarIndex = (controls.selectedBarIndex ?: peakIndex.coerceAtLeast(0)).coerceIn(0, (bars.size - 1).coerceAtLeast(0)),
             totalSpentLkr = total,
-            committedLkr = committed,
-            discretionaryLkr = total - committed,
-            categoryBreakdown = breakdown,
-            transactions = ledger.sortedByDescending { it.second }.map { it.first },
-            userInitials = Formatters.initials(authRepository.currentUser)
+            committedLkr = periodExpenses.filter { it.isCommitted }.sumOf { it.amountLkr },
+            discretionaryLkr = periodExpenses.filter { !it.isCommitted }.sumOf { it.amountLkr },
+            incomeLkr = periodIncomes.sumOf { it.amountInLkr },
+            categoryTotals = categoryTotals,
+            transactions = filteredTransactions,
+            showAllTransactions = controls.showAll,
+            searchQuery = controls.searchQuery,
+            filterCategory = controls.filterCategory
         )
     }
 
-    private data class Bucket(val start: Long, val end: Long, val primaryLabel: String, val secondaryLabel: String)
-
-    /** Seven days ending today (shifted back by whole weeks). */
-    private fun weeklyBuckets(offset: Int): List<Bucket> {
-        val dayNum = SimpleDateFormat("d", Locale.US)
-        val dayName = SimpleDateFormat("EEE", Locale.US)
-        val todayStart = startOfDay()
-        return (6 downTo 0).map { daysAgo ->
-            val start = (todayStart.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, offset * 7 - daysAgo) }
-            val end = (start.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 1) }
-            Bucket(start.timeInMillis, end.timeInMillis, dayNum.format(start.time), dayName.format(start.time))
-        }
-    }
-
-    /** Seven calendar months ending with the selected month. */
-    private fun monthlyBuckets(offset: Int): List<Bucket> {
-        val monthName = SimpleDateFormat("MMM", Locale.US)
-        val yearShort = SimpleDateFormat("''yy", Locale.US)
-        val monthStart = startOfDay().apply { set(Calendar.DAY_OF_MONTH, 1) }
-        return (6 downTo 0).map { monthsAgo ->
-            val start = (monthStart.clone() as Calendar).apply { add(Calendar.MONTH, offset - monthsAgo) }
-            val end = (start.clone() as Calendar).apply { add(Calendar.MONTH, 1) }
-            Bucket(start.timeInMillis, end.timeInMillis, monthName.format(start.time), yearShort.format(start.time))
-        }
-    }
-
-    private fun periodLabel(sel: AnalyticsSelection, start: Long, endExclusive: Long): String {
-        if (sel.selectedInterval == "monthly") {
-            return "${SimpleDateFormat("MMM yyyy", Locale.US).format(Date(start))} – " +
-                SimpleDateFormat("MMM yyyy", Locale.US).format(Date(endExclusive - 1))
-        }
-        if (sel.periodOffset == 0) return "This Week"
-        val fmt = SimpleDateFormat("MMM d", Locale.US)
-        return "${fmt.format(Date(start))} – ${fmt.format(Date(endExclusive - 1))}"
-    }
-
-    private fun startOfDay(): Calendar = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }
-
-    fun switchInterval(interval: String) {
-        selection.update { it.copy(selectedInterval = interval, periodOffset = 0, selectedBarIndex = null) }
+    fun switchInterval(interval: AnalyticsInterval) {
+        controls.value = AnalyticsControls(interval = interval)
     }
 
     fun shiftPeriod(delta: Int) {
-        selection.update {
-            it.copy(periodOffset = (it.periodOffset + delta).coerceAtMost(0), selectedBarIndex = null)
-        }
+        controls.update { it.copy(periodOffset = (it.periodOffset + delta).coerceAtMost(0), selectedBarIndex = null) }
     }
 
     fun selectBar(index: Int) {
-        selection.update { it.copy(selectedBarIndex = index) }
+        controls.update { it.copy(selectedBarIndex = index) }
     }
 
     fun toggleViewAll() {
-        selection.update { it.copy(showAllTransactions = !it.showAllTransactions) }
+        controls.update { it.copy(showAll = !it.showAll) }
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        controls.update { it.copy(searchQuery = query) }
+    }
+
+    fun onCategoryFilterChanged(category: ExpenseCategory?) {
+        controls.update { it.copy(filterCategory = category) }
     }
 }

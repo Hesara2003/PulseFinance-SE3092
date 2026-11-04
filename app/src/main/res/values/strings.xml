@@ -1,11 +1,4 @@
 <resources>
     <string name="app_name">PulseFinance</string>
     <string name="tagline">Personal Finance for High-Performing Engineers</string>
-
-    <!--
-        Web OAuth client ID used by Credential Manager to request a Google ID token.
-        Leave blank when google-services.json contains a Web client (client_type 3): the
-        google-services plugin then generates default_web_client_id, which is used first.
-    -->
-    <string name="google_web_client_id" translatable="false"></string>
 </resources>

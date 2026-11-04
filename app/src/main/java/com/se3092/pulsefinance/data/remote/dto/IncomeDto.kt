@@ -8,20 +8,19 @@ import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
 
 data class IncomeDto(
-    @DocumentId var id: String = "",
-    var userId: String = "",
-    var source: String = "SALARY",
-    var title: String = "",
-    var clientOrPlatform: String = "",
-    var originalAmount: Double = 0.0,
-    var currency: String = "LKR",
-    var exchangeRateToLkr: Double = 1.0,
-    var amountInLkr: Double = 0.0,
-    var status: String = "RECEIVED",
-    var dateReceivedOrExpected: Long = System.currentTimeMillis(),
-    @get:PropertyName("isRecurringMonthly") @set:PropertyName("isRecurringMonthly")
-    var isRecurringMonthly: Boolean = false,
-    var notes: String = ""
+    @DocumentId val id: String = "",
+    val userId: String = "",
+    val source: String = "SALARY",
+    val title: String = "",
+    val clientOrPlatform: String = "",
+    val originalAmount: Double = 0.0,
+    val currency: String = "LKR",
+    val exchangeRateToLkr: Double = 1.0,
+    val amountInLkr: Double = 0.0,
+    val status: String = "RECEIVED",
+    val dateReceivedOrExpected: Long = System.currentTimeMillis(),
+    @get:PropertyName("isRecurringMonthly") val isRecurringMonthly: Boolean = false,
+    val notes: String = ""
 ) {
     fun toDomain(): IncomeStream = IncomeStream(
         id = id,

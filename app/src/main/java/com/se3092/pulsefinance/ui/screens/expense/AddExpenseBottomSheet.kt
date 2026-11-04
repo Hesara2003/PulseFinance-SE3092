@@ -1,7 +1,7 @@
 package com.se3092.pulsefinance.ui.screens.expense
 
-import com.se3092.pulsefinance.ui.util.Formatters
-import com.se3092.pulsefinance.ui.util.TransactionVisuals
+import com.se3092.pulsefinance.ui.common.presetVisual
+import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
+import com.se3092.pulsefinance.ui.common.compactAmount
 import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoContainer
 import com.se3092.pulsefinance.ui.theme.NeoBorder
@@ -65,22 +66,25 @@ import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import com.se3092.pulsefinance.ui.theme.RentColor
 
+private val backdateOptions = listOf(0 to "Today", 1 to "Yesterday", 2 to "2 days ago", 7 to "Last week")
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddExpenseBottomSheet(
-    state: ExpenseScreenUiState,
+    form: AddExpenseFormState,
+    presets: List<ExpensePreset>,
+    accounts: List<Account>,
     onTitleChange: (String) -> Unit,
     onAmountChange: (String) -> Unit,
     onCategoryChange: (ExpenseCategory) -> Unit,
     onCommittedToggle: (Boolean) -> Unit,
     onAccountSelect: (String) -> Unit,
+    onDaysAgoSelect: (Int) -> Unit,
     onPresetSelect: (ExpensePreset) -> Unit,
     onSubmit: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val presets = ExpensePresets.defaults
-    val accounts: List<Account> = state.accounts
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = NeoGreen,
         unfocusedBorderColor = NeoBorder,
@@ -146,7 +150,7 @@ fun AddExpenseBottomSheet(
                         border = BorderStroke(1.dp, NeoBorder),
                         modifier = Modifier.clickable { onPresetSelect(preset) }
                     ) {
-                        val visual = TransactionVisuals.forPreset(preset.title, preset.category)
+                        val visual = presetVisual(preset.title, preset.category)
                         Row(
                             modifier = Modifier.padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -159,7 +163,7 @@ fun AddExpenseBottomSheet(
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = "${preset.title} · ${Formatters.compact(preset.amountLkr)}",
+                                text = "${preset.title} · ${compactAmount(preset.amountLkr)}",
                                 color = NeoTextPrimary,
                                 fontSize = 12.5.sp,
                                 fontWeight = FontWeight.Medium
@@ -172,22 +176,26 @@ fun AddExpenseBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = state.amountInput,
+                value = form.amountInput,
                 onValueChange = onAmountChange,
                 label = { Text("Amount") },
                 prefix = { Text("LKR ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
-                                shape = RoundedCornerShape(16.dp),
+                isError = form.errorMessage != null,
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
                 colors = fieldColors
             )
 
+            form.errorMessage?.let {
+                Text(text = it, color = NeoRose, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
             OutlinedTextField(
-                value = state.titleInput,
+                value = form.titleInput,
                 onValueChange = onTitleChange,
                 label = { Text("What was it? (optional)") },
                 singleLine = true,
@@ -206,12 +214,12 @@ fun AddExpenseBottomSheet(
             ) {
                 ExpenseCategory.entries.forEach { category ->
                     FilterChip(
-                        selected = state.selectedCategory == category,
+                        selected = form.category == category,
                         onClick = { onCategoryChange(category) },
                         label = { Text(category.displayName, fontSize = 12.sp) },
                         leadingIcon = {
                             Icon(
-                                imageVector = TransactionVisuals.forCategory(category).icon,
+                                imageVector = expenseCategoryVisual(category).icon,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -235,19 +243,19 @@ fun AddExpenseBottomSheet(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (state.isCommittedInput) "Committed cost" else "Discretionary spend",
+                        text = if (form.isCommitted) "Committed cost" else "Discretionary spend",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (state.isCommittedInput) RentColor else NeoGreenDark
+                        color = if (form.isCommitted) RentColor else NeoGreenDark
                     )
                     Text(
-                        text = if (state.isCommittedInput) "Must pay: rent, bills, fixed debits" else "Your choice: dining, rides, treats",
+                        text = if (form.isCommitted) "Must pay: rent, bills, fixed debits" else "Your choice: dining, rides, treats",
                         style = MaterialTheme.typography.bodySmall,
                         color = NeoTextSecondary
                     )
                 }
                 Switch(
-                    checked = state.isCommittedInput,
+                    checked = form.isCommitted,
                     onCheckedChange = onCommittedToggle,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = OnAccent,
@@ -261,6 +269,19 @@ fun AddExpenseBottomSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            SectionLabel("WHEN")
+            Spacer(modifier = Modifier.height(6.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                backdateOptions.forEach { (days, label) ->
+                    FilterChip(
+                        selected = form.daysAgo == days,
+                        onClick = { onDaysAgoSelect(days) },
+                        label = { Text(label, fontSize = 12.sp) },
+                        colors = chipColors
+                    )
+                }
+            }
+
             if (accounts.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(10.dp))
                 SectionLabel("PAID FROM")
@@ -271,7 +292,7 @@ fun AddExpenseBottomSheet(
                 ) {
                     accounts.forEach { account ->
                         FilterChip(
-                            selected = state.selectedAccountId == account.id,
+                            selected = form.accountId == account.id,
                             onClick = { onAccountSelect(account.id) },
                             label = { Text(account.name, fontSize = 12.sp) },
                             colors = chipColors
@@ -284,14 +305,14 @@ fun AddExpenseBottomSheet(
 
             Button(
                 onClick = onSubmit,
-                enabled = state.amountInput.isNotBlank() && !state.isSubmitting,
+                enabled = form.amountInput.isNotBlank() && !form.isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent)
             ) {
-                if (state.isSubmitting) {
+                if (form.isSubmitting) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), color = OnAccent, strokeWidth = 2.dp)
                 } else {
                     Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))

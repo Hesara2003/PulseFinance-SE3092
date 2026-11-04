@@ -14,9 +14,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object FirebaseModule {
 
-    /** 100 MB is plenty for a single user's ledger and keeps eviction out of the way. */
-    private const val FIRESTORE_CACHE_SIZE_BYTES = 100L * 1024 * 1024
-
     @Provides
     @Singleton
     fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
@@ -25,16 +22,10 @@ object FirebaseModule {
     @Singleton
     fun provideFirebaseFirestore(): FirebaseFirestore {
         val firestore = FirebaseFirestore.getInstance()
-        // Disk-backed cache: queued writes survive process death and listeners can serve
-        // cached snapshots offline. Replaces the deprecated setPersistenceEnabled(true).
-        val settings = FirebaseFirestoreSettings.Builder()
-            .setLocalCacheSettings(
-                PersistentCacheSettings.newBuilder()
-                    .setSizeBytes(FIRESTORE_CACHE_SIZE_BYTES)
-                    .build()
-            )
+        // Disk-backed cache: writes made offline are queued and replayed when back online.
+        firestore.firestoreSettings = FirebaseFirestoreSettings.Builder()
+            .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
             .build()
-        firestore.firestoreSettings = settings
         return firestore
     }
 }
