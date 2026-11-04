@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.SavingsGoal
 import com.se3092.pulsefinance.ui.common.formatDate
+import com.se3092.pulsefinance.ui.common.signedLkr
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
@@ -52,6 +53,7 @@ import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
 import com.se3092.pulsefinance.ui.theme.NeoSurfaceHighest
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
+import kotlin.math.abs
 
 @Composable
 fun MacBookGoalCard(
@@ -302,7 +304,7 @@ fun MacBookGoalCard(
                                 color = NeoOnPrimaryFixed
                             )
                             Text(
-                                text = "$${String.format("%,.0f", goal.usdReferencePrice)} · Reseller LKR price floats with daily FX rate",
+                                text = "$${String.format("%,.0f", goal.usdReferencePrice)} · ${usdTargetNote(goal)}",
                                 fontSize = 11.sp,
                                 color = NeoOnPrimaryFixed
                             )
@@ -351,4 +353,12 @@ fun MacBookGoalCard(
             }
         }
     }
+}
+
+/** FR-GOAL-6: how the USD-linked LKR target has moved since he set it. */
+internal fun usdTargetNote(goal: SavingsGoal): String {
+    val change = goal.usdTargetChangeLkr ?: return "Reseller LKR price floats with daily FX rate"
+    val since = goal.usdRateSetAtMillis?.let { " since ${formatDate(it, "dd MMM")}" }.orEmpty()
+    return if (abs(change) < 1.0) "Target follows the daily USD rate$since"
+    else "Target ${signedLkr(change)}$since at today's rate"
 }
