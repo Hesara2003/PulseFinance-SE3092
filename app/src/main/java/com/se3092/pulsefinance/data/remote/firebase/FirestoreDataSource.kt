@@ -7,6 +7,7 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.Source
 import com.se3092.pulsefinance.data.remote.dto.AccountDto
+import com.se3092.pulsefinance.data.remote.dto.ApitConfigDto
 import com.se3092.pulsefinance.data.remote.dto.ExpenseDto
 import com.se3092.pulsefinance.data.remote.dto.GoalDto
 import com.se3092.pulsefinance.data.remote.dto.IncomeDto
@@ -179,6 +180,25 @@ class FirestoreDataSource @Inject constructor(
             )
         )
         userDoc(userId).set(payload, SetOptions.merge()).logFailure("saveSubscriptionReview")
+    }
+
+    // ---------------- App configuration (read-only) ----------------
+    /** Emits null when the document is missing or cannot be parsed. */
+    fun observeApitConfig(): Flow<ApitConfigDto?> = callbackFlow {
+        val listener = firestore.collection("config").document("apitBands")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val config = snapshot?.takeIf { it.exists() }?.let {
+                    runCatching { it.toObject(ApitConfigDto::class.java) }
+                        .onFailure { e -> Log.w(TAG, "Malformed config/apitBands", e) }
+                        .getOrNull()
+                }
+                trySend(config)
+            }
+        awaitClose { listener.remove() }
     }
 
     private companion object {

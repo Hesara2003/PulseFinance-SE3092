@@ -703,8 +703,10 @@ fun IncomeScreen(
         // Sri Lankan Payslip & EPF Bottom Sheet (FR-LK-1, FR-LK-2, FR-LK-3)
         // =============================================================================
         if (state.isPayslipSheetVisible) {
+            val apitBands by viewModel.apitBands.collectAsStateWithLifecycle()
             PayslipBottomSheet(
                 calculator = viewModel.calculatePayslipUseCase,
+                apitBands = apitBands,
                 onSaveSalary = viewModel::savePayslipSalary,
                 onDismiss = viewModel::closePayslipSheet
             )

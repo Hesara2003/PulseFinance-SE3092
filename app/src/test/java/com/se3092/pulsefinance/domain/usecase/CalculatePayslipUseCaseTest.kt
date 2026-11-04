@@ -1,6 +1,9 @@
 package com.se3092.pulsefinance.domain.usecase
 
+import com.se3092.pulsefinance.domain.model.ApitTaxBand
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CalculatePayslipUseCaseTest {
@@ -50,5 +53,29 @@ class CalculatePayslipUseCaseTest {
         assertEquals(5_000.0, payslip.apitTaxLkr, 0.01)
         assertEquals(10_000.0, payslip.otherDeductionsLkr, 0.01)
         assertEquals(185_000.0, payslip.takeHomeSalaryLkr, 0.01)
+    }
+
+    @Test
+    fun `a revised schedule changes the tax-free threshold without code changes`() {
+        val revised = listOf(
+            ApitTaxBand(0.0, 150_000.0, 0.00),
+            ApitTaxBand(150_000.0, Double.MAX_VALUE, 0.10)
+        )
+
+        assertEquals(0.0, useCase.calculateApit(150_000.0, revised), 0.01)
+        assertEquals(5_000.0, useCase.calculateApit(200_000.0, revised), 0.01)
+        assertEquals(5_000.0, useCase.calculate(200_000.0, bands = revised).apitTaxLkr, 0.01)
+    }
+
+    @Test
+    fun `bundled schedule is valid and malformed schedules are rejected`() {
+        assertTrue(ApitTaxBand.isValidSchedule(ApitTaxBand.DEFAULTS))
+        assertFalse(ApitTaxBand.isValidSchedule(emptyList()))
+        // Does not start at zero
+        assertFalse(ApitTaxBand.isValidSchedule(listOf(ApitTaxBand(1.0, Double.MAX_VALUE, 0.1))))
+        // Gap between bands
+        assertFalse(ApitTaxBand.isValidSchedule(listOf(ApitTaxBand(0.0, 100.0, 0.0), ApitTaxBand(200.0, 300.0, 0.1))))
+        // Rate entered as a percentage instead of a fraction
+        assertFalse(ApitTaxBand.isValidSchedule(listOf(ApitTaxBand(0.0, Double.MAX_VALUE, 6.0))))
     }
 }
