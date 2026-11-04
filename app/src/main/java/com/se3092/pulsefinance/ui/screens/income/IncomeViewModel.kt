@@ -3,6 +3,7 @@ package com.se3092.pulsefinance.ui.screens.income
 import com.se3092.pulsefinance.ui.common.initialsFor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.se3092.pulsefinance.domain.model.ApitTaxBand
 import com.se3092.pulsefinance.domain.model.Currency
 import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.IncomeSource
@@ -11,6 +12,7 @@ import com.se3092.pulsefinance.domain.model.InvoiceStatus
 import com.se3092.pulsefinance.domain.model.Periods
 import com.se3092.pulsefinance.domain.repository.AuthRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
+import com.se3092.pulsefinance.domain.repository.TaxConfigRepository
 import com.se3092.pulsefinance.domain.usecase.ConvertCurrencyUseCase
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.lkr
@@ -79,8 +81,16 @@ class IncomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val incomeRepository: IncomeRepository,
     private val convertCurrencyUseCase: ConvertCurrencyUseCase,
-    val calculatePayslipUseCase: com.se3092.pulsefinance.domain.usecase.CalculatePayslipUseCase
+    val calculatePayslipUseCase: com.se3092.pulsefinance.domain.usecase.CalculatePayslipUseCase,
+    taxConfigRepository: TaxConfigRepository
 ) : ViewModel() {
+
+    /** APIT schedule from Firestore config (FR-LK-2); starts with the bundled bands. */
+    val apitBands: StateFlow<List<ApitTaxBand>> = taxConfigRepository.observeApitBands().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ApitTaxBand.DEFAULTS
+    )
 
     private val filter = MutableStateFlow<IncomeSource?>(null)
     private val form = MutableStateFlow(IncomeFormState())
