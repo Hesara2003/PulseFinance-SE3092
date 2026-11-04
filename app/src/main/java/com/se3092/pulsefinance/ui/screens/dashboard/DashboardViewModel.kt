@@ -1,31 +1,52 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.se3092.pulsefinance.domain.model.Account
+import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.Expense
+import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
+import com.se3092.pulsefinance.domain.model.Periods
 import com.se3092.pulsefinance.domain.model.SavingsGoal
 import com.se3092.pulsefinance.domain.repository.AccountRepository
 import com.se3092.pulsefinance.domain.repository.AuthRepository
 import com.se3092.pulsefinance.domain.repository.ExpenseRepository
 import com.se3092.pulsefinance.domain.repository.GoalRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
+import com.se3092.pulsefinance.domain.usecase.BankSmsParser
 import com.se3092.pulsefinance.domain.usecase.CalculateFinancialSummaryUseCase
-import com.se3092.pulsefinance.domain.usecase.CalculateSavingsRateUseCase
-import com.se3092.pulsefinance.ui.util.TransactionVisuals
-import com.se3092.pulsefinance.ui.util.userScopedFlow
+import com.se3092.pulsefinance.domain.usecase.ExportDataToCsvUseCase
+import com.se3092.pulsefinance.domain.usecase.SeasonalPeakChecker
+import com.se3092.pulsefinance.ui.common.buildLedger
+import com.se3092.pulsefinance.ui.common.displayNameFor
+import com.se3092.pulsefinance.ui.common.formatDate
+import com.se3092.pulsefinance.ui.common.greetingFor
+import com.se3092.pulsefinance.ui.common.initialsFor
+import com.se3092.pulsefinance.ui.common.lkr
+import com.se3092.pulsefinance.ui.common.whenSignedIn
+import com.se3092.pulsefinance.ui.screens.expense.AddExpenseFormState
+import com.se3092.pulsefinance.ui.screens.expense.ExpensePreset
+import com.se3092.pulsefinance.ui.screens.expense.deriveExpensePresets
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
+import kotlin.math.roundToInt
+
+private data class DashboardData(
+    val expenses: List<Expense>,
+    val incomes: List<IncomeStream>,
+    val goal: SavingsGoal?,
+    val accounts: List<Account>
+)
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
@@ -35,119 +56,319 @@ class DashboardViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
     private val accountRepository: AccountRepository,
     private val calculateFinancialSummaryUseCase: CalculateFinancialSummaryUseCase,
-    private val calculateSavingsRateUseCase: CalculateSavingsRateUseCase
+    private val bankSmsParser: BankSmsParser,
+    private val seasonalPeakChecker: SeasonalPeakChecker,
+    private val exportDataToCsvUseCase: ExportDataToCsvUseCase
 ) : ViewModel() {
 
-    private val expensesFlow = authRepository.userScopedFlow(emptyList()) { expenseRepository.getExpenses(it) }
-    private val incomeFlow = authRepository.userScopedFlow(emptyList()) { incomeRepository.getIncomeStreams(it) }
-    private val goalFlow = authRepository.userScopedFlow<SavingsGoal?>(null) { goalRepository.getPrimaryGoal(it) }
-    private val accountsFlow = authRepository.userScopedFlow(emptyList()) { accountRepository.getAccounts(it) }
+    private val form = MutableStateFlow(AddExpenseFormState())
+    private val message = MutableStateFlow<String?>(null)
+    private val frozenWarning = MutableStateFlow<FrozenExpenseWarning?>(null)
+    private val revealedAccountIds = MutableStateFlow<Set<String>>(emptySet())
+    private var lastData: DashboardData? = null
+
+    private val data = authRepository.whenSignedIn<DashboardData?>(signedOut = null) { userId ->
+        combine(
+            expenseRepository.getExpenses(userId),
+            incomeRepository.getIncomeStreams(userId),
+            goalRepository.getPrimaryGoal(userId),
+            accountRepository.getAccounts(userId)
+        ) { expenses, incomes, goal, accounts ->
+            DashboardData(expenses, incomes, goal, accounts).also { lastData = it }
+        }
+    }
 
     val uiState: StateFlow<DashboardUiState> = combine(
-        expensesFlow,
-        incomeFlow,
-        goalFlow,
-        accountsFlow,
-        authRepository.observeCurrentUser()
-    ) { expenses, incomes, goal, accounts, user ->
-        val summary = calculateFinancialSummaryUseCase(
-            incomes = incomes,
-            expenses = expenses,
-            accounts = accounts,
-            monthlyGoalAllocationLkr = goal?.requiredMonthlySavingsLkr ?: 0.0
-        )
-
-        DashboardUiState(
-            isLoading = false,
-            user = user,
-            summary = summary,
-            savingsRate = calculateSavingsRateUseCase(incomes, expenses),
-            primaryGoal = goal,
-            recentExpenses = expenses.take(5),
-            recentActivity = buildRecentActivity(expenses, incomes),
-            weeklyDiscretionary = buildWeeklyDiscretionary(expenses),
-            incomeStreams = incomes,
-            accounts = accounts,
-            overdueInvoices = incomes
-                .filter { it.status == InvoiceStatus.OVERDUE }
-                .sortedBy { it.dateReceivedOrExpected }
-        )
+        data,
+        form,
+        message,
+        frozenWarning,
+        revealedAccountIds
+    ) { data, form, msg, warning, revealed ->
+        buildState(data, form, msg, warning, revealed)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = DashboardUiState()
     )
 
-    private fun buildRecentActivity(expenses: List<Expense>, incomes: List<IncomeStream>): List<ActivityItem> {
-        val expenseItems = expenses.map { expense ->
-            ActivityItem(
-                id = "exp_${expense.id}",
-                title = expense.title,
-                currencyLabel = "LKR",
-                amountText = String.format(Locale.US, "%,.2f", expense.amountLkr),
-                isIncoming = false,
-                visual = TransactionVisuals.forCategory(expense.category),
-                timestamp = expense.timestamp
-            )
-        }
-        val incomeItems = incomes.filter { it.isRealized }.map { income ->
-            ActivityItem(
-                id = "inc_${income.id}",
-                title = income.clientOrPlatform.ifBlank { income.title },
-                currencyLabel = income.currency.name,
-                amountText = String.format(Locale.US, "%,.2f", income.originalAmount),
-                isIncoming = true,
-                visual = TransactionVisuals.forIncome(income.source),
-                timestamp = income.dateReceivedOrExpected
-            )
-        }
+    private fun buildState(
+        data: DashboardData?,
+        form: AddExpenseFormState,
+        message: String?,
+        warning: FrozenExpenseWarning?,
+        revealed: Set<String>
+    ): DashboardUiState {
         val now = System.currentTimeMillis()
-        return (expenseItems + incomeItems)
-            .filter { it.timestamp <= now }
-            .sortedByDescending { it.timestamp }
-            .take(6)
+        val email = authRepository.userEmail
+        val displayName = authRepository.userDisplayName
+        val header = DashboardUiState(
+            isLoading = data == null,
+            firstName = displayNameFor(displayName, email),
+            initials = initialsFor(displayName, email),
+            greeting = greetingFor(now),
+            monthLabel = formatDate(now, "MMMM yyyy"),
+            addExpense = form,
+            message = message,
+            frozenWarning = warning,
+            revealedAccountIds = revealed
+        )
+        if (data == null) return header
+
+        val unpaid = data.incomes
+            .filter { !it.isRealized }
+            .sortedWith(compareByDescending<IncomeStream> { it.effectiveStatus(now) == InvoiceStatus.OVERDUE }.thenBy { it.dateReceivedOrExpected })
+        val (weekBars, weekTotal, weekChange) = weeklyDiscretionary(data.expenses, now)
+
+        val seasonal = seasonalPeakChecker(data.expenses, now)
+
+        return header.copy(
+            summary = calculateFinancialSummaryUseCase(data.incomes, data.expenses, data.goal, now),
+            primaryGoal = data.goal,
+            recentTransactions = buildLedger(data.incomes, data.expenses).take(6),
+            recentExpenses = data.expenses.take(5),
+            accounts = data.accounts,
+            presets = deriveExpensePresets(data.expenses, now),
+            weekBars = weekBars,
+            weekDiscretionaryLkr = weekTotal,
+            weekChangePct = weekChange,
+            unpaidInvoices = unpaid,
+            overdueInvoiceCount = unpaid.count { it.effectiveStatus(now) == InvoiceStatus.OVERDUE },
+            addExpense = form.copy(accountId = form.accountId.ifBlank { data.accounts.firstOrNull()?.id.orEmpty() }),
+            seasonalAlert = seasonal
+        )
     }
 
-    /** Discretionary spend per day for the last 7 days, oldest first, scaled to the peak day. */
-    private fun buildWeeklyDiscretionary(expenses: List<Expense>): List<DayBar> {
-        val dayFormat = SimpleDateFormat("EEEEE", Locale.US)
-        val todayStart = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
+    /** Discretionary spend per day this week, and the change vs the same weekdays last week. */
+    private fun weeklyDiscretionary(expenses: List<Expense>, now: Long): Triple<List<DayBar>, Double, Int?> {
+        val discretionary = expenses.filter { !it.isCommitted }
+        val week = Periods.week(now)
+        val today = Periods.startOfDay(now)
+        val dayTotals = (0 until 7).map { i ->
+            val start = week.startMillis + i * DAY_MILLIS
+            start to discretionary.filter { it.timestamp in start until start + DAY_MILLIS }.sumOf { it.amountLkr }
         }
-        val days = (6 downTo 0).map { daysAgo ->
-            val start = (todayStart.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -daysAgo) }.timeInMillis
-            val end = (todayStart.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -daysAgo + 1) }.timeInMillis
-            val amount = expenses
-                .filter { !it.isCommitted && it.timestamp in start until end }
-                .sumOf { it.amountLkr }
-            Triple(dayFormat.format(Date(start)), amount, daysAgo == 0)
+        val peak = dayTotals.maxOf { it.second }.coerceAtLeast(1.0)
+        val bars = dayTotals.mapIndexed { i, (start, total) ->
+            DayBar(
+                label = WEEKDAY_LETTERS[i],
+                amountLkr = total,
+                fillRatio = (total / peak).toFloat(),
+                isToday = start == today
+            )
         }
-        val peak = days.maxOf { it.second }.coerceAtLeast(1.0)
-        return days.map { (label, amount, isToday) ->
-            DayBar(label, amount, (amount / peak).toFloat().coerceIn(0f, 1f), isToday)
+
+        val elapsed = (today + DAY_MILLIS) - week.startMillis
+        val thisWeek = discretionary.filter { it.timestamp in week.startMillis until week.startMillis + elapsed }.sumOf { it.amountLkr }
+        val lastWeekStart = week.startMillis - 7 * DAY_MILLIS
+        val lastWeek = discretionary.filter { it.timestamp in lastWeekStart until lastWeekStart + elapsed }.sumOf { it.amountLkr }
+        val change = if (lastWeek > 0) ((thisWeek - lastWeek) / lastWeek * 100).roundToInt() else null
+        return Triple(bars, thisWeek, change)
+    }
+
+    // ---------------- Spending Freeze & Account Security ----------------
+
+    fun freezeAccount(account: Account, days: Int = 14) {
+        val untilMillis = System.currentTimeMillis() + days * DAY_MILLIS
+        viewModelScope.launch {
+            accountRepository.freezeAccount(account, untilMillis).fold(
+                onSuccess = { message.value = "${account.name} frozen until ${formatDate(untilMillis, "dd MMM")} 🔒" },
+                onFailure = { message.value = "Failed to freeze account: ${it.localizedMessage}" }
+            )
         }
     }
+
+    fun unfreezeAccount(account: Account) {
+        viewModelScope.launch {
+            accountRepository.unfreezeAccount(account).fold(
+                onSuccess = { message.value = "${account.name} spending freeze lifted 🔓" },
+                onFailure = { message.value = "Failed to unlock: ${it.localizedMessage}" }
+            )
+        }
+    }
+
+    fun setAccountRevealed(accountId: String, revealed: Boolean) {
+        revealedAccountIds.update { current ->
+            if (revealed) current + accountId else current - accountId
+        }
+    }
+
+    // ---------------- Add expense sheet & Spending Freeze friction ----------------
+
+    fun openAddExpense(preset: ExpensePreset? = null) {
+        form.update {
+            AddExpenseFormState(
+                isVisible = true,
+                accountId = it.accountId,
+                titleInput = preset?.title.orEmpty(),
+                amountInput = preset?.amountLkr?.let { amount -> "%.0f".format(amount) }.orEmpty(),
+                category = preset?.category ?: ExpenseCategory.FOOD_DINING,
+                isCommitted = preset?.isCommitted ?: false
+            )
+        }
+    }
+
+    fun dismissAddExpense() = form.update { it.copy(isVisible = false, errorMessage = null) }
+    fun onTitleChanged(value: String) = form.update { it.copy(titleInput = value) }
+    fun onAmountChanged(value: String) = form.update { it.copy(amountInput = value, errorMessage = null) }
+    fun onCommittedToggled(value: Boolean) = form.update { it.copy(isCommitted = value) }
+    fun onAccountSelected(accountId: String) = form.update { it.copy(accountId = accountId) }
+    fun onDaysAgoSelected(days: Int) = form.update { it.copy(daysAgo = days) }
+
+    fun onCategoryChanged(category: ExpenseCategory) = form.update {
+        it.copy(category = category, isCommitted = category.isTypicallyCommitted)
+    }
+
+    fun onPresetSelected(preset: ExpensePreset) = form.update {
+        it.copy(
+            titleInput = preset.title,
+            amountInput = "%.0f".format(preset.amountLkr),
+            category = preset.category,
+            isCommitted = preset.isCommitted,
+            errorMessage = null
+        )
+    }
+
+    fun handleSharedBankSms(smsText: String) {
+        val parsed = bankSmsParser.parse(smsText) ?: return
+        val currentAccounts = uiState.value.accounts
+        val matchedAccount = currentAccounts.find { acct ->
+            parsed.bankName.isNotBlank() && acct.name.contains(parsed.bankName, ignoreCase = true)
+        }
+        form.update {
+            it.copy(
+                isVisible = true,
+                titleInput = parsed.merchant,
+                amountInput = "%.0f".format(parsed.amountLkr),
+                category = parsed.suggestedCategory,
+                isCommitted = parsed.isCommitted,
+                accountId = matchedAccount?.id ?: it.accountId,
+                errorMessage = null
+            )
+        }
+        message.value = "Draft expense parsed from bank alert: ${parsed.merchant}"
+    }
+
+    fun submitExpense() {
+        val state = uiState.value
+        val current = state.addExpense
+        val amount = current.amountInput.replace(",", "").trim().toDoubleOrNull()
+        if (amount == null || amount <= 0) {
+            form.update { it.copy(errorMessage = "Enter an amount greater than zero") }
+            return
+        }
+        val userId = authRepository.currentUserId ?: run {
+            form.update { it.copy(errorMessage = "You're signed out. Sign in again to save.") }
+            return
+        }
+        val account = state.accounts.find { it.id == current.accountId }
+        val title = current.titleInput.trim().ifBlank { current.category.displayName }
+
+        // Check if account is frozen (FR-ACC-3, FR-ACC-4)
+        if (account?.isFrozen == true) {
+            val dailyPace = state.primaryGoal?.requiredDailySavingsLkr?.takeIf { it > 0 }
+                ?: (state.primaryGoal?.targetAmountLkr?.div(90) ?: 1000.0)
+            val delayDays = (amount / dailyPace).roundToInt().coerceAtLeast(1)
+            frozenWarning.value = FrozenExpenseWarning(
+                account = account,
+                amountLkr = amount,
+                title = title,
+                goalDaysDelayed = delayDays
+            )
+            return
+        }
+
+        saveExpenseRecord(userId, account, title, amount, current.category, current.isCommitted, current.daysAgo)
+    }
+
+    fun confirmFrozenExpenseBreak() {
+        val warning = frozenWarning.value ?: return
+        val state = uiState.value
+        val current = state.addExpense
+        val userId = authRepository.currentUserId ?: return
+
+        frozenWarning.value = null
+        viewModelScope.launch {
+            accountRepository.recordFreezeBreak(warning.account)
+        }
+        saveExpenseRecord(userId, warning.account, warning.title, warning.amountLkr, current.category, current.isCommitted, current.daysAgo)
+    }
+
+    fun dismissFrozenWarning() {
+        frozenWarning.value = null
+    }
+
+    private fun saveExpenseRecord(
+        userId: String,
+        account: Account?,
+        title: String,
+        amount: Double,
+        category: ExpenseCategory,
+        isCommitted: Boolean,
+        daysAgo: Int
+    ) {
+        viewModelScope.launch {
+            form.update { it.copy(isSubmitting = true) }
+            val result = expenseRepository.saveExpense(
+                Expense(
+                    userId = userId,
+                    title = title,
+                    amountLkr = amount,
+                    category = category,
+                    isCommitted = isCommitted,
+                    paymentAccountId = account?.id.orEmpty(),
+                    paymentAccountName = account?.name.orEmpty(),
+                    timestamp = System.currentTimeMillis() - daysAgo * DAY_MILLIS
+                )
+            )
+            result.fold(
+                onSuccess = {
+                    form.update { AddExpenseFormState(accountId = it.accountId) }
+                    message.value = "Logged ${lkr(amount)} · $title"
+                },
+                onFailure = { e ->
+                    form.update { it.copy(isSubmitting = false, errorMessage = e.localizedMessage ?: "Couldn't save this expense") }
+                }
+            )
+        }
+    }
+
+    // ---------------- CSV Data Export ----------------
+
+    fun exportCsv(context: Context) {
+        val d = lastData
+        val incomes = d?.incomes ?: uiState.value.unpaidInvoices
+        val expenses = d?.expenses ?: uiState.value.recentExpenses
+        val goals = listOfNotNull(d?.goal ?: uiState.value.primaryGoal)
+        val csv = exportDataToCsvUseCase.generateCsv(
+            incomes = incomes,
+            expenses = expenses,
+            goals = goals
+        )
+        exportDataToCsvUseCase.shareCsv(context, csv)
+        message.value = "CSV ready for export via Share Sheet"
+    }
+
+    // ---------------- Other actions ----------------
 
     fun deleteExpense(expenseId: String) {
-        val uid = authRepository.currentUserId ?: return
+        val userId = authRepository.currentUserId ?: return
         viewModelScope.launch {
-            expenseRepository.deleteExpense(expenseId, uid)
+            expenseRepository.deleteExpense(expenseId, userId)
+                .onSuccess { message.value = "Expense deleted" }
+                .onFailure { message.value = "Couldn't delete: ${it.localizedMessage}" }
         }
     }
 
-    fun markInvoicePaid(incomeId: String) {
-        val uid = authRepository.currentUserId ?: return
-        viewModelScope.launch {
-            incomeRepository.updateInvoiceStatus(incomeId, uid, InvoiceStatus.RECEIVED)
-        }
+    fun dismissMessage() {
+        message.value = null
     }
 
     fun signOut() {
-        viewModelScope.launch {
-            authRepository.signOut()
-        }
+        viewModelScope.launch { authRepository.signOut() }
+    }
+
+    private companion object {
+        val WEEKDAY_LETTERS = listOf("M", "T", "W", "T", "F", "S", "S")
     }
 }

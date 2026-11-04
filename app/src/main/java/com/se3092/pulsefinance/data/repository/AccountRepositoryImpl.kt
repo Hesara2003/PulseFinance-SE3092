@@ -16,96 +16,82 @@ import javax.inject.Singleton
 @Singleton
 class AccountRepositoryImpl @Inject constructor(
     private val accountDao: AccountDao,
-    private val firestoreDataSource: FirestoreDataSource,
-    private val remoteWriter: RemoteWriter
+    private val firestoreDataSource: FirestoreDataSource
 ) : AccountRepository {
 
     override fun getAccounts(userId: String): Flow<List<Account>> = cacheBackedFlow(
-        label = "accounts",
-        local = accountDao.getAccounts(userId),
-        remote = firestoreDataSource.observeAccounts(userId),
-        persist = { dtos ->
-            accountDao.replaceUserAccounts(userId, dtos.map { AccountEntity.fromDomain(it.toDomain()) })
+        tag = TAG,
+        local = accountDao.getAccounts(userId).map { entities -> entities.map { it.toDomain() } },
+        sync = {
+            firestoreDataSource.observeAccounts(userId).collect { dtos ->
+                accountDao.replaceAll(userId, dtos.map { AccountEntity.fromDomain(it.toDomain()) })
+            }
         }
-    ).map { entities -> entities.map { it.toDomain() } }
+    )
 
     override suspend fun saveAccount(account: Account): Result<Unit> = runCatching {
         val prepared = account.copy(id = account.id.ifBlank { UUID.randomUUID().toString() })
-        accountDao.upsertAccount(AccountEntity.fromDomain(prepared))
-        remoteWriter.enqueue("saveAccount") {
-            firestoreDataSource.saveAccount(prepared.userId, AccountDto.fromDomain(prepared))
+        accountDao.insertAccount(AccountEntity.fromDomain(prepared))
+        firestoreDataSource.saveAccount(prepared.userId, AccountDto.fromDomain(prepared))
+    }
+
+    override suspend fun freezeAccount(account: Account, untilMillis: Long): Result<Unit> {
+        val updated = account.copy(
+            isFrozen = true,
+            frozenUntilMillis = untilMillis
+        )
+        return saveAccount(updated)
+    }
+
+    override suspend fun unfreezeAccount(account: Account): Result<Unit> {
+        val updated = account.copy(
+            isFrozen = false,
+            frozenUntilMillis = null
+        )
+        return saveAccount(updated)
+    }
+
+    override suspend fun recordFreezeBreak(account: Account): Result<Unit> {
+        val updated = account.copy(
+            freezeBreakCount = account.freezeBreakCount + 1
+        )
+        return saveAccount(updated)
+    }
+
+    /**
+     * Gives a brand-new user one payment channel per place money leaves from — the scenario's
+     * card, auto-debit account, cash and exchange wallet — so expenses can be attributed from the
+     * first entry. Channels only; balances start at zero and nothing else is pre-filled.
+     * Requires a server round-trip so an empty offline cache is never mistaken for a new user.
+     */
+    override suspend fun ensureDefaultAccounts(userId: String): Result<Unit> = runCatching {
+        if (firestoreDataSource.hasAnyAccountOnServer(userId)) return@runCatching
+        defaultChannels.forEach { (id, type) ->
+            saveAccount(
+                Account(
+                    id = id,
+                    userId = userId,
+                    name = type.displayName,
+                    type = type,
+                    balanceLkr = 0.0,
+                    isAutoDebitSource = type == AccountType.BANK_SECONDARY,
+                    accountNumber = when (type) {
+                        AccountType.BANK_PRIMARY -> "8001452178"
+                        AccountType.BANK_SECONDARY -> "1002938472"
+                        else -> ""
+                    }
+                )
+            ).getOrThrow()
         }
     }
 
-    override suspend fun updateBalance(
-        accountId: String,
-        userId: String,
-        newBalanceLkr: Double
-    ): Result<Unit> = runCatching {
-        accountDao.updateBalance(accountId, userId, newBalanceLkr)
-        remoteWriter.enqueue("updateAccountBalance") {
-            firestoreDataSource.updateAccountBalance(userId, accountId, newBalanceLkr)
-        }
-    }
-
-    override suspend fun ensureDefaultAccount(userId: String): Result<Unit> = runCatching {
-        if (accountDao.countAccounts(userId) > 0) return@runCatching
-        // Room is empty on a fresh install even for returning users, so ask Firestore too.
-        val hasRemoteAccounts = try {
-            firestoreDataSource.hasAccounts(userId)
-        } catch (_: Exception) {
-            false
-        }
-        if (hasRemoteAccounts) return@runCatching
-        saveAccount(
-            Account(
-                id = DEFAULT_ACCOUNT_ID,
-                userId = userId,
-                name = "Main Account",
-                type = AccountType.BANK_PRIMARY,
-                balanceLkr = 0.0
-            )
-        ).getOrThrow()
-    }
-
-    override suspend fun initializeDefaultAccountsForKavindu(userId: String): Result<Unit> = runCatching {
-        listOf(
-            Account(
-                id = "acc_primary_bank",
-                userId = userId,
-                name = "Commercial Bank (Salary & Card)",
-                type = AccountType.BANK_PRIMARY,
-                balanceLkr = 8700.0,
-                isAutoDebitSource = false
-            ),
-            Account(
-                id = "acc_secondary_bank",
-                userId = userId,
-                name = "Secondary Bank (Gym & Subscriptions)",
-                type = AccountType.BANK_SECONDARY,
-                balanceLkr = 2500.0,
-                isAutoDebitSource = true
-            ),
-            Account(
-                id = "acc_cash_wallet",
-                userId = userId,
-                name = "Cash in Hand",
-                type = AccountType.CASH,
-                balanceLkr = 3200.0,
-                isAutoDebitSource = false
-            ),
-            Account(
-                id = "acc_binance_wallet",
-                userId = userId,
-                name = "Binance (USDT / ETH)",
-                type = AccountType.CRYPTO_EXCHANGE,
-                balanceLkr = 45000.0,
-                isAutoDebitSource = false
-            )
-        ).forEach { saveAccount(it).getOrThrow() }
-    }
-
-    companion object {
-        const val DEFAULT_ACCOUNT_ID = "acc_main"
+    private companion object {
+        const val TAG = "AccountRepository"
+        val defaultChannels = listOf(
+            "acc_primary_bank" to AccountType.BANK_PRIMARY,
+            "acc_secondary_bank" to AccountType.BANK_SECONDARY,
+            "acc_cash" to AccountType.CASH,
+            "acc_crypto_exchange" to AccountType.CRYPTO_EXCHANGE
+        )
     }
 }

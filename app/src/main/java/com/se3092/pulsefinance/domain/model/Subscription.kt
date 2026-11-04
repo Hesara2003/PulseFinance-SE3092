@@ -1,41 +1,51 @@
 package com.se3092.pulsefinance.domain.model
 
-enum class SubscriptionReviewStatus(val displayName: String) {
-    KEEP("Kept Active"),
-    CANCELLED("Cancelled & Blocked"),
-    DISMISSED("Not a Subscription")
+enum class SubscriptionDecision {
+    KEEP,
+    CANCELLED
 }
 
-enum class SubscriptionRisk(val displayName: String) {
-    ZOMBIE("Zombie Leak"),
-    WATCH("Review Soon"),
-    HEALTHY("High Utility")
+enum class SubscriptionRisk {
+    LOW,
+    MEDIUM,
+    HIGH
 }
 
-/** A user's decision about a detected recurring debit, persisted across sessions. */
+/** The user's verdict and usage history on one detected subscription, keyed by its normalised title. */
 data class SubscriptionReview(
-    val subscriptionKey: String,
-    val userId: String,
-    val status: SubscriptionReviewStatus,
-    val reviewedAtMillis: Long = System.currentTimeMillis()
+    val key: String,
+    val decision: SubscriptionDecision,
+    val decidedAt: Long,
+    val consecutiveUnusedMonths: Int = 0
 )
 
-/** A recurring debit inferred from the expense history by DetectSubscriptionsUseCase. */
+enum class SubscriptionStatus {
+    /** Charged recently and never reviewed — the "zombie" candidate. */
+    NEEDS_REVIEW,
+    /** User marked it cancelled, yet a new charge was logged afterwards. */
+    STILL_CHARGING,
+    /** User chose to keep it. */
+    KEPT,
+    /** User cancelled it and no charge has appeared since. */
+    CANCELLED
+}
+
+/** A recurring auto-debit inferred from the user's own subscription-category expenses. */
 data class DetectedSubscription(
     val key: String,
     val title: String,
-    val averageAmountLkr: Double,
-    val occurrences: Int,
-    val cadenceDays: Int,
+    val accountName: String,
+    val monthlyCostLkr: Double,
     val lastChargedMillis: Long,
-    val nextExpectedMillis: Long,
-    val paymentAccountName: String,
-    val isOnAutoDebitAccount: Boolean,
-    val risk: SubscriptionRisk,
-    val reviewStatus: SubscriptionReviewStatus? = null
+    val chargeCount: Int,
+    val status: SubscriptionStatus,
+    val risk: SubscriptionRisk = SubscriptionRisk.LOW,
+    val consecutiveUnusedMonths: Int = 0,
+    val lastAppOpenedDaysAgo: Int? = null,
+    val isSecondaryAccount: Boolean = false
 ) {
-    val monthlyCostLkr: Double get() = averageAmountLkr * (30.0 / cadenceDays.coerceAtLeast(1))
     val annualCostLkr: Double get() = monthlyCostLkr * 12
-    val isPendingReview: Boolean get() = reviewStatus == null
-    val isFlagged: Boolean get() = risk == SubscriptionRisk.ZOMBIE && isPendingReview
+    val isFlagged: Boolean get() = status == SubscriptionStatus.NEEDS_REVIEW ||
+            status == SubscriptionStatus.STILL_CHARGING ||
+            risk == SubscriptionRisk.HIGH
 }

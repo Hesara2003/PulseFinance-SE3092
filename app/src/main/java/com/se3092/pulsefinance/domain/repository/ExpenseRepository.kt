@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface ExpenseRepository {
     fun getExpenses(userId: String): Flow<List<Expense>>
-    suspend fun addExpense(expense: Expense): Result<Unit>
+    /** Inserts, or replaces when [Expense.id] already exists. */
+    suspend fun saveExpense(expense: Expense): Result<Unit>
     suspend fun deleteExpense(expenseId: String, userId: String): Result<Unit>
 }

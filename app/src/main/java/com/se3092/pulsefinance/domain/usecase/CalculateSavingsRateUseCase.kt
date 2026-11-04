@@ -1,64 +1,35 @@
 package com.se3092.pulsefinance.domain.usecase
 
+import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.IncomeStream
-import com.se3092.pulsefinance.domain.model.InvoiceStatus
-import java.util.Calendar
 import javax.inject.Inject
 
-data class SavingsRateReport(
-    val monthlyIncomeLkr: Double,
-    val monthlyExpensesLkr: Double,
-    /** Net cash left after this month's spending; negative means the month ran a deficit. */
-    val monthlyNetSavingsLkr: Double,
-    /** Share of realized income kept this month, 0..1 (0 when there's no income yet). */
-    val savingsRate: Float,
-    /** Average net savings per month across the months that have any activity. */
-    val averageMonthlyNetSavingsLkr: Double
-) {
-    val savingsRatePercent: Int get() = (savingsRate * 100).toInt()
-}
-
+/**
+ * The user's actual monthly savings rate: realised income minus spending, averaged over
+ * the last 90 days (or since the first record if the history is shorter than that).
+ * This is the number Kavindu never knew, and it drives the goal projection.
+ */
 class CalculateSavingsRateUseCase @Inject constructor() {
 
     operator fun invoke(
         incomes: List<IncomeStream>,
         expenses: List<Expense>,
-        nowMillis: Long = System.currentTimeMillis()
-    ): SavingsRateReport {
-        val currentMonth = monthKey(nowMillis)
-        val realized = incomes.filter { it.status == InvoiceStatus.RECEIVED }
+        now: Long = System.currentTimeMillis()
+    ): Double {
+        val windowStart = now - WINDOW_DAYS * DAY_MILLIS
+        val windowIncomes = incomes.filter { it.isRealized && it.dateReceivedOrExpected in windowStart..now }
+        val windowExpenses = expenses.filter { it.timestamp in windowStart..now }
 
-        val incomeByMonth = mutableMapOf<Int, Double>()
-        realized.forEach { income ->
-            // Recurring streams (salary) count towards every month, including the current one.
-            val month = if (income.isRecurringMonthly) currentMonth else monthKey(income.dateReceivedOrExpected)
-            incomeByMonth[month] = (incomeByMonth[month] ?: 0.0) + income.amountInLkr
-        }
-        val expensesByMonth = expenses
-            .groupBy { monthKey(it.timestamp) }
-            .mapValues { (_, list) -> list.sumOf { it.amountLkr } }
+        val earliest = (windowIncomes.map { it.dateReceivedOrExpected } + windowExpenses.map { it.timestamp }).minOrNull()
+            ?: return 0.0
 
-        val monthIncome = incomeByMonth[currentMonth] ?: 0.0
-        val monthExpenses = expensesByMonth[currentMonth] ?: 0.0
-        val net = monthIncome - monthExpenses
-
-        val activeMonths = incomeByMonth.keys + expensesByMonth.keys
-        val averageNet = if (activeMonths.isEmpty()) 0.0 else {
-            activeMonths.sumOf { (incomeByMonth[it] ?: 0.0) - (expensesByMonth[it] ?: 0.0) } / activeMonths.size
-        }
-
-        return SavingsRateReport(
-            monthlyIncomeLkr = monthIncome,
-            monthlyExpensesLkr = monthExpenses,
-            monthlyNetSavingsLkr = net,
-            savingsRate = if (monthIncome > 0) (net / monthIncome).toFloat().coerceIn(0f, 1f) else 0f,
-            averageMonthlyNetSavingsLkr = averageNet
-        )
+        val months = ((now - earliest).toDouble() / (30 * DAY_MILLIS)).coerceIn(1.0, WINDOW_DAYS / 30.0)
+        val net = windowIncomes.sumOf { it.amountInLkr } - windowExpenses.sumOf { it.amountLkr }
+        return net / months
     }
 
-    private fun monthKey(millis: Long): Int {
-        val cal = Calendar.getInstance().apply { timeInMillis = millis }
-        return cal.get(Calendar.YEAR) * 12 + cal.get(Calendar.MONTH)
+    private companion object {
+        const val WINDOW_DAYS = 90L
     }
 }

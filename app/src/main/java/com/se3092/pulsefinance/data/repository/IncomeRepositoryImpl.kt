@@ -16,40 +16,41 @@ import javax.inject.Singleton
 @Singleton
 class IncomeRepositoryImpl @Inject constructor(
     private val incomeDao: IncomeDao,
-    private val firestoreDataSource: FirestoreDataSource,
-    private val remoteWriter: RemoteWriter
+    private val firestoreDataSource: FirestoreDataSource
 ) : IncomeRepository {
 
     override fun getIncomeStreams(userId: String): Flow<List<IncomeStream>> = cacheBackedFlow(
-        label = "income_streams",
-        local = incomeDao.getIncomeStreams(userId),
-        remote = firestoreDataSource.observeIncomeStreams(userId),
-        persist = { dtos ->
-            incomeDao.replaceUserIncome(userId, dtos.map { IncomeEntity.fromDomain(it.toDomain()) })
+        tag = TAG,
+        local = incomeDao.getIncomeStreams(userId).map { entities -> entities.map { it.toDomain() } },
+        sync = {
+            firestoreDataSource.observeIncomeStreams(userId).collect { dtos ->
+                incomeDao.replaceAll(userId, dtos.map { IncomeEntity.fromDomain(it.toDomain()) })
+            }
         }
-    ).map { entities -> entities.map { it.toDomain() } }
+    )
 
-    override suspend fun addIncomeStream(income: IncomeStream): Result<Unit> = runCatching {
+    override suspend fun saveIncomeStream(income: IncomeStream): Result<Unit> = runCatching {
         val prepared = income.copy(id = income.id.ifBlank { UUID.randomUUID().toString() })
-        incomeDao.upsertIncome(IncomeEntity.fromDomain(prepared))
-        remoteWriter.enqueue("saveIncomeStream") {
-            firestoreDataSource.saveIncomeStream(prepared.userId, IncomeDto.fromDomain(prepared))
-        }
+        incomeDao.insertIncome(IncomeEntity.fromDomain(prepared))
+        firestoreDataSource.saveIncomeStream(prepared.userId, IncomeDto.fromDomain(prepared))
     }
 
     override suspend fun updateInvoiceStatus(
         incomeId: String,
         userId: String,
-        status: InvoiceStatus
+        status: InvoiceStatus,
+        dateMillis: Long
     ): Result<Unit> = runCatching {
-        incomeDao.updateStatus(incomeId, userId, status.name)
-        remoteWriter.enqueue("updateIncomeStatus") {
-            firestoreDataSource.updateIncomeStatus(userId, incomeId, status.name)
-        }
+        incomeDao.updateStatus(incomeId, userId, status.name, dateMillis)
+        firestoreDataSource.updateIncomeStatus(userId, incomeId, status.name, dateMillis)
     }
 
     override suspend fun deleteIncomeStream(incomeId: String, userId: String): Result<Unit> = runCatching {
         incomeDao.deleteIncome(incomeId, userId)
-        remoteWriter.enqueue("deleteIncomeStream") { firestoreDataSource.deleteIncomeStream(userId, incomeId) }
+        firestoreDataSource.deleteIncomeStream(userId, incomeId)
+    }
+
+    private companion object {
+        const val TAG = "IncomeRepository"
     }
 }

@@ -1,11 +1,11 @@
 package com.se3092.pulsefinance.domain.usecase
 
-import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.FinancialSummary
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
-import java.util.Calendar
+import com.se3092.pulsefinance.domain.model.Periods
+import com.se3092.pulsefinance.domain.model.SavingsGoal
 import javax.inject.Inject
 
 class CalculateFinancialSummaryUseCase @Inject constructor() {
@@ -13,71 +13,65 @@ class CalculateFinancialSummaryUseCase @Inject constructor() {
     operator fun invoke(
         incomes: List<IncomeStream>,
         expenses: List<Expense>,
-        accounts: List<Account>,
-        monthlyGoalAllocationLkr: Double = 39900.0,
-        nowMillis: Long = System.currentTimeMillis()
+        goal: SavingsGoal?,
+        now: Long = System.currentTimeMillis()
     ): FinancialSummary {
-        val calendar = Calendar.getInstance().apply { timeInMillis = nowMillis }
-        val monthStart = (calendar.clone() as Calendar).apply {
-            set(Calendar.DAY_OF_MONTH, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
+        val month = Periods.month(now)
 
-        // The cockpit reflects the current month: older expenses (e.g. last month's
-        // subscription charges) stay in the ledger but don't eat into this month's budget.
-        val monthExpenses = expenses.filter { it.timestamp >= monthStart }
-
-        // 1. Separate realized income from pending freelance invoices
-        val realizedIncome = incomes
-            .filter { it.status == InvoiceStatus.RECEIVED }
-            .filter { it.isRecurringMonthly || it.dateReceivedOrExpected >= monthStart }
+        // 1. Realised income is counted in the month it actually arrived (crypto losses net off).
+        val realizedThisMonth = incomes
+            .filter { it.isRealized && it.dateReceivedOrExpected in month }
             .sumOf { it.amountInLkr }
 
-        val pendingIncome = incomes
-            .filter { it.status == InvoiceStatus.PENDING_INVOICE || it.status == InvoiceStatus.OVERDUE }
+        // 2. Unpaid invoices are tracked separately and never treated as spendable.
+        val unpaid = incomes.filter { !it.isRealized }
+        val pendingIncome = unpaid.sumOf { it.amountInLkr }
+        val overdueIncome = unpaid
+            .filter { it.effectiveStatus(now) == InvoiceStatus.OVERDUE }
             .sumOf { it.amountInLkr }
 
-        val overdueIncome = incomes
-            .filter { it.status == InvoiceStatus.OVERDUE }
-            .sumOf { it.amountInLkr }
+        // 3. Committed vs discretionary for this month only.
+        val monthExpenses = expenses.filter { it.timestamp in month }
+        val committed = monthExpenses.filter { it.isCommitted }.sumOf { it.amountLkr }
+        val discretionary = monthExpenses.filter { !it.isCommitted }.sumOf { it.amountLkr }
 
-        // 2. Segment expenses into committed vs discretionary
-        val totalExpenses = monthExpenses.sumOf { it.amountLkr }
-        val committedExpenses = monthExpenses
-            .filter { it.isCommitted }
-            .sumOf { it.amountLkr }
-        val discretionaryExpenses = monthExpenses
-            .filter { !it.isCommitted }
-            .sumOf { it.amountLkr }
+        // 4. Salary lands on the 25th, so early in the month "this month's income" is near zero.
+        //    Until it arrives, base the allowance on the average of the previous three months.
+        //    Per FR-DASH-3, leave out crypto profits from the 3-month average but keep crypto losses
+        //    so one lucky trade does not inflate the Safe-to-Spend allowance of an impulsive spender.
+        val recentAverage = (1..3)
+            .map { offset -> Periods.month(now, -offset) }
+            .map { period ->
+                incomes.filter { income ->
+                    income.isRealized &&
+                        income.dateReceivedOrExpected in period &&
+                        !(income.source == com.se3092.pulsefinance.domain.model.IncomeSource.CRYPTO && income.amountInLkr > 0)
+                }.sumOf { it.amountInLkr }
+            }
+            .filter { it > 0 }
+            .let { if (it.isEmpty()) 0.0 else it.average() }
+        val useAverage = recentAverage > realizedThisMonth
+        val incomeBasis = if (useAverage) recentAverage else realizedThisMonth
 
-        // 3. Liquid total across all tracked accounts
-        val totalLiquid = accounts.sumOf { it.balanceLkr }
-
-        // 4. Calculate days remaining in current month
-        val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
-        val maxDays = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
-        val daysRemaining = (maxDays - currentDay + 1).coerceAtLeast(1)
-
-        // 5. Safe-to-spend daily allowance:
-        // (Safe Realized Income - Fixed Committed Bills - Goal Allocation - Discretionary Spent So Far) / Remaining Days
-        val availableDiscretionaryPool = (realizedIncome - committedExpenses - monthlyGoalAllocationLkr - discretionaryExpenses)
-        val safeToSpendDaily = (availableDiscretionaryPool / daysRemaining).coerceAtLeast(0.0)
+        // 5. Safe-to-spend per day = (income − committed − goal contribution − discretionary so far) / days left.
+        val goalAllocation = goal?.takeUnless { it.isComplete }?.requiredMonthlySavingsLkr ?: 0.0
+        val daysRemaining = Periods.daysRemainingInMonth(now)
+        val pool = incomeBasis - committed - goalAllocation - discretionary
+        val safeToSpendDaily = (pool / daysRemaining).coerceAtLeast(0.0)
 
         return FinancialSummary(
-            totalRealizedIncomeLkr = realizedIncome,
+            totalRealizedIncomeLkr = realizedThisMonth,
             pendingIncomeLkr = pendingIncome,
             overdueIncomeLkr = overdueIncome,
-            totalExpensesLkr = totalExpenses,
-            committedExpensesLkr = committedExpenses,
-            discretionaryExpensesLkr = discretionaryExpenses,
-            totalLiquidBalanceLkr = totalLiquid,
-            monthlyGoalAllocationLkr = monthlyGoalAllocationLkr,
-            discretionaryPoolRemainingLkr = availableDiscretionaryPool,
+            totalExpensesLkr = committed + discretionary,
+            committedExpensesLkr = committed,
+            discretionaryExpensesLkr = discretionary,
+            incomeBasisLkr = incomeBasis,
+            incomeBasisIsAverage = useAverage,
+            goalAllocationLkr = goalAllocation,
             safeToSpendDailyLkr = safeToSpendDaily,
-            daysRemainingInMonth = daysRemaining
+            daysRemainingInMonth = daysRemaining,
+            hasAnyData = incomes.isNotEmpty() || expenses.isNotEmpty()
         )
     }
 }

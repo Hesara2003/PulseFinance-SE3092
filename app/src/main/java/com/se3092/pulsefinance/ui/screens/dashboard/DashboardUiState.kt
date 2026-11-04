@@ -3,60 +3,57 @@ package com.se3092.pulsefinance.ui.screens.dashboard
 import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.FinancialSummary
+import com.se3092.pulsefinance.domain.model.GoalQuest
 import com.se3092.pulsefinance.domain.model.IncomeStream
+import com.se3092.pulsefinance.domain.model.QuestProgress
 import com.se3092.pulsefinance.domain.model.SavingsGoal
-import com.se3092.pulsefinance.domain.model.UserProfile
-import com.se3092.pulsefinance.domain.usecase.SavingsRateReport
-import com.se3092.pulsefinance.ui.util.Formatters
-import com.se3092.pulsefinance.ui.util.TransactionVisual
-import com.se3092.pulsefinance.ui.util.formatDate
+import com.se3092.pulsefinance.domain.usecase.SeasonalAlert
+import com.se3092.pulsefinance.ui.common.TransactionItem
+import com.se3092.pulsefinance.ui.screens.expense.AddExpenseFormState
+import com.se3092.pulsefinance.ui.screens.expense.ExpensePreset
 
-/** One square card in the "Recent Transactions" slider (income or expense). */
-data class ActivityItem(
-    val id: String,
-    val title: String,
-    val currencyLabel: String,
-    val amountText: String,
-    val isIncoming: Boolean,
-    val visual: TransactionVisual,
-    val timestamp: Long
-)
-
-/** One capsule in the 7-day discretionary velocity chart. */
 data class DayBar(
     val label: String,
     val amountLkr: Double,
+    /** 0..1 relative to the busiest day of the week. */
     val fillRatio: Float,
     val isToday: Boolean
 )
 
+data class FrozenExpenseWarning(
+    val account: Account,
+    val amountLkr: Double,
+    val title: String,
+    val goalDaysDelayed: Int
+)
+
 data class DashboardUiState(
     val isLoading: Boolean = true,
-    val user: UserProfile? = null,
+    val firstName: String = "",
+    val initials: String = "",
+    val greeting: String = "",
+    val monthLabel: String = "",
     val summary: FinancialSummary = FinancialSummary(),
-    val savingsRate: SavingsRateReport? = null,
     val primaryGoal: SavingsGoal? = null,
+    val recentTransactions: List<TransactionItem> = emptyList(),
     val recentExpenses: List<Expense> = emptyList(),
-    val recentActivity: List<ActivityItem> = emptyList(),
-    val weeklyDiscretionary: List<DayBar> = emptyList(),
-    val incomeStreams: List<IncomeStream> = emptyList(),
     val accounts: List<Account> = emptyList(),
-    val overdueInvoices: List<IncomeStream> = emptyList(),
-    val errorMessage: String? = null
+    val presets: List<ExpensePreset> = emptyList(),
+    val weekBars: List<DayBar> = emptyList(),
+    val weekDiscretionaryLkr: Double = 0.0,
+    /** % change of discretionary spend vs the same days last week; null when there is no baseline. */
+    val weekChangePct: Int? = null,
+    val unpaidInvoices: List<IncomeStream> = emptyList(),
+    val overdueInvoiceCount: Int = 0,
+    val addExpense: AddExpenseFormState = AddExpenseFormState(),
+    val message: String? = null,
+    val seasonalAlert: SeasonalAlert? = null,
+    val frozenWarning: FrozenExpenseWarning? = null,
+    val revealedAccountIds: Set<String> = emptySet()
 ) {
-    val initials: String get() = Formatters.initials(user)
-    val firstName: String get() = Formatters.firstName(user)
-    val greeting: String get() = Formatters.greeting()
-    val monthLabel: String get() = formatDate(System.currentTimeMillis(), "MMMM")
-    val unpaidInvoices: List<IncomeStream> get() = incomeStreams.filterNot { it.isRealized }
-    val overdueInvoiceCount: Int get() = overdueInvoices.size
-    val weekDiscretionaryLkr: Double get() = weeklyDiscretionary.sumOf { it.amountLkr }
-    val weekBars: List<DayBar> get() = weeklyDiscretionary
-    val hasAnyData: Boolean get() = incomeStreams.isNotEmpty() || recentExpenses.isNotEmpty()
+    /** The goal as a level-by-level journey, derived from [primaryGoal]. */
+    val quest: QuestProgress? = primaryGoal?.let(GoalQuest::of)
 
-    val overdueInvoicesCount: Int get() = overdueInvoices.size
-    val overdueInvoicesTotalLkr: Double get() = overdueInvoices.sumOf { it.amountInLkr }
-    val primaryAccountLabel: String get() =
-        accounts.firstOrNull()?.name?.substringBefore(" (")?.uppercase() ?: "PULSEFINANCE"
-    val weeklyDiscretionaryTotalLkr: Double get() = weeklyDiscretionary.sumOf { it.amountLkr }
+    val combinedBalanceLkr: Double get() = accounts.sumOf { it.balanceLkr }
+    val totalFreezeBreaks: Int get() = accounts.sumOf { it.freezeBreakCount }
 }

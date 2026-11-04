@@ -25,7 +25,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "DEMO_EMAIL", "\"kavindu.silva@pulsemail.io\"")
+            buildConfigField("String", "DEMO_PASSWORD", "\"ColomboDev2026!\"")
+        }
         release {
+            buildConfigField("String", "DEMO_EMAIL", "\"\"")
+            buildConfigField("String", "DEMO_PASSWORD", "\"\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -42,6 +48,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {
@@ -92,8 +99,11 @@ dependencies {
 
     // Google Sign-In via Credential Manager
     implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.androidx.credentials.play.services)
     implementation(libs.googleid)
+
+    // Biometrics (Sensitive Account Number reveal)
+    implementation(libs.androidx.biometric)
 
     // Testing
     testImplementation(libs.junit)

@@ -1,6 +1,7 @@
 package com.se3092.pulsefinance.ui.screens.income
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,24 +66,32 @@ import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 
+private val receivedDateOptions = listOf(0 to "Today", -1 to "Yesterday", -7 to "Last week", -30 to "Last month")
+private val dueDateOptions = listOf(7 to "In 1 week", 14 to "In 2 weeks", 30 to "In 30 days", -1 to "Already due")
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddIncomeBottomSheet(
-    state: IncomeScreenUiState,
+    form: IncomeFormState,
     onTitleChange: (String) -> Unit,
     onClientChange: (String) -> Unit,
     onAmountChange: (String) -> Unit,
     onSourceChange: (IncomeSource) -> Unit,
     onCurrencyChange: (Currency) -> Unit,
     onRateChange: (String) -> Unit,
+    onCreditedLkrChange: (String) -> Unit = {},
+    onToggleCreditedLkrMode: (Boolean) -> Unit = {},
     onStatusChange: (InvoiceStatus) -> Unit,
+    onDayOffsetChange: (Int) -> Unit,
+    onCryptoLossToggle: (Boolean) -> Unit,
+    onRecurringToggle: (Boolean) -> Unit,
     onSubmit: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val amount = state.amountInput.replace(",", "").toDoubleOrNull() ?: 0.0
-    val rate = state.exchangeRateInput.toDoubleOrNull() ?: 0.0
+    val amount = form.amountInput.replace(",", "").toDoubleOrNull() ?: 0.0
+    val rate = form.exchangeRateInput.toDoubleOrNull() ?: 0.0
     val convertedLkr = amount * rate
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
@@ -154,7 +163,7 @@ fun AddIncomeBottomSheet(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 IncomeSource.entries.forEach { source ->
-                    val isSelected = state.selectedSource == source
+                    val isSelected = form.selectedSource == source
                     FilterChip(
                         selected = isSelected,
                         onClick = { onSourceChange(source) },
@@ -165,10 +174,22 @@ fun AddIncomeBottomSheet(
                 }
             }
 
+            // Crypto trades can lose money — record losses so the net position is honest.
+            if (form.selectedSource == IncomeSource.CRYPTO) {
+                Spacer(modifier = Modifier.height(6.dp))
+                ToggleRow(
+                    title = if (form.isCryptoLoss) "Realised loss" else "Realised gain",
+                    subtitle = "Losses reduce your crypto net and this month's income",
+                    checked = form.isCryptoLoss,
+                    onCheckedChange = onCryptoLossToggle,
+                    accent = NeoRose
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
-                value = state.titleInput,
+                value = form.titleInput,
                 onValueChange = onTitleChange,
                 label = { Text("Title (e.g. Milestone 2 / AdSense Sept)", fontSize = 13.sp) },
                 singleLine = true,
@@ -180,7 +201,7 @@ fun AddIncomeBottomSheet(
             Spacer(modifier = Modifier.height(10.dp))
 
             OutlinedTextField(
-                value = state.clientInput,
+                value = form.clientInput,
                 onValueChange = onClientChange,
                 label = { Text("Client or platform (e.g. LankaRetail / Binance)", fontSize = 13.sp) },
                 singleLine = true,
@@ -196,7 +217,7 @@ fun AddIncomeBottomSheet(
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Currency.entries.forEach { currency ->
                     FilterChip(
-                        selected = state.selectedCurrency == currency,
+                        selected = form.selectedCurrency == currency,
                         onClick = { onCurrencyChange(currency) },
                         label = { Text(currency.name, fontSize = 12.sp) },
                         shape = CircleShape,
@@ -207,34 +228,82 @@ fun AddIncomeBottomSheet(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 OutlinedTextField(
-                    value = state.amountInput,
+                    value = form.amountInput,
                     onValueChange = onAmountChange,
-                    label = { Text("Amount (${state.selectedCurrency.name})", fontSize = 13.sp) },
+                    label = { Text("Amount (${form.selectedCurrency.name})", fontSize = 13.sp) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
+                    isError = form.errorMessage != null,
                     shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.weight(1.5f),
+                    modifier = Modifier.weight(1.3f),
                     colors = fieldColors
                 )
 
-                if (state.selectedCurrency != Currency.LKR) {
-                    OutlinedTextField(
-                        value = state.exchangeRateInput,
-                        onValueChange = onRateChange,
-                        label = { Text("Rate to LKR", fontSize = 13.sp) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.weight(1f),
-                        colors = fieldColors
+                if (form.selectedCurrency != Currency.LKR) {
+                    if (form.isCreditedLkrMode) {
+                        OutlinedTextField(
+                            value = form.receivedLkrInput,
+                            onValueChange = onCreditedLkrChange,
+                            label = { Text("Bank LKR Credited", fontSize = 13.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.weight(1.3f),
+                            colors = fieldColors
+                        )
+                    } else {
+                        OutlinedTextField(
+                            value = form.exchangeRateInput,
+                            onValueChange = onRateChange,
+                            label = { Text("Rate to LKR", fontSize = 13.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.weight(1f),
+                            colors = fieldColors
+                        )
+                    }
+                }
+            }
+
+            if (form.selectedCurrency != Currency.LKR) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (form.rateSourceInfo.isNotBlank()) "Suggested: ${form.rateSourceInfo}" else "Suggested: 305 LKR/USD",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = NeoTextTertiary,
+                        fontSize = 11.5.sp
+                    )
+                    Text(
+                        text = if (form.isCreditedLkrMode) "Switch to Rate" else "Type Bank LKR",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = NeoGreenDark,
+                        fontSize = 11.5.sp,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable { onToggleCreditedLkrMode(!form.isCreditedLkrMode) }
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
                     )
                 }
             }
 
-            // The rate actually received is stored with the entry, so history never shifts with the market.
-            if (state.selectedCurrency != Currency.LKR && amount > 0 && rate > 0) {
+            form.errorMessage?.let {
+                Text(text = it, color = NeoRose, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
+            }
+
+            // The rate actually received is stored with the entry, so history never shifts with the market (ADR-0001).
+            if (form.selectedCurrency != Currency.LKR && amount > 0 && rate > 0) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Box(
                     modifier = Modifier
@@ -244,11 +313,11 @@ fun AddIncomeBottomSheet(
                         .padding(10.dp)
                 ) {
                     Text(
-                        text = "Recorded as ≈ LKR ${String.format("%,.0f", convertedLkr)} at the rate you entered",
+                        text = "Effective rate: ${String.format("%.2f", rate)} LKR/${form.selectedCurrency.name} → Recorded as ≈ LKR ${String.format("%,.0f", convertedLkr)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = NeoGreenDark,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                        fontSize = 12.5.sp
                     )
                 }
             }
@@ -260,7 +329,7 @@ fun AddIncomeBottomSheet(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(InvoiceStatus.RECEIVED to "Received", InvoiceStatus.PENDING_INVOICE to "Invoiced, not paid").forEach { (status, label) ->
                     FilterChip(
-                        selected = state.selectedStatus == status,
+                        selected = form.selectedStatus == status,
                         onClick = { onStatusChange(status) },
                         label = { Text(label, fontSize = 12.sp) },
                         shape = CircleShape,
@@ -269,11 +338,38 @@ fun AddIncomeBottomSheet(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+            SectionLabel(if (form.selectedStatus == InvoiceStatus.RECEIVED) "RECEIVED" else "PAYMENT DUE")
+            Spacer(modifier = Modifier.height(6.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                val options = if (form.selectedStatus == InvoiceStatus.RECEIVED) receivedDateOptions else dueDateOptions
+                options.forEach { (offset, label) ->
+                    FilterChip(
+                        selected = form.dayOffset == offset,
+                        onClick = { onDayOffsetChange(offset) },
+                        label = { Text(label, fontSize = 12.sp) },
+                        shape = CircleShape,
+                        colors = chipColors
+                    )
+                }
+            }
+
+            if (form.selectedSource == IncomeSource.SALARY) {
+                Spacer(modifier = Modifier.height(6.dp))
+                ToggleRow(
+                    title = "Monthly salary",
+                    subtitle = "Marks this as recurring income",
+                    checked = form.isRecurringMonthly,
+                    onCheckedChange = onRecurringToggle,
+                    accent = NeoGreen
+                )
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             Button(
                 onClick = onSubmit,
-                enabled = state.amountInput.isNotBlank() && !state.isSubmitting,
+                enabled = form.amountInput.isNotBlank() && !form.isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
@@ -284,7 +380,7 @@ fun AddIncomeBottomSheet(
                     contentColor = OnAccent
                 )
             ) {
-                if (state.isSubmitting) {
+                if (form.isSubmitting) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), color = OnAccent, strokeWidth = 2.dp)
                 } else {
                     Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -305,4 +401,33 @@ private fun SectionLabel(text: String) {
         fontWeight = FontWeight.Bold,
         fontSize = 11.sp
     )
+}
+
+@Composable
+private fun ToggleRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    accent: Color
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(NeoCardLow)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeoTextPrimary)
+            Text(text = subtitle, fontSize = 11.5.sp, color = NeoTextSecondary)
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(checkedThumbColor = OnAccent, checkedTrackColor = accent, uncheckedThumbColor = Mist, uncheckedTrackColor = InkHigher, uncheckedBorderColor = Dusk)
+        )
+    }
 }

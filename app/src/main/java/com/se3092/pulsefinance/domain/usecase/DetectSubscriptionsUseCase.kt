@@ -1,107 +1,101 @@
 package com.se3092.pulsefinance.domain.usecase
 
 import com.se3092.pulsefinance.domain.model.Account
+import com.se3092.pulsefinance.domain.model.AccountType
+import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.DetectedSubscription
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
+import com.se3092.pulsefinance.domain.model.SubscriptionDecision
 import com.se3092.pulsefinance.domain.model.SubscriptionReview
-import com.se3092.pulsefinance.domain.model.SubscriptionReviewStatus
 import com.se3092.pulsefinance.domain.model.SubscriptionRisk
+import com.se3092.pulsefinance.domain.model.SubscriptionStatus
 import javax.inject.Inject
-import kotlin.math.abs
 
 /**
- * Scans the expense ledger for recurring debits.
- *
- * A group of expenses sharing a normalised title is treated as a subscription when either
- * - it is explicitly categorised as [ExpenseCategory.SUBSCRIPTION], or
- * - it has at least two charges on a weekly, monthly or yearly cadence with stable amounts.
- *
- * Debits that land on an auto-debit source account (the "invisible" secondary card) are
- * flagged as zombie risks unless the user has already reviewed them.
+ * Groups subscription/auto-debit expenses by merchant to surface what is still being charged.
+ * Surfaces annual drain rate, usage risk, app inactivity, and secondary auto-debit accounts (FR-SUB-1...6).
  */
 class DetectSubscriptionsUseCase @Inject constructor() {
 
     operator fun invoke(
         expenses: List<Expense>,
-        accounts: List<Account>,
-        reviews: Map<String, SubscriptionReview> = emptyMap()
+        reviews: Map<String, SubscriptionReview>,
+        accounts: List<Account> = emptyList(),
+        appUsageDaysProvider: ((key: String) -> Int?)? = null,
+        now: Long = System.currentTimeMillis()
     ): List<DetectedSubscription> {
-        val autoDebitAccountIds = accounts.filter { it.isAutoDebitSource }.map { it.id }.toSet()
+        val lookbackStart = now - LOOKBACK_DAYS * DAY_MILLIS
+        val activeCutoff = now - ACTIVE_DAYS * DAY_MILLIS
+
+        // Map accounts to check secondary auto-debit flag
+        val secondaryAccountNames = accounts
+            .filter { it.type == AccountType.BANK_SECONDARY || it.isAutoDebitSource }
+            .map { it.name.trim().lowercase() }
+            .toSet()
 
         return expenses
-            .groupBy { subscriptionKeyFor(it.title) }
+            .filter { it.category == ExpenseCategory.SUBSCRIPTION && it.timestamp >= lookbackStart }
+            .groupBy { keyFor(it.title) }
             .filterKeys { it.isNotBlank() }
-            .mapNotNull { (key, charges) -> detect(key, charges, autoDebitAccountIds, reviews[key]) }
-            .sortedByDescending { it.monthlyCostLkr }
-    }
+            .mapNotNull { (key, charges) ->
+                val latest = charges.maxBy { it.timestamp }
+                val review = reviews[key]
+                val status = when {
+                    review?.decision == SubscriptionDecision.KEEP -> SubscriptionStatus.KEPT
+                    review?.decision == SubscriptionDecision.CANCELLED && latest.timestamp > review.decidedAt -> SubscriptionStatus.STILL_CHARGING
+                    review?.decision == SubscriptionDecision.CANCELLED -> SubscriptionStatus.CANCELLED
+                    else -> SubscriptionStatus.NEEDS_REVIEW
+                }
+                // Something not charged for ~6 weeks and never reviewed has probably lapsed already.
+                if (status == SubscriptionStatus.NEEDS_REVIEW && latest.timestamp < activeCutoff) return@mapNotNull null
 
-    private fun detect(
-        key: String,
-        charges: List<Expense>,
-        autoDebitAccountIds: Set<String>,
-        review: SubscriptionReview?
-    ): DetectedSubscription? {
-        val sorted = charges.sortedBy { it.timestamp }
-        val isTaggedSubscription = sorted.any { it.category == ExpenseCategory.SUBSCRIPTION }
+                val consecutiveUnused = review?.consecutiveUnusedMonths ?: 0
+                val appDaysAgo = appUsageDaysProvider?.invoke(key)
 
-        val intervalsDays = sorted.zipWithNext { a, b -> ((b.timestamp - a.timestamp) / DAY_MILLIS).toInt() }
-        val cadenceDays = intervalsDays.medianOrNull()
-        val hasRecurringCadence = cadenceDays != null && RECURRING_CADENCES.any { cadenceDays in it }
+                // Secondary account match check
+                val isSecondary = latest.paymentAccountName.trim().lowercase().let { acct ->
+                    secondaryAccountNames.any { acct.contains(it) || it.contains(acct) }
+                }
 
-        val amounts = sorted.map { it.amountLkr }
-        val medianAmount = amounts.median()
-        val hasStableAmounts = medianAmount > 0 &&
-            amounts.all { abs(it - medianAmount) / medianAmount <= AMOUNT_TOLERANCE }
+                // Determine Subscription Risk (FR-SUB-4, FR-SUB-5)
+                val risk = when {
+                    status == SubscriptionStatus.STILL_CHARGING -> SubscriptionRisk.HIGH
+                    consecutiveUnused >= 2 -> SubscriptionRisk.HIGH
+                    appDaysAgo != null && appDaysAgo >= 30 -> SubscriptionRisk.HIGH
+                    consecutiveUnused == 1 -> SubscriptionRisk.MEDIUM
+                    appDaysAgo != null && appDaysAgo >= 14 -> SubscriptionRisk.MEDIUM
+                    status == SubscriptionStatus.NEEDS_REVIEW -> SubscriptionRisk.MEDIUM
+                    else -> SubscriptionRisk.LOW
+                }
 
-        val isRecurring = sorted.size >= 2 && hasRecurringCadence && hasStableAmounts
-        if (!isTaggedSubscription && !isRecurring) return null
-
-        val latest = sorted.last()
-        val cadence = if (isRecurring) cadenceDays!! else DEFAULT_CADENCE_DAYS
-        val isOnAutoDebit = latest.paymentAccountId in autoDebitAccountIds
-
-        val risk = when {
-            review?.status == SubscriptionReviewStatus.KEEP -> SubscriptionRisk.HEALTHY
-            isOnAutoDebit -> SubscriptionRisk.ZOMBIE
-            isTaggedSubscription -> SubscriptionRisk.WATCH
-            else -> SubscriptionRisk.HEALTHY
-        }
-
-        return DetectedSubscription(
-            key = key,
-            title = latest.title,
-            averageAmountLkr = amounts.average(),
-            occurrences = sorted.size,
-            cadenceDays = cadence,
-            lastChargedMillis = latest.timestamp,
-            nextExpectedMillis = latest.timestamp + cadence * DAY_MILLIS,
-            paymentAccountName = latest.paymentAccountName,
-            isOnAutoDebitAccount = isOnAutoDebit,
-            risk = risk,
-            reviewStatus = review?.status
-        )
+                DetectedSubscription(
+                    key = key,
+                    title = latest.title,
+                    accountName = latest.paymentAccountName,
+                    monthlyCostLkr = latest.amountLkr,
+                    lastChargedMillis = latest.timestamp,
+                    chargeCount = charges.size,
+                    status = status,
+                    risk = risk,
+                    consecutiveUnusedMonths = consecutiveUnused,
+                    lastAppOpenedDaysAgo = appDaysAgo,
+                    isSecondaryAccount = isSecondary
+                )
+            }
+            .sortedWith(
+                compareByDescending<DetectedSubscription> { it.risk == SubscriptionRisk.HIGH }
+                    .thenByDescending { it.isFlagged }
+                    .thenByDescending { it.monthlyCostLkr }
+            )
     }
 
     companion object {
-        private const val DAY_MILLIS = 24L * 60 * 60 * 1000
-        private const val DEFAULT_CADENCE_DAYS = 30
-        private const val AMOUNT_TOLERANCE = 0.2
-        private val RECURRING_CADENCES = listOf(6..8, 26..35, 355..375)
+        private const val LOOKBACK_DAYS = 120L
+        private const val ACTIVE_DAYS = 45L
 
-        /** Stable, Firestore-safe document id derived from a merchant title. */
-        fun subscriptionKeyFor(title: String): String =
-            title.lowercase()
-                .replace(Regex("[^a-z ]"), " ")
-                .trim()
-                .split(Regex("\\s+"))
-                .filter { it.isNotBlank() }
-                .joinToString("_")
-
-        private fun List<Int>.medianOrNull(): Int? =
-            if (isEmpty()) null else sorted()[size / 2]
-
-        private fun List<Double>.median(): Double =
-            if (isEmpty()) 0.0 else sorted()[size / 2]
+        /** Stable key for a merchant, e.g. "Netflix Premium " -> "netflix_premium". Safe as a Firestore map key. */
+        fun keyFor(title: String): String =
+            title.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_')
     }
 }

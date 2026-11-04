@@ -1,27 +1,25 @@
 package com.se3092.pulsefinance.ui.screens.goal
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CancelPresentation
-import androidx.compose.ui.graphics.vector.ImageVector
+import com.se3092.pulsefinance.ui.common.initialsFor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.se3092.pulsefinance.domain.model.GoalQuest
+import com.se3092.pulsefinance.domain.model.QuestProgress
+import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.Expense
+import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.SavingsGoal
-import com.se3092.pulsefinance.domain.repository.AccountRepository
 import com.se3092.pulsefinance.domain.repository.AuthRepository
 import com.se3092.pulsefinance.domain.repository.ExpenseRepository
 import com.se3092.pulsefinance.domain.repository.GoalRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
-import com.se3092.pulsefinance.domain.repository.SubscriptionReviewRepository
 import com.se3092.pulsefinance.domain.usecase.CalculateGoalVelocityUseCase
 import com.se3092.pulsefinance.domain.usecase.CalculateSavingsRateUseCase
-import com.se3092.pulsefinance.domain.usecase.DetectSubscriptionsUseCase
 import com.se3092.pulsefinance.domain.usecase.GoalVelocityReport
-import com.se3092.pulsefinance.ui.screens.expense.ExpensePresets
-import com.se3092.pulsefinance.ui.util.Formatters
-import com.se3092.pulsefinance.ui.util.TransactionVisuals
-import com.se3092.pulsefinance.ui.util.userScopedFlow
+import com.se3092.pulsefinance.ui.common.lkr
+import com.se3092.pulsefinance.ui.common.whenSignedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -29,39 +27,59 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Locale
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
-/** One "skip this, fund that" card in the Opportunity Cost Translator. */
-data class OpportunitySuggestion(
-    val id: String,
-    val icon: ImageVector,
-    val title: String,
-    val subtitle: String,
-    val badgeText: String,
-    val amountLkr: Double
+/** "Cut this habit by a quarter" suggestion, priced in days of goal progress. */
+data class OpportunityCost(
+    val category: ExpenseCategory,
+    val monthlySpendLkr: Double,
+    val monthlySavingLkr: Double,
+    val daysOfGoalPace: Float
+)
+
+data class GoalEditorState(
+    val isVisible: Boolean = false,
+    val isNew: Boolean = true,
+    val titleInput: String = "",
+    val targetInput: String = "",
+    val savedInput: String = "",
+    val monthsInput: String = "12",
+    val usdPriceInput: String = "",
+    val notesInput: String = "",
+    val errorMessage: String? = null
 )
 
 data class GoalScreenUiState(
+    val initials: String = "",
+    val isLoading: Boolean = true,
     val goal: SavingsGoal? = null,
     val velocityReport: GoalVelocityReport? = null,
-    val monthlyNetSavingsLkr: Double = 0.0,
-    val suggestions: List<OpportunitySuggestion> = emptyList(),
-    /** Projected completion at the current savings velocity, or null if it never gets there. */
-    val projectedArrivalMillis: Long? = null,
-    val userInitials: String = "",
+    val opportunities: List<OpportunityCost> = emptyList(),
     val depositAmountInput: String = "",
-    val opportunityCostInput: String = "2500",
-    val opportunityCostDaysSaved: Float = 0f,
     val isUpdating: Boolean = false,
     val showAllocateSheet: Boolean = false,
-    val toastMessage: String? = null
+    val editor: GoalEditorState = GoalEditorState(),
+    val toastMessage: String? = null,
+    val celebration: Celebration? = null
 ) {
-    val dailyPaceLkr: Double get() = goal?.requiredDailySavingsLkr ?: 0.0
-
-    fun daysFunded(amountLkr: Double): Float =
-        if (dailyPaceLkr > 0) (amountLkr / dailyPaceLkr).toFloat() else 0f
+    /** The goal as a level-by-level journey, derived from [goal]. */
+    val quest: QuestProgress? = goal?.let(GoalQuest::of)
 }
+
+/** Shown after money is set aside, so progress feels like an event rather than a number change. */
+data class Celebration(val title: String, val message: String)
+
+private data class GoalLocalState(
+    val depositAmountInput: String = "",
+    val isUpdating: Boolean = false,
+    val showAllocateSheet: Boolean = false,
+    val editor: GoalEditorState = GoalEditorState(),
+    val toastMessage: String? = null,
+    val celebration: Celebration? = null
+)
+
+private data class GoalData(val goal: SavingsGoal?, val savingsRate: Double, val expenses: List<Expense>)
 
 @HiltViewModel
 class GoalViewModel @Inject constructor(
@@ -69,187 +87,179 @@ class GoalViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
     expenseRepository: ExpenseRepository,
     incomeRepository: IncomeRepository,
-    accountRepository: AccountRepository,
-    subscriptionReviewRepository: SubscriptionReviewRepository,
-    private val calculateGoalVelocityUseCase: CalculateGoalVelocityUseCase,
-    private val calculateSavingsRateUseCase: CalculateSavingsRateUseCase,
-    private val detectSubscriptions: DetectSubscriptionsUseCase
+    calculateSavingsRateUseCase: CalculateSavingsRateUseCase,
+    private val calculateGoalVelocityUseCase: CalculateGoalVelocityUseCase
 ) : ViewModel() {
 
-    private val _screenState = MutableStateFlow(GoalScreenUiState())
+    private val local = MutableStateFlow(GoalLocalState())
 
-    private val goalFlow = authRepository.userScopedFlow<SavingsGoal?>(null) { goalRepository.getPrimaryGoal(it) }
-    private val expensesFlow = authRepository.userScopedFlow(emptyList()) { expenseRepository.getExpenses(it) }
-    private val incomeFlow = authRepository.userScopedFlow(emptyList()) { incomeRepository.getIncomeStreams(it) }
-
-    /** Recurring debits the user hasn't reviewed yet: candidates for "kill this sub". */
-    private val flaggedSubscriptionsFlow = combine(
-        expensesFlow,
-        authRepository.userScopedFlow(emptyList()) { accountRepository.getAccounts(it) },
-        authRepository.userScopedFlow(emptyMap()) { subscriptionReviewRepository.observeReviews(it) }
-    ) { expenses, accounts, reviews ->
-        detectSubscriptions(expenses, accounts, reviews).filter { it.isFlagged }
+    private val data = authRepository.whenSignedIn<GoalData?>(signedOut = null) { userId ->
+        combine(
+            goalRepository.getPrimaryGoal(userId),
+            expenseRepository.getExpenses(userId),
+            incomeRepository.getIncomeStreams(userId)
+        ) { goal, expenses, incomes ->
+            GoalData(goal, calculateSavingsRateUseCase(incomes, expenses), expenses)
+        }
     }
 
-    val uiState: StateFlow<GoalScreenUiState> = combine(
-        goalFlow,
-        expensesFlow,
-        incomeFlow,
-        flaggedSubscriptionsFlow,
-        _screenState
-    ) { goal, expenses, incomes, flaggedSubs, state ->
-        val savings = calculateSavingsRateUseCase(incomes, expenses)
-        val velocity = savings.monthlyNetSavingsLkr.coerceAtLeast(0.0)
-        val report = goal?.let { calculateGoalVelocityUseCase(it, velocity) }
+    private val initials = initialsFor(authRepository.userDisplayName, authRepository.userEmail)
 
-        val withGoal = state.copy(goal = goal)
-        val suggestions = if (goal == null) emptyList() else buildList {
-            addAll(discretionarySuggestions(expenses, withGoal))
-            flaggedSubs.firstOrNull()?.let { sub ->
-                val boost = if (goal.requiredMonthlySavingsLkr > 0) {
-                    (sub.monthlyCostLkr / goal.requiredMonthlySavingsLkr * 100).toInt()
-                } else 0
-                add(
-                    OpportunitySuggestion(
-                        id = "sub_${sub.key}",
-                        icon = Icons.Default.CancelPresentation,
-                        title = "Kill ${sub.title}",
-                        subtitle = "Save ${Formatters.lkr(sub.monthlyCostLkr)}/mo • Compounding speed",
-                        badgeText = "+$boost% Boost",
-                        amountLkr = sub.monthlyCostLkr
-                    )
-                )
-            }
-        }
-
-        val arrival = goal?.let { g ->
-            when {
-                g.remainingAmountLkr <= 0 -> System.currentTimeMillis()
-                velocity <= 0 -> null
-                else -> System.currentTimeMillis() + (g.remainingAmountLkr / velocity * 30 * DAY_MILLIS).toLong()
-            }
-        }
-
-        withGoal.copy(
-            velocityReport = report,
-            monthlyNetSavingsLkr = savings.monthlyNetSavingsLkr,
-            suggestions = suggestions,
-            projectedArrivalMillis = arrival,
-            userInitials = Formatters.initials(authRepository.currentUser),
-            opportunityCostDaysSaved = withGoal.daysFunded(state.opportunityCostInput.toDoubleOrNull() ?: 0.0)
+    val uiState: StateFlow<GoalScreenUiState> = combine(data, local) { data, local ->
+        val goal = data?.goal
+        GoalScreenUiState(
+            isLoading = data == null,
+            goal = goal,
+            velocityReport = goal?.let { calculateGoalVelocityUseCase(it, data.savingsRate) },
+            opportunities = if (goal != null && data != null) opportunities(data.expenses, goal) else emptyList(),
+            depositAmountInput = local.depositAmountInput,
+            isUpdating = local.isUpdating,
+            showAllocateSheet = local.showAllocateSheet,
+            editor = local.editor,
+            toastMessage = local.toastMessage,
+            celebration = local.celebration
         )
-    }.stateIn(
+    }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = GoalScreenUiState()
     )
 
-    /**
-     * Picks the user's most frequent discretionary purchases (by title) and frames skipping
-     * one (or a few) of them as days of goal funding. Falls back to the speed-logger presets
-     * for new users with no history yet.
-     */
-    private fun discretionarySuggestions(
-        expenses: List<Expense>,
-        state: GoalScreenUiState
-    ): List<OpportunitySuggestion> {
-        val habits = expenses
-            .filter { !it.isCommitted }
-            .groupBy { it.title.trim().lowercase(Locale.US) }
-            .values
-            .sortedByDescending { group -> group.size * group.sumOf { it.amountLkr } }
-            .take(2)
-
-        if (habits.isEmpty()) {
-            return ExpensePresets.defaults.filter { !it.isCommitted }.take(2).map { preset ->
-                val days = state.daysFunded(preset.amountLkr)
-                OpportunitySuggestion(
-                    id = "preset_${preset.id}",
-                    icon = TransactionVisuals.forCategory(preset.category).icon,
-                    title = "Skip 1 ${preset.label}",
-                    subtitle = "Save ${Formatters.lkr(preset.amountLkr)} • ${Formatters.days(days)} days funded",
-                    badgeText = "+${String.format(Locale.US, "%.1f", days)} Days",
-                    amountLkr = preset.amountLkr
-                )
+    /** Top three discretionary categories of the last 30 days, each trimmed by 25%. */
+    private fun opportunities(expenses: List<Expense>, goal: SavingsGoal): List<OpportunityCost> {
+        val since = System.currentTimeMillis() - 30 * DAY_MILLIS
+        val dailyPace = goal.requiredDailySavingsLkr.takeIf { it > 0 } ?: return emptyList()
+        return expenses
+            .filter { !it.isCommitted && it.timestamp >= since }
+            .groupBy { it.category }
+            .map { (category, items) ->
+                val spend = items.sumOf { it.amountLkr }
+                val saving = spend * 0.25
+                OpportunityCost(category, spend, saving, (saving / dailyPace).toFloat())
             }
-        }
-
-        return habits.mapIndexed { index, group ->
-            val sample = group.maxBy { it.timestamp }
-            val typical = group.map { it.amountLkr }.average()
-            // Second card asks for a few skips so the impact is visible for cheap habits
-            val count = if (index == 0) 1 else 3
-            val amount = typical * count
-            val days = state.daysFunded(amount)
-            OpportunitySuggestion(
-                id = "habit_${sample.id}",
-                icon = TransactionVisuals.forCategory(sample.category).icon,
-                title = "Skip $count× ${sample.title}",
-                subtitle = "Save ${Formatters.lkr(amount)} • ${Formatters.days(days)} days funded",
-                badgeText = "+${String.format(Locale.US, "%.1f", days)} Days",
-                amountLkr = amount
-            )
-        }
+            .filter { it.monthlySavingLkr >= 100 }
+            .sortedByDescending { it.monthlySpendLkr }
+            .take(3)
     }
 
-    fun onDepositAmountChanged(amount: String) {
-        _screenState.update { it.copy(depositAmountInput = amount.filter { c -> c.isDigit() || c == '.' }) }
-    }
+    // ---------------- Allocation ----------------
 
-    fun onOpportunityCostInputChanged(amountStr: String) {
-        _screenState.update { it.copy(opportunityCostInput = amountStr) }
-    }
+    fun onDepositAmountChanged(amount: String) = local.update { it.copy(depositAmountInput = amount) }
 
-    fun applySuggestion(suggestion: OpportunitySuggestion) {
-        _screenState.update {
-            it.copy(
-                depositAmountInput = suggestion.amountLkr.toLong().toString(),
-                showAllocateSheet = true
-            )
-        }
+    fun setAllocateSheetVisible(visible: Boolean) = local.update { it.copy(showAllocateSheet = visible) }
+
+    fun openAllocateWith(amountLkr: Double) = local.update {
+        it.copy(showAllocateSheet = true, depositAmountInput = amountLkr.roundToInt().toString())
     }
 
     fun addSavingsToGoal() {
-        val deposit = _screenState.value.depositAmountInput.toDoubleOrNull()?.takeIf { it > 0 } ?: return
-        allocateAmount(deposit)
-    }
-
-    fun setAllocateSheetVisible(visible: Boolean) {
-        _screenState.update { it.copy(showAllocateSheet = visible) }
-    }
-
-    fun allocateAmount(amount: Double) {
-        val uid = authRepository.currentUserId ?: return
-        val currentGoal = uiState.value.goal ?: return
-        val newTotal = currentGoal.currentSavedLkr + amount
+        val deposit = local.value.depositAmountInput.replace(",", "").trim().toDoubleOrNull()
+        val goal = uiState.value.goal
+        val userId = authRepository.currentUserId
+        if (deposit == null || deposit <= 0 || goal == null || userId == null) {
+            local.update { it.copy(toastMessage = "Enter an amount greater than zero") }
+            return
+        }
         viewModelScope.launch {
-            _screenState.update { it.copy(isUpdating = true) }
-            goalRepository.updateSavedAmount(currentGoal.id, uid, newTotal)
-            _screenState.update {
-                it.copy(
-                    depositAmountInput = "",
-                    isUpdating = false,
-                    showAllocateSheet = false,
-                    toastMessage = "${Formatters.lkr(amount)} allocated to goal"
+            local.update { it.copy(isUpdating = true) }
+            goalRepository.updateSavedAmount(goal.id, userId, goal.currentSavedLkr + deposit).fold(
+                onSuccess = {
+                    val newTotal = goal.currentSavedLkr + deposit
+                    val celebration = if (newTotal >= goal.targetAmountLkr) {
+                        Celebration("Goal reached!", "${goal.title} is fully funded. Every rupee you tracked got you here.")
+                    } else {
+                        val days = goal.requiredDailySavingsLkr.takeIf { it > 0 }?.let { deposit / it } ?: 0.0
+                        Celebration(
+                            "${lkr(deposit)} set aside",
+                            "That covers ${"%.1f".format(days)} days of your required pace. " +
+                                "${lkr(goal.targetAmountLkr - newTotal)} to go for ${goal.title}."
+                        )
+                    }
+                    local.update {
+                        it.copy(
+                            depositAmountInput = "",
+                            isUpdating = false,
+                            showAllocateSheet = false,
+                            celebration = celebration
+                        )
+                    }
+                },
+                onFailure = { e ->
+                    local.update { it.copy(isUpdating = false, toastMessage = e.localizedMessage ?: "Couldn't update the goal") }
+                }
+            )
+        }
+    }
+
+    // ---------------- Create / edit goal ----------------
+
+    fun openGoalEditor() {
+        val goal = uiState.value.goal
+        local.update {
+            it.copy(
+                editor = if (goal == null) GoalEditorState(isVisible = true, usdPriceInput = "1599")
+                else GoalEditorState(
+                    isVisible = true,
+                    isNew = false,
+                    titleInput = goal.title,
+                    targetInput = goal.targetAmountLkr.roundToInt().toString(),
+                    savedInput = goal.currentSavedLkr.roundToInt().toString(),
+                    monthsInput = ((goal.daysRemaining + 15) / 30).coerceAtLeast(1).toString(),
+                    usdPriceInput = goal.usdReferencePrice?.roundToInt()?.toString().orEmpty(),
+                    notesInput = goal.notes
                 )
-            }
+            )
         }
     }
 
-    /** New users without a seeded scenario can start the flagship goal themselves. */
-    fun createDefaultGoal() {
-        val uid = authRepository.currentUserId ?: return
+    fun dismissGoalEditor() = local.update { it.copy(editor = it.editor.copy(isVisible = false)) }
+
+    fun onEditorChanged(transform: (GoalEditorState) -> GoalEditorState) =
+        local.update { it.copy(editor = transform(it.editor).copy(errorMessage = null)) }
+
+    fun saveGoal() {
+        val editor = local.value.editor
+        val target = editor.targetInput.replace(",", "").trim().toDoubleOrNull()
+        val saved = editor.savedInput.replace(",", "").trim().ifBlank { "0" }.toDoubleOrNull()
+        val months = editor.monthsInput.trim().toIntOrNull()
+        val usdPrice = editor.usdPriceInput.replace(",", "").trim().toDoubleOrNull()
+        val error = when {
+            editor.titleInput.isBlank() -> "Give the goal a name"
+            target == null || target <= 0 -> "Enter the target amount"
+            saved == null || saved < 0 -> "Saved so far can't be negative"
+            months == null || months !in 1..120 -> "Deadline must be 1–120 months away"
+            else -> null
+        }
+        val userId = authRepository.currentUserId
+        if (error != null || userId == null) {
+            local.update { it.copy(editor = it.editor.copy(errorMessage = error ?: "You're signed out")) }
+            return
+        }
+        val existing = uiState.value.goal
+        val goal = (existing ?: SavingsGoal(userId = userId)).copy(
+            userId = userId,
+            title = editor.titleInput.trim(),
+            targetAmountLkr = target!!,
+            currentSavedLkr = saved!!,
+            targetDateMillis = System.currentTimeMillis() + months!! * 30L * DAY_MILLIS,
+            notes = editor.notesInput.trim(),
+            usdReferencePrice = usdPrice
+        )
         viewModelScope.launch {
-            goalRepository.saveGoal(SavingsGoal(id = "", userId = uid, currentSavedLkr = 0.0))
-            _screenState.update { it.copy(toastMessage = "MacBook Pro M4 goal created") }
+            goalRepository.saveGoal(goal).fold(
+                onSuccess = {
+                    local.update {
+                        it.copy(editor = GoalEditorState(), toastMessage = if (existing == null) "Goal created" else "Goal updated")
+                    }
+                },
+                onFailure = { e ->
+                    local.update { it.copy(editor = it.editor.copy(errorMessage = e.localizedMessage ?: "Couldn't save")) }
+                }
+            )
         }
     }
 
-    fun dismissToast() {
-        _screenState.update { it.copy(toastMessage = null) }
-    }
+    fun dismissToast() = local.update { it.copy(toastMessage = null) }
 
-    private companion object {
-        const val DAY_MILLIS = 24L * 60 * 60 * 1000
-    }
+    fun dismissCelebration() = local.update { it.copy(celebration = null) }
 }

@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CorporateFare
 import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SmartDisplay
@@ -77,12 +78,14 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.TextButton
 import com.se3092.pulsefinance.domain.model.Currency
+import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
-import com.se3092.pulsefinance.ui.util.Formatters
-import com.se3092.pulsefinance.ui.util.TransactionVisuals
-import com.se3092.pulsefinance.ui.util.formatDate
+import com.se3092.pulsefinance.ui.common.formatDate
+import com.se3092.pulsefinance.ui.common.incomeSourceVisual
+import com.se3092.pulsefinance.ui.common.lkr
+import com.se3092.pulsefinance.ui.common.signedLkr
 import com.se3092.pulsefinance.ui.components.EmptyStateView
 import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.Teal
@@ -101,6 +104,7 @@ import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
 import com.se3092.pulsefinance.ui.theme.NeoSurface
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
+import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import kotlinx.coroutines.delay
 
 @Composable
@@ -181,7 +185,7 @@ fun IncomeScreen(
                             .background(NeoContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        ProfileAvatar(initials = state.userInitials, size = 34.dp)
+                        ProfileAvatar(initials = state.initials, size = 34.dp)
                     }
                 }
             }
@@ -220,21 +224,92 @@ fun IncomeScreen(
                             )
                         }
 
-                        // Tune Action Button
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(NeoGreen)
-                                .clickable { viewModel.showAddSheet() },
-                            contentAlignment = Alignment.Center
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Record income",
-                                tint = OnAccent,
-                                modifier = Modifier.size(22.dp)
-                            )
+                            // Payslip & EPF Button (FR-LK-1, FR-LK-3)
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(NeoCardLow)
+                                    .clickable { viewModel.openPayslipSheet() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Description,
+                                    contentDescription = "Payslip & EPF Calculator",
+                                    tint = NeoGreenDark,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            // Add Income Action Button
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(NeoGreen)
+                                    .clickable { viewModel.showAddSheet() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Record income",
+                                    tint = OnAccent,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // EPF Wealth Accumulation Card (FR-LK-3)
+                if (state.totalEpfAccumulatedLkr > 0) item {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        color = NeoGreen.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, NeoGreen.copy(alpha = 0.35f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(NeoGreen),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(imageVector = Icons.Default.Savings, contentDescription = null, tint = OnAccent, modifier = Modifier.size(20.dp))
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Accumulated EPF Wealth",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = NeoTextTertiary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.5.sp,
+                                    letterSpacing = 0.5.sp
+                                )
+                                Text(
+                                    text = lkr(state.totalEpfAccumulatedLkr),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = NeoGreenDark,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 18.sp
+                                )
+                                Text(
+                                    text = "Employer 12% + Employee 8% social savings you already own",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = NeoTextSecondary,
+                                    fontSize = 11.5.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -282,7 +357,7 @@ fun IncomeScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = formatDate(System.currentTimeMillis(), "MMMM").uppercase(),
+                                        text = state.monthLabel.uppercase(),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = NeoTextSecondary,
                                         fontWeight = FontWeight.Bold,
@@ -321,7 +396,7 @@ fun IncomeScreen(
 
                                 // Inflow Amount & Subtitle
                                 Text(
-                                    text = Formatters.lkr(state.totalRealizedLkr, decimals = 2),
+                                    text = lkr(state.realizedThisMonthLkr, 2),
                                     style = MaterialTheme.typography.headlineLarge,
                                     color = NeoTextPrimary,
                                     fontWeight = FontWeight.ExtraBold,
@@ -339,9 +414,6 @@ fun IncomeScreen(
                                 Spacer(modifier = Modifier.height(18.dp))
 
                                 // Realized vs Pending Breakdown (2 columns)
-                                val overdueLkr = state.streams
-                                    .filter { it.status == InvoiceStatus.OVERDUE }
-                                    .sumOf { it.amountInLkr }
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -366,7 +438,7 @@ fun IncomeScreen(
                                         }
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = Formatters.lkr(state.totalRealizedLkr, decimals = 2),
+                                            text = lkr(state.realizedThisMonthLkr, 2),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = NeoTextPrimary
@@ -386,14 +458,14 @@ fun IncomeScreen(
                                                     .background(NeoAmber)
                                             )
                                             Text(
-                                                text = if (overdueLkr > 0) "Unpaid (${Formatters.lkr(overdueLkr)} late)" else "Unpaid invoices",
+                                                text = if (state.overdueLkr > 0) "Unpaid (${lkr(state.overdueLkr)} late)" else "Unpaid invoices",
                                                 fontSize = 12.sp,
                                                 color = NeoTextSecondary
                                             )
                                         }
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = Formatters.lkr(state.totalPendingLkr, decimals = 2),
+                                            text = lkr(state.pendingLkr, 2),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = NeoTextPrimary
@@ -480,36 +552,46 @@ fun IncomeScreen(
                             .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        listOf(
-                            "all" to "All (${state.streams.size})",
-                            "contracts" to "Salary & Freelance",
-                            "usd" to "USD",
-                            "yield" to "Crypto"
-                        ).forEach { (key, label) ->
+                        CategoryPill(
+                            label = "All (${state.totalCount})",
+                            isSelected = state.filterSource == null,
+                            onClick = { viewModel.setFilter(null) }
+                        )
+                        IncomeSource.entries.forEach { source ->
                             CategoryPill(
-                                label = label,
-                                isSelected = state.filterCategory == key,
-                                onClick = { viewModel.setFilterCategory(key) }
+                                label = "${source.shortLabel} (${state.countBySource[source] ?: 0})",
+                                isSelected = state.filterSource == source,
+                                onClick = { viewModel.setFilter(source) }
                             )
                         }
                     }
                 }
 
+                // 4. This month by source — the four channels side by side for once
+                if (state.totalCount > 0) item {
+                    SourceBreakdownCard(state.sourceBreakdown, state.realizedThisMonthLkr)
+                }
+
+                // 5. Crypto running net position (gains minus losses, year to date)
+                if (state.cryptoEntriesYtd > 0) item {
+                    CryptoNetCard(state.cryptoNetYtdLkr, state.cryptoEntriesYtd)
+                }
+
                 // 6. Income records
-                if (!state.isLoading && state.visibleStreams.isEmpty()) item {
+                if (!state.isLoading && state.incomes.isEmpty()) item {
                     EmptyStateView(
-                        title = if (state.streams.isEmpty()) "No income recorded yet" else "Nothing in this filter yet",
+                        title = if (state.filterSource == null) "No income recorded yet" else "Nothing from ${state.filterSource?.displayName} yet",
                         message = "Tap + to record salary, a freelance milestone (paid or still invoiced), AdSense in USD, or a crypto gain or loss.",
                         icon = Icons.Default.Payments,
                         illustration = R.drawable.illustration_wallet
                     )
                 }
 
-                items(state.visibleStreams, key = { it.id }) { income ->
+                items(state.incomes, key = { it.id }) { income ->
                     IncomeRecordCard(
                         income = income,
-                        onMarkReceived = { viewModel.markReceived(income.id) },
-                        onDelete = { viewModel.deleteStream(income.id) }
+                        onMarkReceived = { viewModel.markReceived(income) },
+                        onDelete = { viewModel.deleteIncome(income) }
                     )
                 }
 
@@ -597,18 +679,34 @@ fun IncomeScreen(
         // =============================================================================
         // Add Income Stream Bottom Sheet
         // =============================================================================
-        if (state.isAddSheetVisible) {
+        if (state.form.isVisible) {
             AddIncomeBottomSheet(
-                state = state,
+                form = state.form,
                 onTitleChange = viewModel::onTitleChanged,
                 onClientChange = viewModel::onClientChanged,
                 onAmountChange = viewModel::onAmountChanged,
                 onSourceChange = viewModel::onSourceChanged,
                 onCurrencyChange = viewModel::onCurrencyChanged,
                 onRateChange = viewModel::onRateChanged,
+                onCreditedLkrChange = viewModel::onCreditedLkrChanged,
+                onToggleCreditedLkrMode = viewModel::onToggleCreditedLkrMode,
                 onStatusChange = viewModel::onStatusChanged,
+                onDayOffsetChange = viewModel::onDayOffsetChanged,
+                onCryptoLossToggle = viewModel::onCryptoLossToggled,
+                onRecurringToggle = viewModel::onRecurringToggled,
                 onSubmit = viewModel::submitIncome,
                 onDismiss = viewModel::hideAddSheet
+            )
+        }
+
+        // =============================================================================
+        // Sri Lankan Payslip & EPF Bottom Sheet (FR-LK-1, FR-LK-2, FR-LK-3)
+        // =============================================================================
+        if (state.isPayslipSheetVisible) {
+            PayslipBottomSheet(
+                calculator = viewModel.calculatePayslipUseCase,
+                onSaveSalary = viewModel::savePayslipSalary,
+                onDismiss = viewModel::closePayslipSheet
             )
         }
     }
@@ -645,16 +743,139 @@ private fun CategoryPill(
     }
 }
 
+private val IncomeSource.shortLabel: String
+    get() = when (this) {
+        IncomeSource.SALARY -> "Salary"
+        IncomeSource.FREELANCE -> "Freelance"
+        IncomeSource.ADSENSE -> "AdSense"
+        IncomeSource.CRYPTO -> "Crypto"
+    }
+
+@Composable
+private fun SourceBreakdownCard(breakdown: List<SourceTotal>, totalLkr: Double) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = NeoCard,
+        border = BorderStroke(1.dp, NeoBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "THIS MONTH BY SOURCE",
+                style = MaterialTheme.typography.labelSmall,
+                color = NeoTextSecondary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                letterSpacing = 1.sp
+            )
+            breakdown.forEach { item ->
+                val visual = incomeSourceVisual(item.source)
+                val share = if (totalLkr > 0) (item.amountLkr / totalLkr).toFloat().coerceIn(0f, 1f) else 0f
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .clip(CircleShape)
+                                    .background(visual.container),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(visual.icon, contentDescription = null, tint = visual.tint, modifier = Modifier.size(14.dp))
+                            }
+                            Text(text = item.source.displayName, fontSize = 13.sp, color = NeoTextPrimary, fontWeight = FontWeight.Medium)
+                        }
+                        Text(
+                            text = if (item.count == 0) "—" else lkr(item.amountLkr),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (item.amountLkr < 0) NeoRose else NeoTextPrimary
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(CircleShape)
+                            .background(NeoContainer)
+                    ) {
+                        if (share > 0f) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(share)
+                                    .fillMaxHeight()
+                                    .clip(CircleShape)
+                                    .background(Teal)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CryptoNetCard(netLkr: Double, entries: Int) {
+    val isUp = netLkr >= 0
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = NeoCard,
+        border = BorderStroke(1.dp, VioletAccent.copy(alpha = 0.35f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(VioletAccent.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Token, contentDescription = null, tint = VioletAccent, modifier = Modifier.size(20.dp))
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Crypto net, year to date", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeoTextPrimary)
+                Text(
+                    text = "$entries realised gain/loss entr${if (entries == 1) "y" else "ies"} this year",
+                    fontSize = 11.sp,
+                    color = NeoTextSecondary
+                )
+            }
+            Text(
+                text = signedLkr(netLkr),
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 15.sp,
+                color = if (isUp) NeoGreenDark else NeoRose
+            )
+        }
+    }
+}
+
 @Composable
 private fun IncomeRecordCard(
     income: IncomeStream,
     onMarkReceived: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val status = income.status
-    val visual = TransactionVisuals.forIncome(income.source)
+    val status = income.effectiveStatus()
+    val visual = incomeSourceVisual(income.source)
     val (statusLabel, statusBg, statusText) = when (status) {
-        InvoiceStatus.RECEIVED -> Triple("Received", Teal.copy(alpha = 0.15f), NeoGreenDark)
+        InvoiceStatus.RECEIVED -> Triple(if (income.isLoss) "Loss" else "Received", if (income.isLoss) NeoRose.copy(alpha = 0.12f) else Teal.copy(alpha = 0.15f), if (income.isLoss) NeoRose else NeoGreenDark)
         InvoiceStatus.PENDING_INVOICE -> Triple("Awaiting payment", NeoAmber.copy(alpha = 0.15f), NeoAmber)
         InvoiceStatus.OVERDUE -> Triple("Overdue", NeoRose.copy(alpha = 0.12f), NeoRose)
     }
@@ -662,7 +883,7 @@ private fun IncomeRecordCard(
         InvoiceStatus.RECEIVED -> "Received ${formatDate(income.dateReceivedOrExpected)}"
         InvoiceStatus.PENDING_INVOICE -> "Due ${formatDate(income.dateReceivedOrExpected)}"
         InvoiceStatus.OVERDUE -> {
-            val days = ((System.currentTimeMillis() - income.dateReceivedOrExpected) / (24L * 60 * 60 * 1000)).coerceAtLeast(1)
+            val days = ((System.currentTimeMillis() - income.dateReceivedOrExpected) / DAY_MILLIS).coerceAtLeast(1)
             "Due ${formatDate(income.dateReceivedOrExpected)} · $days day${if (days > 1) "s" else ""} late"
         }
     }
@@ -729,11 +950,11 @@ private fun IncomeRecordCard(
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = if (income.currency == Currency.LKR) Formatters.lkr(income.amountInLkr, decimals = 2)
+                        text = if (income.currency == Currency.LKR) lkr(income.amountInLkr, 2)
                         else "${income.currency.name} ${"%,.2f".format(income.originalAmount)}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = NeoTextPrimary,
+                        color = if (income.isLoss) NeoRose else NeoTextPrimary,
                         fontSize = 15.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -785,7 +1006,7 @@ private fun IncomeRecordCard(
                     }
                     if (income.currency != Currency.LKR) {
                         Text(
-                            text = "≈ ${Formatters.lkr(income.amountInLkr)}",
+                            text = "≈ ${lkr(income.amountInLkr)}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeoTextPrimary
