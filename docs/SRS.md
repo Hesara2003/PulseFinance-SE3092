@@ -308,7 +308,7 @@ flowchart LR
 | FR-GOAL-3 | The system shall calculate his actual savings rate (realised income − spending, averaged over the last 90 days or since his first record). | §3.4 ("does not know what he currently saves") | F1 | M | Done |
 | FR-GOAL-4 | The system shall project the arrival date at the actual savings rate and state whether he is on pace or behind, by how much. | §3.4 ("emotionally present and financially invisible") | F1 | M | Done |
 | FR-GOAL-5 | The system shall translate any amount into "days of MacBook funded" (opportunity cost), with presets for common Sri Lankan purchases. | §3.4, §2 ("impulsive") | — | S | Done |
-| FR-GOAL-6 | The goal shall optionally store a USD reference price; its LKR target shall follow the daily exchange rate, and the change shall be shown to him. | §3.4 (priced "from an authorised reseller"; LKR prices track USD) | F2 | S | Partial |
+| FR-GOAL-6 | The goal shall optionally store a USD reference price; its LKR target shall follow the daily exchange rate, and the change shall be shown to him. | §3.4 (priced "from an authorised reseller"; LKR prices track USD) | F2 | S | Done |
 | FR-GOAL-7 | Quick-add boosters (+LKR 5,000 / 10,000 / 25,000) shall let him move a windfall (e.g. a freelance milestone) into the goal. | §3.2 (milestone payments) | — | C | Done |
 
 ### 5.6 Dashboard (FR-DASH)
@@ -463,7 +463,7 @@ Status as of 28/10/2026, checked against the code on `main`.
 | Priority | Done | Partial | Planned |
 |---|---|---|---|
 | **Must** | FR-AUTH-1, 3, 7 · FR-INC-1–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1–6 · FR-ANA-1, 2 · FR-ACC-1 · FR-LK-1, 2, 6 · NFR-1, 3–7, 9 | FR-AUTH-4 · NFR-12 · NFR-2 (savings rate only) | — |
-| **Should** | FR-AUTH-2 · FR-EXP-4, 7 · FR-SUB-4, 6 · FR-GOAL-5 · FR-ANA-3 · FR-ACC-2–7 · FR-LK-3, 4 · FR-DATA-1 · NFR-10, 11 | FR-SUB-5 · FR-GOAL-6 · FR-LK-5 | NFR-8 (not yet verified) |
+| **Should** | FR-AUTH-2 · FR-EXP-4, 7 · FR-SUB-4, 6 · FR-GOAL-5, 6 · FR-ANA-3 · FR-ACC-2–7 · FR-LK-3, 4 · FR-DATA-1 · NFR-10, 11 | FR-SUB-5 · FR-LK-5 | NFR-8 (not yet verified) |
 | **Could** | FR-GOAL-7 · FR-ANA-4 | FR-ANA-5 | FR-AUTH-5, 6 |
 
 ### 10.1 Open gaps
@@ -472,7 +472,6 @@ Status as of 28/10/2026, checked against the code on `main`.
 |---|---|
 | FR-AUTH-4 | The three onboarding steps are informational screens only; they do not capture salary, income sources or fixed commitments. |
 | NFR-12 / FR-SUB-5 | `UsageStatsHelper.openUsageSettings()` is never called, so the app never asks for usage access in context; app-usage risk only works if the user grants it manually in Settings. |
-| FR-GOAL-6 | The USD reference price is stored and displayed, but the LKR target does not follow the daily rate and no change is shown. |
 | FR-LK-5 | The warning shows a suggested set-aside amount but offers no action to set it aside. |
 | FR-ANA-5 | Search by keyword and filter by category work; filtering by account and date does not exist. |
 | NFR-8 | Colour-only status and 200% font scale have not been checked. |
