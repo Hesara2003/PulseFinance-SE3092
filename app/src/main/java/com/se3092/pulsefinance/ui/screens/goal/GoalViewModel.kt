@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.se3092.pulsefinance.domain.model.GoalQuest
 import com.se3092.pulsefinance.domain.model.QuestProgress
+import com.se3092.pulsefinance.domain.model.Currency
 import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
@@ -15,6 +16,7 @@ import com.se3092.pulsefinance.domain.repository.GoalRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
 import com.se3092.pulsefinance.domain.usecase.CalculateGoalVelocityUseCase
 import com.se3092.pulsefinance.domain.usecase.CalculateSavingsRateUseCase
+import com.se3092.pulsefinance.domain.usecase.ConvertCurrencyUseCase
 import com.se3092.pulsefinance.domain.usecase.GoalVelocityReport
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.whenSignedIn
@@ -88,10 +90,16 @@ class GoalViewModel @Inject constructor(
     expenseRepository: ExpenseRepository,
     incomeRepository: IncomeRepository,
     calculateSavingsRateUseCase: CalculateSavingsRateUseCase,
-    private val calculateGoalVelocityUseCase: CalculateGoalVelocityUseCase
+    private val calculateGoalVelocityUseCase: CalculateGoalVelocityUseCase,
+    private val convertCurrencyUseCase: ConvertCurrencyUseCase
 ) : ViewModel() {
 
     private val local = MutableStateFlow(GoalLocalState())
+
+    init {
+        // At most one fetch a day; a USD-linked target re-prices when it lands (FR-GOAL-6).
+        viewModelScope.launch { convertCurrencyUseCase.refreshRates() }
+    }
 
     private val data = authRepository.whenSignedIn<GoalData?>(signedOut = null) { userId ->
         combine(
@@ -236,15 +244,28 @@ class GoalViewModel @Inject constructor(
             return
         }
         val existing = uiState.value.goal
-        val goal = (existing ?: SavingsGoal(userId = userId)).copy(
+        val base = (existing ?: SavingsGoal(userId = userId)).copy(
             userId = userId,
             title = editor.titleInput.trim(),
-            targetAmountLkr = target!!,
             currentSavedLkr = saved!!,
             targetDateMillis = System.currentTimeMillis() + months!! * 30L * DAY_MILLIS,
             notes = editor.notesInput.trim(),
             usdReferencePrice = usdPrice
         )
+        val keepsRateLink = existing != null && existing.isUsdLinked &&
+            usdPrice == existing.usdReferencePrice &&
+            target!!.roundToInt() == existing.targetAmountLkr.roundToInt()
+        val goal = when {
+            // Only the title, deadline or notes changed: keep the original rate so the change shown stays true.
+            keepsRateLink -> base
+            usdPrice != null && usdPrice > 0 -> base.copy(
+                targetAmountLkr = target!!,
+                targetAtSetLkr = target,
+                usdRateAtSetLkr = convertCurrencyUseCase.getBenchmarkRate(Currency.USD),
+                usdRateSetAtMillis = System.currentTimeMillis()
+            )
+            else -> base.copy(targetAmountLkr = target!!, targetAtSetLkr = null, usdRateAtSetLkr = null, usdRateSetAtMillis = null)
+        }
         viewModelScope.launch {
             goalRepository.saveGoal(goal).fold(
                 onSuccess = {

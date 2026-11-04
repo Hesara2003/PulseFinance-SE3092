@@ -4,6 +4,9 @@ import android.content.Context
 import com.se3092.pulsefinance.domain.model.Currency
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -25,6 +28,11 @@ class ExchangeRateService @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val prefs = context.getSharedPreferences("pulse_exchange_rates", Context.MODE_PRIVATE)
+
+    private val _usdLkrRate = MutableStateFlow(getSuggestedRate(Currency.USD).rate)
+
+    /** Today's USD→LKR rate (cached or fallback); updates when the daily refresh lands. */
+    val usdLkrRate: StateFlow<Double> = _usdLkrRate.asStateFlow()
 
     companion object {
         private const val KEY_USD_LKR = "rate_usd_lkr"
@@ -68,6 +76,7 @@ class ExchangeRateService @Inject constructor(
                     .putFloat(KEY_USD_LKR, usdLkr.toFloat())
                     .putLong(KEY_FETCHED_AT, now)
                     .apply()
+                _usdLkrRate.value = usdLkr
             }
             connUsd.disconnect()
 
