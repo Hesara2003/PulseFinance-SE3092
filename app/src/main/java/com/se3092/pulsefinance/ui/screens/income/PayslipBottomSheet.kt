@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.se3092.pulsefinance.domain.model.ApitTaxBand
 import com.se3092.pulsefinance.domain.usecase.CalculatePayslipUseCase
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.theme.NeoBorder
@@ -64,6 +65,7 @@ import com.se3092.pulsefinance.ui.theme.OnAccent
 @Composable
 fun PayslipBottomSheet(
     calculator: CalculatePayslipUseCase,
+    apitBands: List<ApitTaxBand>,
     onSaveSalary: (gross: Double, takeHome: Double, employeeEpf: Double, employerEpf: Double) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -79,12 +81,13 @@ fun PayslipBottomSheet(
     val customApit = apitTaxInput.replace(",", "").toDoubleOrNull()
     val otherDeductions = otherDeductionsInput.replace(",", "").toDoubleOrNull() ?: 0.0
 
-    val payslip = remember(grossAmount, customEpf, customApit, otherDeductions) {
+    val payslip = remember(grossAmount, customEpf, customApit, otherDeductions, apitBands) {
         calculator.calculate(
             grossSalaryLkr = grossAmount,
             customEmployeeEpf = customEpf,
             customApitTax = customApit,
-            otherDeductions = otherDeductions
+            otherDeductions = otherDeductions,
+            bands = apitBands
         )
     }
 
