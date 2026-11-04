@@ -137,7 +137,33 @@ users/
         │     └── {incomeId} (IncomeDto)
         └── goals/
               └── {goalId} (GoalDto)
+
+config/                      (read-only for signed-in users)
+  └── apitBands (ApitConfigDto)
 ```
+
+### 4.0. APIT tax bands: `config/apitBands`
+
+The payslip calculator reads its APIT schedule from this document (FR-LK-2), so a budget revision only needs a console edit. Bands must start at 0 and be contiguous; `upperLkr: null` marks the top band. If the document is missing or invalid, the app uses the bands bundled in `ApitTaxBand.DEFAULTS`.
+
+Create it in the Firebase console (Firestore → `config` → document ID `apitBands`):
+
+```json
+{
+  "effectiveFrom": "2025-04-01",
+  "bands": [
+    { "lowerLkr": 0,      "upperLkr": 100000, "rate": 0.00 },
+    { "lowerLkr": 100000, "upperLkr": 141667, "rate": 0.06 },
+    { "lowerLkr": 141667, "upperLkr": 183333, "rate": 0.12 },
+    { "lowerLkr": 183333, "upperLkr": 225000, "rate": 0.18 },
+    { "lowerLkr": 225000, "upperLkr": 266667, "rate": 0.24 },
+    { "lowerLkr": 266667, "upperLkr": 308333, "rate": 0.30 },
+    { "lowerLkr": 308333, "upperLkr": null,   "rate": 0.36 }
+  ]
+}
+```
+
+Deploy the matching rule with `firebase deploy --only firestore:rules`.
 
 ### 4.1. Firestore DTO Example: `IncomeDto`
 ```kotlin

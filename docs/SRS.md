@@ -349,7 +349,7 @@ flowchart LR
 | ID | Requirement | Source | Prevents | Pri | Status |
 |---|---|---|---|---|---|
 | FR-LK-1 | Kavindu shall be able to record a salary payslip as Gross Salary; the system shall calculate employee EPF (8%) and APIT, and show the resulting Take-Home Salary. All three values shall be editable. | §3.2 ("rarely examines his payslip… cannot recall the exact amount deposited") | F2 | M | Done |
-| FR-LK-2 | APIT tax bands shall be read from configuration data in Firestore, not compiled into the app. | Sri Lankan APIT bands revised 2023 and 2025 | — | M | Planned |
+| FR-LK-2 | APIT tax bands shall be read from configuration data in Firestore, not compiled into the app. | Sri Lankan APIT bands revised 2023 and 2025 | — | M | Done |
 | FR-LK-3 | The system shall show his accumulating EPF Balance (employee 8% + employer 12%) as savings he already owns. | §3.1 ("LKR 11,200 in savings") | — | S | Done |
 | FR-LK-4 | The system shall know Sri Lankan Seasonal Peaks (Avurudu – April, Vesak – May, Poson – June, December) and, after 12 months of history, add months where his own spending was ≥ 20% above average. | §2 ("impulsive"), §3.3 | — | S | Done |
 | FR-LK-5 | 30 days before a Seasonal Peak, the system shall warn him with last year's excess (if known) and offer to set the amount aside. | §3.4 (goal protection) | — | S | Partial |
@@ -462,7 +462,7 @@ Status as of 28/10/2026, checked against the code on `main`.
 
 | Priority | Done | Partial | Planned |
 |---|---|---|---|
-| **Must** | FR-AUTH-1, 3, 7 · FR-INC-1–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1–6 · FR-ANA-1, 2 · FR-ACC-1 · FR-LK-1, 6 · NFR-1, 3–7, 9 | FR-AUTH-4 · NFR-12 · NFR-2 (savings rate only) | FR-LK-2 |
+| **Must** | FR-AUTH-1, 3, 7 · FR-INC-1–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1–6 · FR-ANA-1, 2 · FR-ACC-1 · FR-LK-1, 2, 6 · NFR-1, 3–7, 9 | FR-AUTH-4 · NFR-12 · NFR-2 (savings rate only) | — |
 | **Should** | FR-AUTH-2 · FR-EXP-4, 7 · FR-SUB-4, 6 · FR-GOAL-5, 6 · FR-ANA-3 · FR-ACC-2–7 · FR-LK-3, 4 · FR-DATA-1 · NFR-10, 11 | FR-SUB-5 · FR-LK-5 | NFR-8 (not yet verified) |
 | **Could** | FR-GOAL-7 · FR-ANA-4 | FR-ANA-5 | FR-AUTH-5, 6 |
 
@@ -471,7 +471,6 @@ Status as of 28/10/2026, checked against the code on `main`.
 | ID | Gap |
 |---|---|
 | FR-AUTH-4 | The three onboarding steps are informational screens only; they do not capture salary, income sources or fixed commitments. |
-| FR-LK-2 | APIT tax bands are hard-coded in `CalculatePayslipUseCase.defaultTaxBands`, not read from Firestore. |
 | NFR-12 / FR-SUB-5 | `UsageStatsHelper.openUsageSettings()` is never called, so the app never asks for usage access in context; app-usage risk only works if the user grants it manually in Settings. |
 | FR-LK-5 | The warning shows a suggested set-aside amount but offers no action to set it aside. |
 | FR-ANA-5 | Search by keyword and filter by category work; filtering by account and date does not exist. |

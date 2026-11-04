@@ -32,4 +32,30 @@ data class ApitTaxBand(
     val lowerLimitLkr: Double,
     val upperLimitLkr: Double,
     val taxRate: Double
-)
+) {
+    companion object {
+        /**
+         * Monthly APIT bands bundled with the app. Only used until the Firestore config
+         * document (`config/apitBands`) has been read at least once.
+         */
+        val DEFAULTS = listOf(
+            ApitTaxBand(0.0, 100_000.0, 0.00),         // First 100k tax-free
+            ApitTaxBand(100_000.0, 141_667.0, 0.06),   // Next ~41.6k @ 6%
+            ApitTaxBand(141_667.0, 183_333.0, 0.12),   // Next ~41.6k @ 12%
+            ApitTaxBand(183_333.0, 225_000.0, 0.18),   // Next ~41.6k @ 18%
+            ApitTaxBand(225_000.0, 266_667.0, 0.24),   // Next ~41.6k @ 24%
+            ApitTaxBand(266_667.0, 308_333.0, 0.30),   // Next ~41.6k @ 30%
+            ApitTaxBand(308_333.0, Double.MAX_VALUE, 0.36) // Balance @ 36%
+        )
+
+        /**
+         * True when [bands] can be used for tax: non-empty, starting at 0, contiguous,
+         * each band non-empty and every rate between 0 and 1.
+         */
+        fun isValidSchedule(bands: List<ApitTaxBand>): Boolean {
+            if (bands.isEmpty() || bands.first().lowerLimitLkr != 0.0) return false
+            if (bands.any { it.upperLimitLkr <= it.lowerLimitLkr || it.taxRate !in 0.0..1.0 }) return false
+            return bands.zipWithNext().all { (a, b) -> a.upperLimitLkr == b.lowerLimitLkr }
+        }
+    }
+}
