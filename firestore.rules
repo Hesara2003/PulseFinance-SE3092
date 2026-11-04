@@ -21,5 +21,12 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
+
+    // App-wide configuration such as APIT tax bands (FR-LK-2).
+    // Read-only for the app; edited in the Firebase console.
+    match /config/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
   }
 }
