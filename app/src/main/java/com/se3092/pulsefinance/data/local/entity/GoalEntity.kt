@@ -14,7 +14,9 @@ data class GoalEntity(
     val targetDateMillis: Long,
     val createdDateMillis: Long,
     val notes: String,
-    val usdReferencePrice: Double? = null
+    val usdReferencePrice: Double? = null,
+    val usdRateAtSetLkr: Double? = null,
+    val usdRateSetAtMillis: Long? = null
 ) {
     fun toDomain(): SavingsGoal = SavingsGoal(
         id = id,
@@ -25,20 +27,26 @@ data class GoalEntity(
         targetDateMillis = targetDateMillis,
         createdDateMillis = createdDateMillis,
         notes = notes,
-        usdReferencePrice = usdReferencePrice
+        usdReferencePrice = usdReferencePrice,
+        usdRateAtSetLkr = usdRateAtSetLkr,
+        usdRateSetAtMillis = usdRateSetAtMillis,
+        targetAtSetLkr = targetAmountLkr.takeIf { usdRateAtSetLkr != null }
     )
 
     companion object {
+        /** Stores the target as entered, never the rate-adjusted one, so it is not scaled twice. */
         fun fromDomain(domain: SavingsGoal): GoalEntity = GoalEntity(
             id = domain.id,
             userId = domain.userId,
             title = domain.title,
-            targetAmountLkr = domain.targetAmountLkr,
+            targetAmountLkr = domain.targetAtSetLkr ?: domain.targetAmountLkr,
             currentSavedLkr = domain.currentSavedLkr,
             targetDateMillis = domain.targetDateMillis,
             createdDateMillis = domain.createdDateMillis,
             notes = domain.notes,
-            usdReferencePrice = domain.usdReferencePrice
+            usdReferencePrice = domain.usdReferencePrice,
+            usdRateAtSetLkr = domain.usdRateAtSetLkr,
+            usdRateSetAtMillis = domain.usdRateSetAtMillis
         )
     }
 }

@@ -18,7 +18,7 @@ import com.se3092.pulsefinance.data.local.entity.IncomeEntity
         GoalEntity::class,
         AccountEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
