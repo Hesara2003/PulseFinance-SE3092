@@ -68,7 +68,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.TextButton
 import com.se3092.pulsefinance.domain.model.Currency
-import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
@@ -800,7 +799,7 @@ private fun IncomeRecordCard(
         InvoiceStatus.RECEIVED -> "Received ${formatDate(income.dateReceivedOrExpected)}"
         InvoiceStatus.PENDING_INVOICE -> "Due ${formatDate(income.dateReceivedOrExpected)}"
         InvoiceStatus.OVERDUE -> {
-            val days = ((System.currentTimeMillis() - income.dateReceivedOrExpected) / DAY_MILLIS).coerceAtLeast(1)
+            val days = income.daysOverdue()
             "Due ${formatDate(income.dateReceivedOrExpected)} · $days day${if (days > 1) "s" else ""} late"
         }
     }

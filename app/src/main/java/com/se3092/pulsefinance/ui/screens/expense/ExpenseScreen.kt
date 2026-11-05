@@ -478,8 +478,7 @@ fun ExpenseScreen(
                 }
 
                 // 5. Subscription Cards List Grouped by Account (FR-SUB-6)
-                val groupedSubs = state.subscriptions.groupBy { it.accountName.ifBlank { "Unassigned Account" } }
-                groupedSubs.forEach { (accountName, subs) ->
+                state.subscriptionsByAccount.forEach { (accountName, subs) ->
                     item(key = "header_$accountName") {
                         Row(
                             modifier = Modifier
