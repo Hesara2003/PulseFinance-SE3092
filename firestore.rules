@@ -1,24 +1,130 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Only authenticated users can access their own financial records
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
 
-      match /accounts/{accountId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+    // ---------------------------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------------------------
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // The document being written (after the write, so partial updates are checked whole).
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // Every record carries its owner's uid, and it must be the signed-in user's.
+    function ownedBy(userId) {
+      return incoming().userId == userId;
+    }
+
+    function isText(field, maxLength) {
+      return incoming()[field] is string && incoming()[field].size() <= maxLength;
+    }
+
+    function optionalText(field, maxLength) {
+      return !(field in incoming()) || isText(field, maxLength);
+    }
+
+    function optionalNumber(field) {
+      return !(field in incoming()) || incoming()[field] == null || incoming()[field] is number;
+    }
+
+    function optionalBool(field) {
+      return !(field in incoming()) || incoming()[field] is bool;
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Per-record validation, matching the DTOs in data/remote/dto
+    // ---------------------------------------------------------------------------------------
+
+    function validExpense(userId) {
+      let d = incoming();
+      return ownedBy(userId)
+        && isText('title', 200)
+        && d.amountLkr is number && d.amountLkr >= 0
+        && d.category in ['RENT', 'UTILITIES', 'SUBSCRIPTION', 'FOOD_DINING', 'TRANSPORT',
+                          'TECH_HARDWARE', 'ENTERTAINMENT', 'OTHER']
+        && optionalBool('isCommitted')
+        && d.timestamp is number
+        && optionalText('paymentAccountId', 200)
+        && optionalText('paymentAccountName', 200)
+        && optionalText('notes', 2000);
+    }
+
+    // amountInLkr may be negative: a crypto trading loss (FR-INC-7).
+    function validIncome(userId) {
+      let d = incoming();
+      return ownedBy(userId)
+        && isText('title', 200)
+        && d.source in ['SALARY', 'FREELANCE', 'ADSENSE', 'CRYPTO']
+        && d.currency in ['LKR', 'USD', 'USDT', 'ETH']
+        && d.status in ['RECEIVED', 'PENDING_INVOICE', 'OVERDUE']
+        && d.originalAmount is number
+        && d.exchangeRateToLkr is number && d.exchangeRateToLkr > 0
+        && d.amountInLkr is number
+        && d.dateReceivedOrExpected is number
+        && optionalText('clientOrPlatform', 200)
+        && optionalBool('isRecurringMonthly')
+        && optionalText('notes', 2000);
+    }
+
+    function validGoal(userId) {
+      let d = incoming();
+      return ownedBy(userId)
+        && isText('title', 200)
+        && d.targetAmountLkr is number && d.targetAmountLkr >= 0
+        && d.currentSavedLkr is number && d.currentSavedLkr >= 0
+        && d.targetDateMillis is number
+        && optionalNumber('createdDateMillis')
+        && optionalNumber('usdReferencePrice')
+        && optionalNumber('usdRateAtSetLkr')
+        && optionalNumber('usdRateSetAtMillis')
+        && optionalText('notes', 2000);
+    }
+
+    function validAccount(userId) {
+      let d = incoming();
+      return ownedBy(userId)
+        && isText('name', 200)
+        && d.type in ['BANK_PRIMARY', 'BANK_SECONDARY', 'CASH', 'CRYPTO_EXCHANGE']
+        && d.balanceLkr is number
+        && optionalBool('isAutoDebitSource')
+        && optionalBool('isFrozen')
+        && optionalNumber('frozenUntilMillis')
+        && (!('freezeBreakCount' in d) || (d.freezeBreakCount is int && d.freezeBreakCount >= 0))
+        && optionalText('accountNumber', 34);
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Paths
+    // ---------------------------------------------------------------------------------------
+
+    // Each user can reach only their own records.
+    match /users/{userId} {
+      // The user document holds subscription reviews, seasonal reserves and the onboarding profile.
+      allow read, write: if isOwner(userId);
+
+      match /expenses/{expenseId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validExpense(userId);
       }
 
       match /income_streams/{incomeId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      match /expenses/{expenseId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validIncome(userId);
       }
 
       match /goals/{goalId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validGoal(userId);
+      }
+
+      match /accounts/{accountId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validAccount(userId);
       }
     }
 

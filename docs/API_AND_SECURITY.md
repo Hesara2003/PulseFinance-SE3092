@@ -16,29 +16,41 @@ flowchart LR
     App -->|"HTTPS, no account data"| FX["open.er-api.com · CoinGecko"]
 ```
 
-**Server-side rules** ([`firestore.rules`](../firestore.rules), NFR-5):
+**Server-side rules** ([`firestore.rules`](../firestore.rules), NFR-5) do two things: they keep each user to their own records, and they check what is written, matching the DTOs in `data/remote/dto`.
 
 ```javascript
 match /users/{userId} {
-  allow read, write: if request.auth != null && request.auth.uid == userId;
-  match /accounts/{accountId}       { allow read, write: if request.auth != null && request.auth.uid == userId; }
-  match /income_streams/{incomeId}  { allow read, write: if request.auth != null && request.auth.uid == userId; }
-  match /expenses/{expenseId}       { allow read, write: if request.auth != null && request.auth.uid == userId; }
-  match /goals/{goalId}             { allow read, write: if request.auth != null && request.auth.uid == userId; }
+  allow read, write: if isOwner(userId);                  // reviews, reserves, onboarding (merged fields)
+  match /expenses/{id}       { allow read, delete: if isOwner(userId);
+                               allow create, update: if isOwner(userId) && validExpense(userId); }
+  match /income_streams/{id} { … validIncome(userId) }
+  match /goals/{id}          { … validGoal(userId) }
+  match /accounts/{id}       { … validAccount(userId) }
 }
-match /config/{docId} {
-  allow read: if request.auth != null;
-  allow write: if false;
-}
+match /config/{docId} { allow read: if request.auth != null; allow write: if false; }
 ```
+
+| Record | Checked on every create and update |
+|---|---|
+| Expense | `userId` is the writer's · `title` text ≤ 200 · `amountLkr` a number ≥ 0 · `category` one of the 8 categories · `timestamp` a number |
+| Income | `userId` · `source` one of Salary/Freelance/AdSense/Crypto · `currency` one of LKR/USD/USDT/ETH · `status` one of the 3 · `originalAmount`, `amountInLkr` numbers (negative allowed: a crypto loss) · `exchangeRateToLkr` a number > 0 · date a number |
+| Goal | `userId` · `title` · `targetAmountLkr`, `currentSavedLkr` numbers ≥ 0 · `targetDateMillis` a number · USD fields a number or null |
+| Account | `userId` · `name` · `type` one of the 4 · `balanceLkr` a number · `freezeBreakCount` a whole number ≥ 0 · `accountNumber` ≤ 34 characters (IBAN length) |
+
+Rules check the document as it will be after the write, so partial updates (marking an invoice received, adding to a goal) are validated whole. Unknown extra fields are allowed, so an older app version doesn't break.
 
 What these rules guarantee:
 - **Signed out:** no access to anything.
-- **Signed in:** another user can never read or change `users/{Kavindu's uid}/…`.
+- **Signed in:** another user can never read or change `users/{Kavindu's uid}/…`, and a record can't claim another user's `userId`.
+- **Data:** an amount can't be text, a category or currency can't be invented, and an exchange rate can't be zero.
 - **Config:** `config/` is readable by any signed-in user and writable by nobody through the app. The APIT bands are edited in the Firebase console.
 - **Everything else:** paths not listed are denied, because Firestore denies by default.
 
-Deploy with `firebase deploy --only firestore:rules`.
+**Tested** against the Firestore emulator (05/11/2026): 21 checks — 10 app-shaped writes, reads and deletes allowed; 11 invalid or foreign writes denied.
+
+**Indexes** ([`firestore.indexes.json`](../firestore.indexes.json)): every query filters one collection under the user and sorts by a single field (`timestamp` for expenses, `dateReceivedOrExpected` for income), which Firestore's automatic single-field indexes cover. No composite index is needed, so the file declares none; add one there if a query ever combines a filter with a sort on another field.
+
+Deploy with `firebase deploy --only firestore` (rules and indexes).
 
 ---
 
