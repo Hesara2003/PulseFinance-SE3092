@@ -121,6 +121,9 @@ dependencies {
     // Biometrics (Sensitive Account Number reveal)
     implementation(libs.androidx.biometric)
 
+    // Google profile photo in the avatar
+    implementation(libs.coil.compose)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
