@@ -1,6 +1,8 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
 import com.se3092.pulsefinance.ui.screens.expense.ExpensePreset
+import com.se3092.pulsefinance.domain.model.MAX_RUNWAY_MONTHS
+import com.se3092.pulsefinance.domain.model.MIN_RUNWAY_MONTHS
 import com.se3092.pulsefinance.domain.model.SeasonalReserve
 import com.se3092.pulsefinance.domain.usecase.SeasonalAlert
 import com.se3092.pulsefinance.ui.theme.pulseColors
@@ -224,6 +226,137 @@ internal fun SeasonalPeakCard(
                 }
             }
         }
+    }
+}
+
+/**
+ * Emergency Runway Buffer (FR-AUTH-6): how many months of his fixed costs he wants kept aside in
+ * case income stops, and how far along he is. It is a goal to grow into, so it uses the calm
+ * accent rather than an attention colour. Until he picks a number of months it just asks.
+ */
+@Composable
+internal fun SafetyBufferCard(
+    state: DashboardUiState,
+    masked: Boolean,
+    onMonths: (Int) -> Unit,
+    onAdd: (Double) -> Unit
+) {
+    val runway = state.runway
+    fun money(amount: Double) = if (masked) "••••" else lkr(amount)
+    fun months(count: Int) = if (count == 1) "1 month" else "$count months"
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = 2.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.pulseColors.primaryLight),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Savings,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Safety buffer",
+                        fontFamily = Display,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = if (runway != null) {
+                            "${months(runway.months)} of your fixed costs · ${money(runway.targetLkr)}"
+                        } else {
+                            "Months of your fixed costs to keep aside, in case income stops"
+                        },
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (runway != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.pulseColors.track)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(runway.progress)
+                            .height(8.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                    )
+                }
+                Text(
+                    text = if (runway.isFunded) {
+                        "Fully funded · ${money(runway.savedLkr)} covers ${months(runway.months)}"
+                    } else {
+                        "${money(runway.savedLkr)} set aside · covers ${"%.1f".format(runway.monthsCovered)} of ${runway.months} months"
+                    },
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Text(text = "Months to keep aside", fontSize = 11.sp, color = MaterialTheme.pulseColors.textTertiary)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                (MIN_RUNWAY_MONTHS..MAX_RUNWAY_MONTHS).forEach { count ->
+                    BufferChip(label = "$count", selected = state.runwayMonths == count, onClick = { onMonths(count) })
+                }
+            }
+
+            if (runway != null && !runway.isFunded) {
+                Text(text = "Add to it", fontSize = 11.sp, color = MaterialTheme.pulseColors.textTertiary)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(5_000.0, 10_000.0, 25_000.0).forEach { amount ->
+                        BufferChip(label = "+${"%,.0f".format(amount)}", selected = false, onClick = { onAdd(amount) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BufferChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 7.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            fontSize = 12.5.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

@@ -2,6 +2,7 @@ package com.se3092.pulsefinance.ui.screens.setup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.se3092.pulsefinance.domain.model.EmergencyRunway
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.IncomeVariability
@@ -17,7 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** First-run setup for a new account: salary, income sources, fixed commitments (FR-AUTH-4, FR-AUTH-5). */
+/** First-run setup for a new account: salary, income sources, fixed commitments, emergency buffer (FR-AUTH-4, 5, 6). */
 @HiltViewModel
 class SetupViewModel @Inject constructor(
     private val authRepository: AuthRepository,
@@ -71,6 +72,14 @@ class SetupViewModel @Inject constructor(
     fun onCommitmentTitleChanged(id: Int, title: String) = updateCommitment(id) { it.copy(title = title) }
 
     fun onCommitmentAmountChanged(id: Int, amount: String) = updateCommitment(id) { it.copy(amountInput = amount) }
+
+    fun onRunwayMonthsChanged(months: Int) {
+        _uiState.update { it.copy(runwayMonths = EmergencyRunway.clampMonths(months), errorMessage = null) }
+    }
+
+    fun onRunwaySavedChanged(input: String) {
+        _uiState.update { it.copy(runwaySavedInput = input, errorMessage = null) }
+    }
 
     fun removeCommitment(id: Int) {
         _uiState.update { state -> state.copy(commitments = state.commitments.filterNot { it.id == id }) }

@@ -14,13 +14,17 @@ data class FixedCommitment(
     val category: ExpenseCategory
 )
 
-/** What first-run setup captured (FR-AUTH-4, FR-AUTH-5). */
+/** What first-run setup captured (FR-AUTH-4, FR-AUTH-5, FR-AUTH-6). */
 data class OnboardingProfile(
     /** Monthly take-home salary; null when he has no salaried job. */
     val monthlySalaryLkr: Double?,
     val incomeSources: Map<IncomeSource, IncomeVariability>,
     val fixedCommitments: List<FixedCommitment>,
-    val completedAt: Long
+    val completedAt: Long,
+    /** Months of committed costs he wants as an emergency buffer (1 to 6); null until he chooses. */
+    val runwayMonths: Int? = null,
+    /** What he has already set aside towards that buffer, in his own words (see [EmergencyRunway]). */
+    val runwaySavedLkr: Double = 0.0
 ) {
     companion object {
         /** Starting guess per source; he can change each one during setup. */

@@ -54,6 +54,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.IncomeVariability
+import com.se3092.pulsefinance.domain.model.MAX_RUNWAY_MONTHS
+import com.se3092.pulsefinance.domain.model.MIN_RUNWAY_MONTHS
 import com.se3092.pulsefinance.ui.common.lkr
 
 /** Three short steps after a new account's first sign-in (FR-AUTH-4, FR-AUTH-5). */
@@ -316,6 +318,57 @@ private fun CommitmentsStep(state: SetupUiState, viewModel: SetupViewModel) {
             }
         }
     }
+
+    RunwaySection(state, viewModel)
+}
+
+/** Emergency buffer: how many months of the costs above to keep aside in case income stops (FR-AUTH-6). */
+@Composable
+private fun RunwaySection(state: SetupUiState, viewModel: SetupViewModel) {
+    Text(
+        text = "Your safety buffer",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+    Text(
+        text = "If your income stopped, how many months of these costs would you like set aside? " +
+            "You can change this later from Today.",
+        fontSize = 13.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        (MIN_RUNWAY_MONTHS..MAX_RUNWAY_MONTHS).forEach { months ->
+            SetupPill(
+                label = if (months == 1) "1 month" else "$months months",
+                isSelected = months == state.runwayMonths,
+                onClick = { viewModel.onRunwayMonthsChanged(months) }
+            )
+        }
+    }
+    if (state.commitmentsTotalLkr > 0) {
+        Text(
+            text = "${state.runwayMonths} months of your costs is ${lkr(state.runwayTargetLkr)}.",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+    OutlinedTextField(
+        value = state.runwaySavedInput,
+        onValueChange = viewModel::onRunwaySavedChanged,
+        label = { Text("Already set aside (optional)") },
+        placeholder = { Text("11,200", color = MaterialTheme.pulseColors.textTertiary) },
+        prefix = { Text("LKR ", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        singleLine = true,
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.fillMaxWidth(),
+        colors = setupFieldColors()
+    )
 }
 
 @Composable

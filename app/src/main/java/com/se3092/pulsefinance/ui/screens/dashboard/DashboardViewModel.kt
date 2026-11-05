@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.DAY_MILLIS
+import com.se3092.pulsefinance.domain.model.DEFAULT_RUNWAY_MONTHS
+import com.se3092.pulsefinance.domain.model.EmergencyRunway
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
+import com.se3092.pulsefinance.domain.model.OnboardingProfile
 import com.se3092.pulsefinance.domain.model.Periods
 import com.se3092.pulsefinance.domain.model.SavingsGoal
 import com.se3092.pulsefinance.domain.model.SeasonalReserve
@@ -16,6 +19,7 @@ import com.se3092.pulsefinance.domain.repository.AuthRepository
 import com.se3092.pulsefinance.domain.repository.ExpenseRepository
 import com.se3092.pulsefinance.domain.repository.GoalRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
+import com.se3092.pulsefinance.domain.repository.OnboardingRepository
 import com.se3092.pulsefinance.domain.repository.SeasonalReserveRepository
 import com.se3092.pulsefinance.domain.usecase.BankSmsParser
 import com.se3092.pulsefinance.domain.usecase.CalculateFinancialSummaryUseCase
@@ -51,7 +55,9 @@ private data class DashboardData(
     val incomes: List<IncomeStream>,
     val goal: SavingsGoal?,
     val accounts: List<Account>,
-    val seasonalReserves: Map<String, SeasonalReserve>
+    val seasonalReserves: Map<String, SeasonalReserve>,
+    /** What setup captured, including the emergency buffer (FR-AUTH-6). */
+    val profile: OnboardingProfile? = null
 )
 
 @HiltViewModel
@@ -62,6 +68,7 @@ class DashboardViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
     private val accountRepository: AccountRepository,
     private val seasonalReserveRepository: SeasonalReserveRepository,
+    private val onboardingRepository: OnboardingRepository,
     private val calculateFinancialSummaryUseCase: CalculateFinancialSummaryUseCase,
     private val bankSmsParser: BankSmsParser,
     private val seasonalPeakChecker: SeasonalPeakChecker,
@@ -76,13 +83,18 @@ class DashboardViewModel @Inject constructor(
 
     private val data = authRepository.whenSignedIn<DashboardData?>(signedOut = null) { userId ->
         combine(
-            expenseRepository.getExpenses(userId),
-            incomeRepository.getIncomeStreams(userId),
-            goalRepository.getPrimaryGoal(userId),
-            accountRepository.getAccounts(userId),
-            seasonalReserveRepository.getReserves(userId)
-        ) { expenses, incomes, goal, accounts, reserves ->
-            DashboardData(expenses, incomes, goal, accounts, reserves).also { lastData = it }
+            combine(
+                expenseRepository.getExpenses(userId),
+                incomeRepository.getIncomeStreams(userId),
+                goalRepository.getPrimaryGoal(userId),
+                accountRepository.getAccounts(userId),
+                seasonalReserveRepository.getReserves(userId)
+            ) { expenses, incomes, goal, accounts, reserves ->
+                DashboardData(expenses, incomes, goal, accounts, reserves)
+            },
+            onboardingRepository.getProfile(userId)
+        ) { base, profile ->
+            base.copy(profile = profile).also { lastData = it }
         }
     }
 
@@ -129,9 +141,16 @@ class DashboardViewModel @Inject constructor(
         val (weekBars, weekTotal, weekChange) = weeklyDiscretionary(data.expenses, now)
 
         val seasonal = seasonalPeakChecker(data.expenses, now)
+        val summary = calculateFinancialSummaryUseCase(data.incomes, data.expenses, data.goal, now, data.seasonalReserves.values.toList())
 
         return header.copy(
-            summary = calculateFinancialSummaryUseCase(data.incomes, data.expenses, data.goal, now, data.seasonalReserves.values.toList()),
+            summary = summary,
+            runwayMonthlyCommittedLkr = EmergencyRunway.monthlyCommitted(
+                data.profile?.fixedCommitments.orEmpty(),
+                summary.committedExpensesLkr
+            ),
+            runwayMonths = data.profile?.runwayMonths,
+            runwaySavedLkr = data.profile?.runwaySavedLkr ?: 0.0,
             primaryGoal = data.goal,
             recentTransactions = buildLedger(data.incomes, data.expenses).take(6),
             accounts = data.accounts,
@@ -218,6 +237,24 @@ class DashboardViewModel @Inject constructor(
         val reserve = uiState.value.seasonalReserve ?: return
         seasonalReserveRepository.release(userId, reserve.peakKey)
         notice.value = UiNotice("Set-aside released", "${lkr(reserve.amountLkr)} back in Safe-to-Spend")
+    }
+
+    // ---------------- Emergency buffer (FR-AUTH-6) ----------------
+
+    fun setRunwayMonths(months: Int) {
+        val userId = authRepository.currentUserId ?: return
+        onboardingRepository.saveRunway(userId, months, uiState.value.runwaySavedLkr)
+    }
+
+    /** Adds to what he has recorded as set aside for the buffer; it is his own tally, not a transaction. */
+    fun addToRunway(amountLkr: Double) {
+        val userId = authRepository.currentUserId ?: return
+        if (amountLkr <= 0) return
+        val state = uiState.value
+        val months = state.runwayMonths ?: DEFAULT_RUNWAY_MONTHS
+        val saved = state.runwaySavedLkr + amountLkr
+        onboardingRepository.saveRunway(userId, months, saved)
+        notice.value = UiNotice("${lkr(amountLkr)} added to your safety buffer", "${lkr(saved)} set aside so far")
     }
 
     fun setAccountRevealed(accountId: String, revealed: Boolean) {

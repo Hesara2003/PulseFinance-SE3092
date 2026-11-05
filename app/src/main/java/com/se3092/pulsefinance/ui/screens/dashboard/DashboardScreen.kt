@@ -174,6 +174,18 @@ fun DashboardScreen(
                 }
             }
 
+            // Emergency Runway Buffer (FR-AUTH-6)
+            if (state.showRunwayCard) {
+                item {
+                    SafetyBufferCard(
+                        state = state,
+                        masked = isBalanceMasked,
+                        onMonths = viewModel::setRunwayMonths,
+                        onAdd = viewModel::addToRunway
+                    )
+                }
+            }
+
             // Accounts and Spending Freeze (FR-ACC-1…7). Reveal and copy need the Activity, so they stay here.
             item {
                 AccountsSection(

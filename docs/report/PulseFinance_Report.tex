@@ -187,7 +187,7 @@ Kavindu Silva earned more than \lkr{1.6 million} in twelve months and has \lkr{1
 
 This report argues that the problem was never discipline. \emph{None of those tools could represent his financial life accurately enough to be worth maintaining.} PulseFinance is designed against each of those four failures. It records income at the amount actually received and freezes the exchange rate with it; it keeps unpaid invoices out of what he can spend; it captures cash and secondary-account spending through presets and shared bank SMS; it surfaces forgotten subscriptions from his own charges; and it turns the MacBook into a required daily pace that it compares with what he really saves.
 
-The report covers the requirements analysis (Section~\ref{sec:requirements}), the MVVM architecture (Section~\ref{sec:architecture}), the Firestore schema (Section~\ref{sec:schema}), annotated wireframes of every main screen (Section~\ref{sec:wireframes}) and the justification of sixteen design decisions (Section~\ref{sec:decisions}). Every requirement, field and screen element is traced back to a specific part of Kavindu's scenario. At the time of writing, 68 of the 73 requirements are implemented; the five that are not are listed with their gaps in Section~\ref{sec:status}.
+The report covers the requirements analysis (Section~\ref{sec:requirements}), the MVVM architecture (Section~\ref{sec:architecture}), the Firestore schema (Section~\ref{sec:schema}), annotated wireframes of every main screen (Section~\ref{sec:wireframes}) and the justification of sixteen design decisions (Section~\ref{sec:decisions}). Every requirement, field and screen element is traced back to a specific part of Kavindu's scenario. At the time of writing, 69 of the 73 requirements are implemented; the four that are not are listed with their gaps in Section~\ref{sec:status}.
 
 \tableofcontents
 \clearpage
@@ -300,7 +300,7 @@ FR-AUTH-2 & Sign in with a Google account. & S & Done\\
 FR-AUTH-3 & Every record stored under the signed-in user's ID, so the same data appears on any device. & M & Done\\
 FR-AUTH-4 & First-run setup captures salary, active Income Sources and fixed monthly commitments (e.g.\ rent \lkr{34,000}) in three steps. & M & Done\\
 FR-AUTH-5 & Setup records each source's expected variability (steady, varies, highly volatile). & C & Done\\
-FR-AUTH-6 & Setup lets him set an emergency-runway buffer of 1--6 months of committed costs. & C & Planned\\
+FR-AUTH-6 & Setup lets him set an emergency-runway buffer of 1--6 months of committed costs; the dashboard shows its size and his progress. & C & Done\\
 FR-AUTH-7 & A debug-only demo drawer fills credentials for a pre-seeded account; credentials come from build configuration. & M & Done\\
 \multicolumn{4}{@{}l}{\textbf{\textsf{Income}}}\\
 FR-INC-1 & Each entry records source, title, client or platform, original amount, currency (LKR, USD, USDT, ETH) and date. & M & Done\\
@@ -711,7 +711,9 @@ With a USD price, the app shows \(\text{target} \times \text{today's rate} \div 
   "incomeSources": { "SALARY": "LOW", "FREELANCE": "MODERATE", "ADSENSE": "MODERATE", "CRYPTO": "VOLATILE" },
   "fixedCommitments": [ { "title": "Rent", "amountLkr": 34000, "category": "RENT" },
                         { "title": "Fiber Broadband", "amountLkr": 4800, "category": "UTILITIES" } ],
-  "completedAt": 1730750000000
+  "completedAt": 1730750000000,
+  "runwayMonths": 3,
+  "runwaySavedLkr": 11200
 }
 \end{lstlisting}
 \begin{itemize}
@@ -833,7 +835,7 @@ The wireframes below show each main screen as built, with the layout, labels and
 \midrule
 \callout{1} & \textbf{Monthly take-home.} Optional, because not every user has a salary. Gives the dashboard an Income Basis before his first payslip is logged. \prob{P1}, \req{FR-AUTH-4}\\
 \callout{2} & \textbf{Sources with variability.} Each active source is ticked and given steady / varies / highly volatile, pre-filled sensibly (crypto starts as volatile). Volatile sources are treated more cautiously. \prob{P1}, \prob{P4}, \req{FR-AUTH-5}\\
-\callout{3} & \textbf{Fixed commitments.} Rent \lkr{34,000} is suggested because it is in his scenario; the running total shows what is committed before he spends anything. \prob{P7}, \req{FR-AUTH-4}\\
+\callout{3} & \textbf{Fixed commitments.} Rent \lkr{34,000} is suggested because it is in his scenario; the running total shows what is committed before he spends anything. Below it he picks a safety buffer of 1--6 months of those costs (three is preselected), which the dashboard later tracks. \prob{P7}, \req{FR-AUTH-4}, \req{FR-AUTH-6}\\
 \callout{4} & \textbf{Three short steps, one screen each.} His Google Sheet died of entry overhead (F1), so setup asks only what the dashboard needs on day one. Written once to \code{users/{uid}.onboarding}.\\
 \bottomrule
 \end{tabularx}
@@ -1200,9 +1202,9 @@ Each decision is stated with the part of Kavindu's scenario that forced it, the 
 \toprule
 \textbf{Status} & \textbf{Count} & \textbf{Requirements}\\
 \midrule
-Done & 68 & All requirements not listed below\\
+Done & 69 & All requirements not listed below\\
 Partial & 3 & FR-SUB-5 and NFR-12 (usage access is not yet requested in context; app-usage risk works once access is granted in Settings); NFR-2 (gap tolerance verified for the savings rate and seasonal averages, not yet for every view)\\
-Planned & 2 & FR-AUTH-6 (emergency-runway buffer); NFR-8 (accessibility at 200\% font scale and colour-independent status not yet verified)\\
+Planned & 1 & NFR-8 (accessibility at 200\% font scale and colour-independent status not yet verified)\\
 \bottomrule
 \end{tabularx}
 
@@ -1240,6 +1242,6 @@ Shazaan & QA unit tests for goal pacing, opportunity cost and currency conversio
 
 % ============================================================================
 \section{Conclusion}
-Kavindu's problem was never a lack of discipline; it was that every tool he tried misrepresented his financial life -- one income, one currency, one card, fragile formulas -- until he stopped trusting it. PulseFinance answers each of those failures with a specific design decision: income recorded at what actually arrived and frozen there, unpaid invoices kept out of what he can spend, every channel his money leaves through in scope, subscriptions surfaced from his own charges, and a goal expressed as a daily pace compared with what he really saves. The architecture -- an offline-first MVVM app over a user-scoped Firestore schema -- exists to keep those numbers fast, private and trustworthy enough that he keeps opening the app. Sixty-eight of seventy-three requirements are implemented; the remaining five are known, small and tracked.
+Kavindu's problem was never a lack of discipline; it was that every tool he tried misrepresented his financial life -- one income, one currency, one card, fragile formulas -- until he stopped trusting it. PulseFinance answers each of those failures with a specific design decision: income recorded at what actually arrived and frozen there, unpaid invoices kept out of what he can spend, every channel his money leaves through in scope, subscriptions surfaced from his own charges, and a goal expressed as a daily pace compared with what he really saves. The architecture -- an offline-first MVVM app over a user-scoped Firestore schema -- exists to keep those numbers fast, private and trustworthy enough that he keeps opening the app. Sixty-nine of seventy-three requirements are implemented; the remaining four are known, small and tracked.
 
 \end{document}
