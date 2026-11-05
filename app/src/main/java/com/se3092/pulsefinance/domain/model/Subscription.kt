@@ -42,6 +42,8 @@ data class DetectedSubscription(
     val risk: SubscriptionRisk = SubscriptionRisk.LOW,
     val consecutiveUnusedMonths: Int = 0,
     val lastAppOpenedDaysAgo: Int? = null,
+    /** True when the subscription maps to an installed-app lookup (Netflix, Spotify...). */
+    val isAppLinked: Boolean = false,
     val isSecondaryAccount: Boolean = false
 ) {
     val annualCostLkr: Double get() = monthlyCostLkr * 12
