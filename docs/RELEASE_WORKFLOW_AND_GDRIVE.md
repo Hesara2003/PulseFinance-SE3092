@@ -2,15 +2,17 @@
 
 ## 1. Overview
 
-PulseFinance features an automated CI/CD release pipeline configured via GitHub Actions in [`.github/workflows/release-apk-to-drive.yml`](file:///Users/hesaraperera/Desktop/PulseFinance/.github/workflows/release-apk-to-drive.yml). 
+PulseFinance-SE3092 has an automated release pipeline in [`.github/workflows/release-apk-to-drive.yml`](../.github/workflows/release-apk-to-drive.yml). It gives the team (and the markers) an installable build of whatever is on `main`, without anyone building it locally.
 
-Whenever a major version or release tag (e.g. `v1.0.0`, `v2.0.0`) is pushed or published on GitHub, the pipeline:
+It runs on **every push to `main`** (which includes every merged PR), on pushed version tags (`v1.2.3`), on a published GitHub Release, and manually (§2, Option C). Each run:
 1. Compiles and packages the Android Application Package (**APK**) and Android App Bundle (**AAB**).
 2. Signs the APK so it is immediately installable on physical Android devices.
 3. Automatically uploads the bundled artifacts to the shared Google Drive folder:
    - **Target Folder URL:** [`https://drive.google.com/drive/folders/1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d`](https://drive.google.com/drive/folders/1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d?usp=sharing)
    - **Target Folder ID:** `1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d`
-4. Attaches the release APK/AAB to the GitHub Release and preserves build artifacts in GitHub Actions for 30 days.
+4. Attaches the release APK/AAB to the GitHub Release (tag or release triggers only), and keeps the build as a GitHub Actions artifact for 30 days.
+
+**Version names:** pushes to `main` and manual runs without a version are named `1.0.0`. Each upload therefore replaces `PulseFinance-v1.0.0.apk` in the folder, and its Drive link stays the same. Tag a release (`v1.1.0`) to keep a separate copy.
 
 ---
 
@@ -28,7 +30,7 @@ git push origin v1.0.0
 ```
 
 ### Option B: Publishing a GitHub Release
-1. Navigate to your repository: [https://github.com/Hesara2003/PulseFinance](https://github.com/Hesara2003/PulseFinance).
+1. Navigate to your repository: [Hesara2003/PulseFinance-SE3092](https://github.com/Hesara2003/PulseFinance-SE3092).
 2. Go to **Releases** $\to$ **Draft a new release**.
 3. Create a tag (e.g. `v1.0.0`), write release notes, and click **Publish release**.
 4. The workflow detects the published release and triggers the build and drive upload.
@@ -45,11 +47,36 @@ git push origin v1.0.0
 
 ---
 
-## 3. Google Drive Service Account Configuration
+## 3. Google Drive credentials
 
-To enable GitHub Actions to upload files into the private Google Drive folder, configure a Google Cloud Service Account:
+`scripts/upload_to_gdrive.py` accepts two kinds of credentials. It uses the OAuth refresh token when one is present, and otherwise the service-account key.
 
-### Step 1: Create a Service Account
+| Method | Secrets | Works with | Used by this repo |
+|---|---|---|---|
+| **A. OAuth refresh token** | `GDRIVE_CLIENT_ID`, `GDRIVE_CLIENT_SECRET`, `GDRIVE_REFRESH_TOKEN` | A **personal** Google Drive, using the owner's storage quota | **Yes.** The team folder is in a personal Drive |
+| B. Service account | `GDRIVE_SA_KEY` | A **Shared Drive** (Workspace). Service accounts have no storage quota of their own, so they can't upload into a personal Drive | Set as a fallback |
+
+### 3.1 Method A: OAuth refresh token
+
+1. In the Google Cloud project that owns the OAuth client (`airy-berm-483018-d6`), make sure the **Google Drive API** is enabled. You need an OAuth client of type **Desktop app**.
+2. On your machine, run the helper with that client's ID and secret:
+   ```bash
+   python3 scripts/authenticate_gdrive_oauth.py --client-id <ID> --client-secret <SECRET>
+   ```
+   - A browser opens; sign in with the Google account that owns the Drive folder and allow Drive access.
+   - The script prints the three values and tries `gh secret set` on the current repo.
+3. Check that the three secrets are on **PulseFinance-SE3092** (Settings → Secrets and variables → Actions). If not, add them by hand.
+4. **Publish the OAuth consent screen** (Google Cloud → APIs & Services → OAuth consent screen → Publish app). While it is in *Testing* mode, Google expires refresh tokens after 7 days and the upload silently stops working.
+
+**Two things to know:**
+- **Secrets are read when a run is queued, not when it starts.** A run queued before you added or changed a secret uses the old (or empty) value, and logs "Neither GDRIVE_REFRESH_TOKEN nor GDRIVE_SA_KEY secret is configured. Skipping…". The run still shows success. Start a fresh run with Option C to check.
+- **The workflow skips the upload, it doesn't fail,** when no credentials are set. A green run is not proof of an upload. The upload step logs `✅ Upload Complete!` and a Drive link when it works.
+
+### 3.2 Method B: Service account (Shared Drives only)
+
+To use a Shared Drive instead, configure a Google Cloud service account:
+
+#### Step 1: Create a Service Account
 1. Open the [Google Cloud Console](https://console.cloud.google.com/).
 2. Select your Firebase/Google Cloud project (or create a new project).
 3. Go to **APIs & Services** $\to$ **Library**, search for **Google Drive API**, and click **Enable**.
@@ -59,15 +86,15 @@ To enable GitHub Actions to upload files into the private Google Drive folder, c
 5. Click on the created service account, go to the **Keys** tab $\to$ **Add Key** $\to$ **Create new key** $\to$ select **JSON**.
 6. Download the generated `.json` key file to your computer.
 
-### Step 2: Share the Google Drive Folder with the Service Account
+#### Step 2: Share the Google Drive Folder with the Service Account
 1. Open the target Google Drive folder:
    [https://drive.google.com/drive/folders/1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d](https://drive.google.com/drive/folders/1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d?usp=sharing)
 2. Click the **Share** button in the top right.
 3. Paste the Service Account's email address (e.g. `pulsefinance-drive-uploader@your-project.iam.gserviceaccount.com`).
 4. Set permission to **Editor** and click **Send / Share**.
 
-### Step 3: Add Repository Secret in GitHub
-1. Open your repository: [https://github.com/Hesara2003/PulseFinance/settings/secrets/actions](https://github.com/Hesara2003/PulseFinance/settings/secrets/actions).
+#### Step 3: Add Repository Secret in GitHub
+1. Open [PulseFinance-SE3092 → Settings → Secrets → Actions](https://github.com/Hesara2003/PulseFinance-SE3092/settings/secrets/actions).
 2. Click **New repository secret**.
 3. Name: `GDRIVE_SA_KEY`
 4. Value: Paste the entire content of the downloaded Service Account JSON file.
