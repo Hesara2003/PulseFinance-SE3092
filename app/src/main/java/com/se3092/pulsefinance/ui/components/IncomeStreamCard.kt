@@ -137,7 +137,7 @@ fun IncomeStreamCard(
             ) {
                 Column {
                     Text(
-                        text = "+ LKR ${String.format("%,.0f", income.amountInLkr)}",
+                        text = "+ LKR ${String.format(Locale.US, "%,.0f", income.amountInLkr)}",
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.ExtraBold,
@@ -146,7 +146,7 @@ fun IncomeStreamCard(
 
                     if (income.currency != Currency.LKR) {
                         Text(
-                            text = "Original: ${income.currency.symbol} ${String.format("%,.2f", income.originalAmount)}",
+                            text = "Original: ${income.currency.symbol} ${String.format(Locale.US, "%,.2f", income.originalAmount)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.pulseColors.textTertiary,
                             fontSize = 11.sp

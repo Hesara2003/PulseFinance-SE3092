@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import java.util.Locale
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.se3092.pulsefinance.domain.model.Account
@@ -344,7 +345,7 @@ class DashboardViewModel @Inject constructor(
                 isVisible = true,
                 accountId = it.accountId,
                 titleInput = preset?.title.orEmpty(),
-                amountInput = preset?.amountLkr?.let { amount -> "%.0f".format(amount) }.orEmpty(),
+                amountInput = preset?.amountLkr?.let { amount -> "%.0f".format(Locale.US, amount) }.orEmpty(),
                 category = preset?.category ?: ExpenseCategory.FOOD_DINING,
                 isCommitted = preset?.isCommitted ?: false
             )
@@ -366,7 +367,7 @@ class DashboardViewModel @Inject constructor(
         it.copy(
             titleInput = preset.title,
             // A starter shortcut has no amount, so keep whatever the user has already typed.
-            amountInput = preset.amountLkr?.let { amount -> "%.0f".format(amount) } ?: it.amountInput,
+            amountInput = preset.amountLkr?.let { amount -> "%.0f".format(Locale.US, amount) } ?: it.amountInput,
             category = preset.category,
             isCommitted = preset.isCommitted,
             errorMessage = null
@@ -383,7 +384,7 @@ class DashboardViewModel @Inject constructor(
             it.copy(
                 isVisible = true,
                 titleInput = parsed.merchant,
-                amountInput = "%.0f".format(parsed.amountLkr),
+                amountInput = "%.0f".format(Locale.US, parsed.amountLkr),
                 category = parsed.suggestedCategory,
                 isCommitted = parsed.isCommitted,
                 accountId = matchedAccount?.id ?: it.accountId,

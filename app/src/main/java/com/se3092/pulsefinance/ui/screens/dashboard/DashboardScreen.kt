@@ -281,7 +281,8 @@ fun DashboardScreen(
                 WeeklyDiscretionaryCard(
                     weekDiscretionaryLkr = state.weekDiscretionaryLkr,
                     weekChangePct = state.weekChangePct,
-                    weekBars = state.weekBars
+                    weekBars = state.weekBars,
+                    totalFreezeBreaks = state.totalFreezeBreaks
                 )
             }
 
