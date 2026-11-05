@@ -14,6 +14,8 @@ import com.se3092.pulsefinance.domain.repository.AuthRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
 import com.se3092.pulsefinance.domain.repository.TaxConfigRepository
 import com.se3092.pulsefinance.domain.usecase.ConvertCurrencyUseCase
+import com.se3092.pulsefinance.domain.usecase.asThisMonth
+import com.se3092.pulsefinance.domain.usecase.recurringIncomeDue
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.signedLkr
@@ -100,6 +102,8 @@ data class IncomeScreenUiState(
     /** Only income paid in a foreign currency (USD AdSense, USDT trades…); combines with [filterSource]. */
     val foreignCurrencyOnly: Boolean = false,
     val incomes: List<IncomeStream> = emptyList(),
+    /** Monthly income not yet recorded this month; he taps to add it (FR-INC-11). */
+    val recurringDue: List<IncomeStream> = emptyList(),
     val totalCount: Int = 0,
     val foreignCurrencyCount: Int = 0,
     val countBySource: Map<IncomeSource, Int> = emptyMap(),
@@ -144,6 +148,8 @@ class IncomeViewModel @Inject constructor(
     private val form = MutableStateFlow(IncomeFormState())
     private val isPayslipVisible = MutableStateFlow(false)
     private val toast = MutableStateFlow<UiNotice?>(null)
+    /** Suggestions he waved off this session; they come back next time the screen is opened. */
+    private val dismissedRecurring = MutableStateFlow<Set<String>>(emptySet())
 
     private val incomes = authRepository.whenSignedIn<List<IncomeStream>?>(signedOut = null) { userId ->
         incomeRepository.getIncomeStreams(userId)
@@ -153,6 +159,8 @@ class IncomeViewModel @Inject constructor(
 
     val uiState: StateFlow<IncomeScreenUiState> = combine(incomes, filter, form, isPayslipVisible, toast) { incomes, filter, form, isPayslip, toast ->
         buildState(incomes, filter, form, isPayslip, toast)
+    }.combine(dismissedRecurring) { state, dismissed ->
+        state.copy(recurringDue = state.recurringDue.filter { it.id !in dismissed })
     }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -205,6 +213,7 @@ class IncomeViewModel @Inject constructor(
                 (filter.source == null || income.source == filter.source) &&
                     (!filter.foreignCurrencyOnly || income.currency != Currency.LKR)
             },
+            recurringDue = recurringIncomeDue(incomes, now),
             totalCount = incomes.size,
             foreignCurrencyCount = incomes.count { it.currency != Currency.LKR },
             countBySource = incomes.groupingBy { it.source }.eachCount(),
@@ -270,6 +279,19 @@ class IncomeViewModel @Inject constructor(
                 .onFailure { toast.value = UiNotice("Couldn't update", it.localizedMessage ?: "Try again", NoticeTone.ERROR) }
         }
     }
+
+    /** Adds this month's copy of a recurring entry (FR-INC-11). Only ever called from his tap. */
+    fun addRecurring(income: IncomeStream) {
+        val userId = authRepository.currentUserId ?: return
+        val entry = income.asThisMonth(System.currentTimeMillis()).copy(userId = userId)
+        viewModelScope.launch {
+            incomeRepository.saveIncomeStream(entry)
+                .onSuccess { toast.value = UiNotice("Income recorded", "+${lkr(entry.amountInLkr)} · ${entry.title}", illustration = incomeSourceIllustration(entry.source)) }
+                .onFailure { toast.value = UiNotice("Couldn't save", it.localizedMessage ?: "Try again", NoticeTone.ERROR) }
+        }
+    }
+
+    fun dismissRecurring(income: IncomeStream) = dismissedRecurring.update { it + income.id }
 
     fun deleteIncome(income: IncomeStream) {
         val userId = authRepository.currentUserId ?: return
