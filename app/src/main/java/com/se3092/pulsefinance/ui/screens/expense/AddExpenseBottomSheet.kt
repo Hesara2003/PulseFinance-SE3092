@@ -3,7 +3,6 @@ package com.se3092.pulsefinance.ui.screens.expense
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import com.se3092.pulsefinance.ui.common.presetIllustration
-import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -67,6 +66,7 @@ import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import com.se3092.pulsefinance.ui.theme.RentColor
+import com.se3092.pulsefinance.ui.common.categoryIllustration
 
 private val backdateOptions = listOf(0 to "Today", 1 to "Yesterday", 2 to "2 days ago", 7 to "Last week")
 
@@ -218,10 +218,10 @@ fun AddExpenseBottomSheet(
                         onClick = { onCategoryChange(category) },
                         label = { Text(category.displayName, fontSize = 12.sp) },
                         leadingIcon = {
-                            Icon(
-                                imageVector = expenseCategoryVisual(category).icon,
+                            Image(
+                                painter = painterResource(categoryIllustration(category)),
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         },
                         colors = chipColors

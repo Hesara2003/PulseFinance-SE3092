@@ -67,7 +67,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -79,7 +78,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.se3092.pulsefinance.domain.usecase.GoalVelocityReport
-import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.theme.OnAccent
@@ -102,6 +100,8 @@ import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import kotlinx.coroutines.launch
 import com.se3092.pulsefinance.ui.components.PulseNoticeHost
+import androidx.annotation.DrawableRes
+import com.se3092.pulsefinance.ui.common.categoryIllustration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -358,7 +358,7 @@ fun GoalScreen(
                         }
                         state.opportunities.forEach { opportunity ->
                             OpportunityCostCard(
-                                icon = expenseCategoryVisual(opportunity.category).icon,
+                                illustration = categoryIllustration(opportunity.category),
                                 title = "Trim ${opportunity.category.displayName} by 25%",
                                 subtitle = "${lkr(opportunity.monthlySpendLkr)} last 30 days · saves ${lkr(opportunity.monthlySavingLkr)}/mo",
                                 badgeText = "+${"%.1f".format(opportunity.daysOfGoalPace)} days",
@@ -673,7 +673,7 @@ fun GoalScreen(
 
 @Composable
 private fun OpportunityCostCard(
-    icon: ImageVector,
+    @DrawableRes illustration: Int,
     title: String,
     subtitle: String,
     badgeText: String,
@@ -713,11 +713,10 @@ private fun OpportunityCostCard(
                         .background(NeoCardLow),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = title,
-                        tint = NeoTextPrimary,
-                        modifier = Modifier.size(22.dp)
+                    Image(
+                        painter = painterResource(illustration),
+                        contentDescription = null,
+                        modifier = Modifier.size(38.dp)
                     )
                 }
 

@@ -42,10 +42,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.roundToInt
-import com.se3092.pulsefinance.R
 import com.se3092.pulsefinance.ui.common.presetIllustration
 import com.se3092.pulsefinance.ui.components.NoticeTone
 import com.se3092.pulsefinance.ui.components.UiNotice
+import com.se3092.pulsefinance.ui.common.accountIllustration
 
 private data class DashboardData(
     val expenses: List<Expense>,
@@ -182,7 +182,7 @@ class DashboardViewModel @Inject constructor(
         val untilMillis = System.currentTimeMillis() + days * DAY_MILLIS
         viewModelScope.launch {
             accountRepository.freezeAccount(account, untilMillis).fold(
-                onSuccess = { notice.value = UiNotice("${account.name} frozen", "No spending from it until ${formatDate(untilMillis, "dd MMM")}", illustration = R.drawable.ic_preset_bank) },
+                onSuccess = { notice.value = UiNotice("${account.name} frozen", "No spending from it until ${formatDate(untilMillis, "dd MMM")}", illustration = accountIllustration(account.type)) },
                 onFailure = { notice.value = UiNotice("Couldn't freeze ${account.name}", it.localizedMessage, NoticeTone.ERROR) }
             )
         }
@@ -191,7 +191,7 @@ class DashboardViewModel @Inject constructor(
     fun unfreezeAccount(account: Account) {
         viewModelScope.launch {
             accountRepository.unfreezeAccount(account).fold(
-                onSuccess = { notice.value = UiNotice("Spending freeze lifted", account.name, illustration = R.drawable.ic_preset_bank) },
+                onSuccess = { notice.value = UiNotice("Spending freeze lifted", account.name, illustration = accountIllustration(account.type)) },
                 onFailure = { notice.value = UiNotice("Couldn't lift the freeze", it.localizedMessage, NoticeTone.ERROR) }
             )
         }

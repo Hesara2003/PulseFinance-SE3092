@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,7 +29,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,10 +38,8 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.LocalTaxi
-import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.DatePickerDialog
@@ -100,17 +96,18 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Payments
 import com.se3092.pulsefinance.ui.common.TransactionItem
-import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.relativeDayLabel
 import com.se3092.pulsefinance.ui.common.signedLkr
-import com.se3092.pulsefinance.ui.common.transactionVisual
 import com.se3092.pulsefinance.ui.components.CommittedVsDiscretionaryBar
 import com.se3092.pulsefinance.ui.components.EmptyStateView
 import com.se3092.pulsefinance.ui.theme.NeoSurface
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
+import com.se3092.pulsefinance.ui.common.accountIllustration
+import com.se3092.pulsefinance.ui.common.categoryIllustration
+import com.se3092.pulsefinance.ui.common.transactionIllustration
 
 @Composable
 fun AnalyticsScreen(
@@ -653,7 +650,7 @@ fun AnalyticsScreen(
                                     },
                                     label = { Text(account.name, fontSize = 11.5.sp) },
                                     leadingIcon = {
-                                        Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Image(painterResource(accountIllustration(account.type)), contentDescription = null, modifier = Modifier.size(20.dp))
                                     },
                                     shape = CircleShape,
                                     colors = FilterChipDefaults.filterChipColors(
@@ -777,7 +774,6 @@ private fun CategoryBreakdownCard(totals: List<CategoryTotal>) {
                 letterSpacing = 1.sp
             )
             totals.forEach { total ->
-                val visual = expenseCategoryVisual(total.category)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -788,15 +784,11 @@ private fun CategoryBreakdownCard(totals: List<CategoryTotal>) {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(26.dp)
-                                    .clip(CircleShape)
-                                    .background(visual.container),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(visual.icon, contentDescription = null, tint = visual.tint, modifier = Modifier.size(14.dp))
-                            }
+                            Image(
+                                painter = painterResource(categoryIllustration(total.category)),
+                                contentDescription = null,
+                                modifier = Modifier.size(28.dp)
+                            )
                             Text(text = total.category.displayName, fontSize = 13.sp, color = NeoTextPrimary)
                         }
                         Text(
@@ -829,7 +821,6 @@ private fun CategoryBreakdownCard(totals: List<CategoryTotal>) {
 
 @Composable
 private fun TransactionLedgerCard(tx: TransactionItem) {
-    val visual = transactionVisual(tx)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -857,16 +848,15 @@ private fun TransactionLedgerCard(tx: TransactionItem) {
             ) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(visual.container),
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(NeoCardLow),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = visual.icon,
-                        contentDescription = tx.title,
-                        tint = visual.tint,
-                        modifier = Modifier.size(22.dp)
+                    Image(
+                        painter = painterResource(transactionIllustration(tx)),
+                        contentDescription = null,
+                        modifier = Modifier.size(38.dp)
                     )
                 }
 

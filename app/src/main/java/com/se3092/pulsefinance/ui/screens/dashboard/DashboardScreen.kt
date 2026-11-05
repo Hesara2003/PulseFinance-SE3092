@@ -35,8 +35,6 @@ import androidx.compose.material.icons.filled.SouthWest
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.WifiTethering
-import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Lock
@@ -60,7 +58,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
 import com.se3092.pulsefinance.domain.model.Account
-import com.se3092.pulsefinance.domain.model.AccountType
 import com.se3092.pulsefinance.ui.common.BiometricHelper
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -109,8 +106,6 @@ import com.se3092.pulsefinance.ui.theme.NeoContainerHigh
 import com.se3092.pulsefinance.ui.theme.NeoErrorContainer
 import com.se3092.pulsefinance.ui.theme.NeoGreen
 import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenFixed
-import com.se3092.pulsefinance.ui.theme.NeoOnPrimaryFixed
 import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
 import com.se3092.pulsefinance.ui.theme.NeoRose
 import com.se3092.pulsefinance.ui.theme.NeoSurface
@@ -119,6 +114,7 @@ import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import com.se3092.pulsefinance.ui.theme.NeoTrack
 import com.se3092.pulsefinance.ui.components.PulseNoticeHost
+import com.se3092.pulsefinance.ui.common.accountIllustration
 
 @Composable
 fun DashboardScreen(
@@ -1235,21 +1231,24 @@ private fun AccountCardItem(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(if (account.isFrozen) NeoErrorContainer else NeoGreenFixed),
+                            .background(if (account.isFrozen) NeoErrorContainer else NeoCardLow),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = when {
-                                account.isFrozen -> Icons.Default.Lock
-                                account.type == AccountType.BANK_PRIMARY -> Icons.Default.AccountBalance
-                                account.type == AccountType.BANK_SECONDARY -> Icons.Default.AccountBalance
-                                account.type == AccountType.CRYPTO_EXCHANGE -> Icons.Default.WifiTethering
-                                else -> Icons.Default.SouthWest
-                            },
-                            contentDescription = null,
-                            tint = if (account.isFrozen) NeoRose else NeoOnPrimaryFixed,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        // A frozen account shows the lock, its status; otherwise what kind of account it is.
+                        if (account.isFrozen) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Frozen",
+                                tint = NeoRose,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(accountIllustration(account.type)),
+                                contentDescription = null,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
                     }
                     Column {
                         Text(
