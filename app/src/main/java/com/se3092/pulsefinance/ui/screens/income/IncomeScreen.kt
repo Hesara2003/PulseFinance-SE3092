@@ -49,7 +49,6 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.TipsAndUpdates
-import androidx.compose.material.icons.filled.Token
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Button
@@ -83,7 +82,7 @@ import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
 import com.se3092.pulsefinance.ui.common.formatDate
-import com.se3092.pulsefinance.ui.common.incomeSourceVisual
+import com.se3092.pulsefinance.ui.common.incomeSourceIllustration
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.signedLkr
 import com.se3092.pulsefinance.ui.components.EmptyStateView
@@ -774,7 +773,6 @@ private fun SourceBreakdownCard(breakdown: List<SourceTotal>, totalLkr: Double) 
                 letterSpacing = 1.sp
             )
             breakdown.forEach { item ->
-                val visual = incomeSourceVisual(item.source)
                 val share = if (totalLkr > 0) (item.amountLkr / totalLkr).toFloat().coerceIn(0f, 1f) else 0f
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(
@@ -786,15 +784,11 @@ private fun SourceBreakdownCard(breakdown: List<SourceTotal>, totalLkr: Double) 
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(26.dp)
-                                    .clip(CircleShape)
-                                    .background(visual.container),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(visual.icon, contentDescription = null, tint = visual.tint, modifier = Modifier.size(14.dp))
-                            }
+                            Image(
+                                painter = painterResource(incomeSourceIllustration(item.source)),
+                                contentDescription = null,
+                                modifier = Modifier.size(28.dp)
+                            )
                             Text(text = item.source.displayName, fontSize = 13.sp, color = NeoTextPrimary, fontWeight = FontWeight.Medium)
                         }
                         Text(
@@ -841,15 +835,11 @@ private fun CryptoNetCard(netLkr: Double, entries: Int) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(VioletAccent.copy(alpha = 0.18f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.Token, contentDescription = null, tint = VioletAccent, modifier = Modifier.size(20.dp))
-            }
+            Image(
+                painter = painterResource(incomeSourceIllustration(IncomeSource.CRYPTO)),
+                contentDescription = null,
+                modifier = Modifier.size(44.dp)
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = "Crypto net, year to date", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeoTextPrimary)
                 Text(
@@ -875,7 +865,6 @@ private fun IncomeRecordCard(
     onDelete: () -> Unit
 ) {
     val status = income.effectiveStatus()
-    val visual = incomeSourceVisual(income.source)
     val (statusLabel, statusBg, statusText) = when (status) {
         InvoiceStatus.RECEIVED -> Triple(if (income.isLoss) "Loss" else "Received", if (income.isLoss) NeoRose.copy(alpha = 0.12f) else Teal.copy(alpha = 0.15f), if (income.isLoss) NeoRose else NeoGreenDark)
         InvoiceStatus.PENDING_INVOICE -> Triple("Awaiting payment", NeoAmber.copy(alpha = 0.15f), NeoAmber)
@@ -919,15 +908,11 @@ private fun IncomeRecordCard(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(visual.container),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(visual.icon, contentDescription = null, tint = visual.tint, modifier = Modifier.size(24.dp))
-                    }
+                    Image(
+                        painter = painterResource(incomeSourceIllustration(income.source)),
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp)
+                    )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = income.title,
