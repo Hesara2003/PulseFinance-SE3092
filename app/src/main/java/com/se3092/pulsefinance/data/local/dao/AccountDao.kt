@@ -19,6 +19,9 @@ abstract class AccountDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertAccounts(accounts: List<AccountEntity>)
 
+    @Query("DELETE FROM accounts WHERE id = :accountId AND userId = :userId")
+    abstract suspend fun deleteAccount(accountId: String, userId: String)
+
     @Query("DELETE FROM accounts WHERE userId = :userId")
     abstract suspend fun clearUserAccounts(userId: String)
 
