@@ -39,6 +39,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -80,6 +81,11 @@ class DashboardViewModel @Inject constructor(
     private val frozenWarning = MutableStateFlow<FrozenExpenseWarning?>(null)
     private val revealedAccountIds = MutableStateFlow<Set<String>>(emptySet())
     private var lastData: DashboardData? = null
+
+    private val _accountEditor = MutableStateFlow<AccountEditorState?>(null)
+
+    /** The add/edit account form while it is open (FR-ACC-8, FR-ACC-9). */
+    val accountEditor: StateFlow<AccountEditorState?> = _accountEditor.asStateFlow()
 
     private val data = authRepository.whenSignedIn<DashboardData?>(signedOut = null) { userId ->
         combine(
@@ -210,6 +216,69 @@ class DashboardViewModel @Inject constructor(
             accountRepository.unfreezeAccount(account).fold(
                 onSuccess = { notice.value = UiNotice("Spending freeze lifted", account.name, illustration = accountIllustration(account.type)) },
                 onFailure = { notice.value = UiNotice("Couldn't lift the freeze", it.localizedMessage, NoticeTone.ERROR) }
+            )
+        }
+    }
+
+    // ---------------- Account management (FR-ACC-8, FR-ACC-9) ----------------
+
+    fun openAccountEditor(account: Account? = null) {
+        _accountEditor.value = account?.let(AccountEditorState::editing) ?: AccountEditorState.forNewAccount()
+    }
+
+    fun onAccountEditorChange(transform: (AccountEditorState) -> AccountEditorState) {
+        _accountEditor.update { editor -> editor?.let(transform) }
+    }
+
+    fun dismissAccountEditor() {
+        _accountEditor.value = null
+    }
+
+    fun saveAccountEditor() {
+        val editor = _accountEditor.value ?: return
+        val userId = authRepository.currentUserId ?: return
+        val account = editor.toAccount(userId) ?: run {
+            _accountEditor.update { it?.copy(errorMessage = editor.validationError) }
+            return
+        }
+        viewModelScope.launch {
+            accountRepository.saveAccount(account).fold(
+                onSuccess = {
+                    _accountEditor.value = null
+                    notice.value = UiNotice(
+                        if (editor.isNew) "Account added" else "Account updated",
+                        account.name,
+                        illustration = accountIllustration(account.type)
+                    )
+                },
+                onFailure = { e ->
+                    _accountEditor.update { it?.copy(errorMessage = e.localizedMessage ?: "Couldn't save the account") }
+                }
+            )
+        }
+    }
+
+    fun requestDeleteAccount() {
+        // He always keeps at least one account, so an expense always has somewhere to go.
+        if (uiState.value.accounts.size <= 1) {
+            _accountEditor.update { it?.copy(errorMessage = "Keep at least one account so your expenses have somewhere to go") }
+            return
+        }
+        _accountEditor.update { it?.copy(isConfirmingDelete = true, errorMessage = null) }
+    }
+
+    fun confirmDeleteAccount() {
+        val original = _accountEditor.value?.original ?: return
+        val userId = authRepository.currentUserId ?: return
+        viewModelScope.launch {
+            accountRepository.deleteAccount(userId, original.id).fold(
+                onSuccess = {
+                    _accountEditor.value = null
+                    notice.value = UiNotice("Account deleted", "${original.name}. Its expenses are kept.")
+                },
+                onFailure = { e ->
+                    _accountEditor.update { it?.copy(isConfirmingDelete = false, errorMessage = e.localizedMessage ?: "Couldn't delete the account") }
+                }
             )
         }
     }

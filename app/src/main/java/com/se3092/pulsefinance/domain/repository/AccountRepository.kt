@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.Flow
 interface AccountRepository {
     fun getAccounts(userId: String): Flow<List<Account>>
     suspend fun saveAccount(account: Account): Result<Unit>
+    /** Removes the account only; expenses that name it keep their copied account name (FR-ACC-8). */
+    suspend fun deleteAccount(userId: String, accountId: String): Result<Unit>
     /** Creates the default payment channels for a brand-new user; true when it did (first sign-in). */
     suspend fun ensureDefaultAccounts(userId: String): Result<Boolean>
     suspend fun freezeAccount(account: Account, untilMillis: Long): Result<Unit>
