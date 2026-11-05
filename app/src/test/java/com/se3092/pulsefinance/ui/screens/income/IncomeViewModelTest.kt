@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -58,7 +59,7 @@ class IncomeViewModelTest {
     fun `a salary from before this month is suggested, and nothing is saved until he taps`() = runTest {
         val repo = FakeIncomeRepository(listOf(salary(daysAgo = 40)))
         val vm = viewModel(repo)
-        backgroundScope.launch { vm.uiState.collect {} }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
 
         assertEquals(listOf("Monthly Salary"), vm.uiState.value.recurringDue.map { it.title })
         assertTrue(repo.saved.isEmpty())
@@ -68,7 +69,7 @@ class IncomeViewModelTest {
     fun `tapping add records a received copy dated today and clears the suggestion`() = runTest {
         val repo = FakeIncomeRepository(listOf(salary(daysAgo = 40)))
         val vm = viewModel(repo)
-        backgroundScope.launch { vm.uiState.collect {} }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
 
         vm.addRecurring(vm.uiState.value.recurringDue.single())
 
@@ -84,7 +85,7 @@ class IncomeViewModelTest {
     fun `waving a suggestion off hides it without adding anything`() = runTest {
         val repo = FakeIncomeRepository(listOf(salary(daysAgo = 40)))
         val vm = viewModel(repo)
-        backgroundScope.launch { vm.uiState.collect {} }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
 
         vm.dismissRecurring(vm.uiState.value.recurringDue.single())
 
@@ -96,7 +97,7 @@ class IncomeViewModelTest {
     fun `recording new income saves it with the rate he typed`() = runTest {
         val repo = FakeIncomeRepository()
         val vm = viewModel(repo)
-        backgroundScope.launch { vm.uiState.collect {} }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
 
         vm.showAddSheet()
         vm.onSourceChanged(IncomeSource.ADSENSE)
@@ -114,7 +115,7 @@ class IncomeViewModelTest {
     fun `a zero amount is explained and nothing is saved`() = runTest {
         val repo = FakeIncomeRepository()
         val vm = viewModel(repo)
-        backgroundScope.launch { vm.uiState.collect {} }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
 
         vm.showAddSheet()
         vm.onAmountChanged("0")
@@ -133,7 +134,7 @@ class IncomeViewModelTest {
         )
         val repo = FakeIncomeRepository(listOf(original))
         val vm = viewModel(repo)
-        backgroundScope.launch { vm.uiState.collect {} }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
 
         vm.showEditSheet(original)
         vm.onAmountChanged("500")
@@ -155,7 +156,7 @@ class IncomeViewModelTest {
             originalAmount = 400.0, currency = Currency.USD, exchangeRateToLkr = 301.25, amountInLkr = 120_500.0
         )
         val vm = viewModel(FakeIncomeRepository(listOf(usd)))
-        backgroundScope.launch { vm.uiState.collect {} }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
 
         vm.showEditSheet(usd)
         vm.onSourceChanged(IncomeSource.ADSENSE)
@@ -169,7 +170,7 @@ class IncomeViewModelTest {
         val invoice = salary(1).copy(id = "inv", status = InvoiceStatus.PENDING_INVOICE, isRecurringMonthly = false)
         val repo = FakeIncomeRepository(listOf(invoice))
         val vm = viewModel(repo)
-        backgroundScope.launch { vm.uiState.collect {} }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
 
         vm.markReceived(invoice)
         assertEquals(InvoiceStatus.RECEIVED, repo.items.value.single().status)

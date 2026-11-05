@@ -20,6 +20,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -51,7 +52,7 @@ class DashboardViewModelTest {
             FakeSeasonalReserveRepository(), FakeOnboardingRepository(),
             CalculateFinancialSummaryUseCase(), BankSmsParser(), SeasonalPeakChecker(), ExportDataToCsvUseCase()
         )
-        backgroundScope.launch { vm.uiState.collect {} }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
         return Harness(expenseRepo, accountRepo, vm)
     }
 
