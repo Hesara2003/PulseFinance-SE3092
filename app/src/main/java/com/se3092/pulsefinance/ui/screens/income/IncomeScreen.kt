@@ -564,6 +564,14 @@ fun IncomeScreen(
                                 onClick = { viewModel.setFilter(source) }
                             )
                         }
+                        // Restored from the 15/10 redesign: foreign-currency income, on top of the source filter.
+                        if (state.foreignCurrencyCount > 0) {
+                            CategoryPill(
+                                label = "USD & crypto (${state.foreignCurrencyCount})",
+                                isSelected = state.foreignCurrencyOnly,
+                                onClick = { viewModel.toggleForeignCurrencyFilter() }
+                            )
+                        }
                     }
                 }
 
@@ -580,7 +588,11 @@ fun IncomeScreen(
                 // 6. Income records
                 if (!state.isLoading && state.incomes.isEmpty()) item {
                     EmptyStateView(
-                        title = if (state.filterSource == null) "No income recorded yet" else "Nothing from ${state.filterSource?.displayName} yet",
+                        title = when {
+                            state.totalCount == 0 -> "No income recorded yet"
+                            state.filterSource != null -> "Nothing from ${state.filterSource?.displayName} yet"
+                            else -> "Nothing in this filter yet"
+                        },
                         message = "Tap + to record salary, a freelance milestone (paid or still invoiced), AdSense in USD, or a crypto gain or loss.",
                         icon = Icons.Default.Payments,
                         illustration = R.drawable.illustration_wallet

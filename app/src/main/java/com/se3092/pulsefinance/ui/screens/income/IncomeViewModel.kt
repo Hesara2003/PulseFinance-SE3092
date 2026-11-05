@@ -57,8 +57,11 @@ data class IncomeScreenUiState(
     val isLoading: Boolean = true,
     val monthLabel: String = "",
     val filterSource: IncomeSource? = null,
+    /** Only income paid in a foreign currency (USD AdSense, USDT trades…); combines with [filterSource]. */
+    val foreignCurrencyOnly: Boolean = false,
     val incomes: List<IncomeStream> = emptyList(),
     val totalCount: Int = 0,
+    val foreignCurrencyCount: Int = 0,
     val countBySource: Map<IncomeSource, Int> = emptyMap(),
     val realizedThisMonthLkr: Double = 0.0,
     val pendingLkr: Double = 0.0,
@@ -76,6 +79,11 @@ data class IncomeScreenUiState(
     val pendingRatio: Float get() = if (totalProjectedLkr > 0) (pendingLkr / totalProjectedLkr).toFloat().coerceIn(0f, 1f) else 0f
 }
 
+private data class IncomeFilter(
+    val source: IncomeSource? = null,
+    val foreignCurrencyOnly: Boolean = false
+)
+
 @HiltViewModel
 class IncomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
@@ -92,7 +100,7 @@ class IncomeViewModel @Inject constructor(
         initialValue = ApitTaxBand.DEFAULTS
     )
 
-    private val filter = MutableStateFlow<IncomeSource?>(null)
+    private val filter = MutableStateFlow(IncomeFilter())
     private val form = MutableStateFlow(IncomeFormState())
     private val isPayslipVisible = MutableStateFlow(false)
     private val toast = MutableStateFlow<Pair<String, String>?>(null)
@@ -113,7 +121,7 @@ class IncomeViewModel @Inject constructor(
 
     private fun buildState(
         incomes: List<IncomeStream>?,
-        filter: IncomeSource?,
+        filter: IncomeFilter,
         form: IncomeFormState,
         isPayslip: Boolean,
         toast: Pair<String, String>?
@@ -122,7 +130,8 @@ class IncomeViewModel @Inject constructor(
         val base = IncomeScreenUiState(
             isLoading = incomes == null,
             monthLabel = formatDate(now, "MMMM yyyy"),
-            filterSource = filter,
+            filterSource = filter.source,
+            foreignCurrencyOnly = filter.foreignCurrencyOnly,
             isPayslipSheetVisible = isPayslip,
             form = form,
             toastNotification = toast
@@ -152,8 +161,12 @@ class IncomeViewModel @Inject constructor(
         )
 
         return base.copy(
-            incomes = sorted.filter { filter == null || it.source == filter },
+            incomes = sorted.filter { income ->
+                (filter.source == null || income.source == filter.source) &&
+                    (!filter.foreignCurrencyOnly || income.currency != Currency.LKR)
+            },
             totalCount = incomes.size,
+            foreignCurrencyCount = incomes.count { it.currency != Currency.LKR },
             countBySource = incomes.groupingBy { it.source }.eachCount(),
             realizedThisMonthLkr = realizedThisMonth.sumOf { it.amountInLkr },
             pendingLkr = unpaid.sumOf { it.amountInLkr },
@@ -202,7 +215,11 @@ class IncomeViewModel @Inject constructor(
     }
 
     fun setFilter(source: IncomeSource?) {
-        filter.value = source
+        filter.update { it.copy(source = source) }
+    }
+
+    fun toggleForeignCurrencyFilter() {
+        filter.update { it.copy(foreignCurrencyOnly = !it.foreignCurrencyOnly) }
     }
 
     fun markReceived(income: IncomeStream) {
