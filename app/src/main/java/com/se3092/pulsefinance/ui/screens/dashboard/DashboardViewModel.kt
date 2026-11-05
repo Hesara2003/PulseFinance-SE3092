@@ -33,6 +33,8 @@ import com.se3092.pulsefinance.ui.common.initialsFor
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.whenSignedIn
 import com.se3092.pulsefinance.ui.screens.expense.AddExpenseFormState
+import com.se3092.pulsefinance.ui.screens.expense.ExpenseEditSession
+import com.se3092.pulsefinance.ui.screens.expense.ExpenseEditorState
 import com.se3092.pulsefinance.ui.screens.expense.ExpensePreset
 import com.se3092.pulsefinance.ui.screens.expense.deriveExpensePresets
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -78,6 +80,8 @@ class DashboardViewModel @Inject constructor(
 
     private val form = MutableStateFlow(AddExpenseFormState())
     private val notice = MutableStateFlow<UiNotice?>(null)
+    private val expenseEdit = ExpenseEditSession(viewModelScope, expenseRepository) { notice.value = it }
+    val editingExpense: StateFlow<ExpenseEditorState?> = expenseEdit.state
     private val frozenWarning = MutableStateFlow<FrozenExpenseWarning?>(null)
     private val revealedAccountIds = MutableStateFlow<Set<String>>(emptySet())
     private var lastData: DashboardData? = null
@@ -491,6 +495,17 @@ class DashboardViewModel @Inject constructor(
     }
 
     // ---------------- Other actions ----------------
+
+    // ---------------- Edit an expense (FR-EXP-8) ----------------
+
+    fun startEditExpense(expenseId: String) {
+        val userId = authRepository.currentUserId ?: return
+        expenseEdit.start(userId, expenseId)
+    }
+
+    fun onExpenseEditChange(transform: (ExpenseEditorState) -> ExpenseEditorState) = expenseEdit.change(transform)
+    fun dismissExpenseEdit() = expenseEdit.dismiss()
+    fun saveExpenseEdit() = expenseEdit.save(uiState.value.accounts)
 
     fun deleteExpense(expenseId: String) {
         val userId = authRepository.currentUserId ?: return

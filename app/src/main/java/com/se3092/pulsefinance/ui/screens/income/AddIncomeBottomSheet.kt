@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.Currency
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
+import com.se3092.pulsefinance.ui.common.formatDate
 
 private val receivedDateOptions = listOf(0 to "Today", -1 to "Yesterday", -7 to "Last week", -30 to "Last month")
 private val dueDateOptions = listOf(7 to "In 1 week", 14 to "In 2 weeks", 30 to "In 30 days", -1 to "Already due")
@@ -124,14 +125,14 @@ fun AddIncomeBottomSheet(
             ) {
                 Column {
                     Text(
-                        text = "Record Income",
+                        text = if (form.isEditing) "Edit income" else "Record Income",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
                     Text(
-                        text = "Money received, or an invoice you're waiting on",
+                        text = if (form.isEditing) "The rate you recorded stays unless you change it" else "Money received, or an invoice you're waiting on",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
@@ -331,9 +332,18 @@ fun AddIncomeBottomSheet(
             Spacer(modifier = Modifier.height(6.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 val options = if (form.selectedStatus == InvoiceStatus.RECEIVED) receivedDateOptions else dueDateOptions
+                form.editing?.let { original ->
+                    FilterChip(
+                        selected = form.usesOriginalDate,
+                        onClick = {},
+                        label = { Text("Keep ${formatDate(original.dateReceivedOrExpected)}", fontSize = 12.sp) },
+                        shape = CircleShape,
+                        colors = chipColors
+                    )
+                }
                 options.forEach { (offset, label) ->
                     FilterChip(
-                        selected = form.dayOffset == offset,
+                        selected = !form.usesOriginalDate && form.dayOffset == offset,
                         onClick = { onDayOffsetChange(offset) },
                         label = { Text(label, fontSize = 12.sp) },
                         shape = CircleShape,
@@ -373,7 +383,7 @@ fun AddIncomeBottomSheet(
                 } else {
                     Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.size(8.dp))
-                    Text(text = "Save", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(text = if (form.isEditing) "Save changes" else "Save", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
         }

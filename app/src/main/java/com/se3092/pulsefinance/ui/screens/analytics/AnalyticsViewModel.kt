@@ -23,6 +23,8 @@ import com.se3092.pulsefinance.ui.common.buildLedger
 import com.se3092.pulsefinance.ui.common.filterLedger
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.whenSignedIn
+import com.se3092.pulsefinance.ui.screens.expense.ExpenseEditSession
+import com.se3092.pulsefinance.ui.screens.expense.ExpenseEditorState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -137,6 +139,8 @@ class AnalyticsViewModel @Inject constructor(
 
     private val controls = MutableStateFlow(AnalyticsControls())
     private val notice = MutableStateFlow<UiNotice?>(null)
+    private val expenseEdit = ExpenseEditSession(viewModelScope, expenseRepository) { notice.value = it }
+    val editingExpense: StateFlow<ExpenseEditorState?> = expenseEdit.state
 
     private val data = authRepository.whenSignedIn<AnalyticsData?>(signedOut = null) { userId ->
         combine(
@@ -309,6 +313,17 @@ class AnalyticsViewModel @Inject constructor(
     fun clearFilters() {
         controls.update { it.copy(searchQuery = "", filterCategory = null, filterAccountId = null, filterDateRange = null) }
     }
+
+    /** Edit an expense from any period (FR-EXP-8), not only the latest few shown on the Dashboard. */
+    fun startEditExpense(transaction: TransactionItem) {
+        val expenseId = transaction.expenseId ?: return
+        val userId = authRepository.currentUserId ?: return
+        expenseEdit.start(userId, expenseId)
+    }
+
+    fun onExpenseEditChange(transform: (ExpenseEditorState) -> ExpenseEditorState) = expenseEdit.change(transform)
+    fun dismissExpenseEdit() = expenseEdit.dismiss()
+    fun saveExpenseEdit() = expenseEdit.save(uiState.value.accounts)
 
     /** Deletes an expense from any period, not only the latest few shown on the Dashboard. */
     fun deleteExpense(transaction: TransactionItem) {
