@@ -1,87 +1,121 @@
-# Vivid Neo-Fintech Design System
+# Design System
 
-## 1. Design Philosophy: "Vivid Neo-Fintech"
+PulseFinance uses a light theme: porcelain white surfaces with one signal green. It is designed for one reader. Kavindu abandoned four money tools, the last because "incomplete entries felt more discouraging than helpful" (SRS F1). The visual language therefore aims to make opening the app feel calm and useful rather than like being graded.
 
-Traditional banking applications are notorious for dull corporate gray palettes, cluttered tabular lists, and emotionally disconnected number dumps. PulseFinance breaks this paradigm by implementing the **Vivid Neo-Fintech** design language:
-
-- **Cyber-Luxury Contrast**: Pitch-black and obsidian background surfaces (`#080C14` and `#0D1117`) paired with high-voltage neon accents (`#135BFB` Electric Blue, `#00E5FF` Cyan, and `#10B981` Emerald Mint).
-- **Capsule Geometry**: Soft pill-shaped tags, rounded 24dp–32dp card containers, and fluid organic curves that feel modern and tactile.
-- **Glassmorphism & Depth**: Multi-layer elevation achieved through translucent dark surfaces (`rgba(22, 27, 34, 0.85)`), hairline borders (`#30363D`), and subtle radial gradient glows.
-- **Emotional Pacing**: Financial metrics are presented not merely as cold figures, but as energetic velocity indicators (e.g., daily burn gauges, pacing progress, and opportunity cost comparisons).
+Tokens live in [`ui/theme/Color.kt`](../app/src/main/java/com/se3092/pulsefinance/ui/theme/Color.kt), [`Type.kt`](../app/src/main/java/com/se3092/pulsefinance/ui/theme/Type.kt) and [`Theme.kt`](../app/src/main/java/com/se3092/pulsefinance/ui/theme/Theme.kt). The redesign landed on 16/10/2026 and replaced the original dark theme.
 
 ---
 
-## 2. Color Palette & Token Definitions
+## 1. Principles, from the scenario
 
-All color tokens are centralized in [Color.kt](file:///Users/hesaraperera/Desktop/PulseFinance/app/src/main/java/com/se3092/pulsefinance/ui/theme/Color.kt):
-
-| Token Name | Hex Code | Compose Value | Purpose & Usage |
-| :--- | :--- | :--- | :--- |
-| **`PrimaryBlue`** | `#135BFB` | `Color(0xFF135BFB)` | Main brand accent, primary CTA buttons, active state indicators. |
-| **`ElectricCyan`** | `#00E5FF` | `Color(0xFF00E5FF)` | High-voltage highlights, goal velocity glow, primary gradient endpoints. |
-| **`EmeraldGreen`** | `#10B981` | `Color(0xFF10B981)` | Income badges, positive net cash flow, Safe-To-Spend gauge healthy zone. |
-| **`WarningAmber`** | `#F59E0B` | `Color(0xFFF59E0B)` | Caution zone, overdue freelance milestones, medium subscription risk. |
-| **`DangerRed`** | `#EF4444` | `Color(0xFFEF4444)` | Critical alerts, zombie subscription nuke buttons, high-risk leaks. |
-| **`BackgroundDark`** | `#080C14` | `Color(0xFF080C14)` | Deepest app background (OLED energy-saving canvas). |
-| **`SurfaceDark`** | `#0D1117` | `Color(0xFF0D1117)` | Primary surface for top bars, sticky headers, and bottom sheets. |
-| **`CardBackground`** | `#161B22` | `Color(0xFF161B22)` | Default card background container elevation. |
-| **`CardElevated`** | `#21262D` | `Color(0xFF21262D)` | Floating dialogs, elevated tooltips, and interactive pill buttons. |
-| **`BorderDark`** | `#30363D` | `Color(0xFF30363D)` | Hairline strokes for cards and dividers (1dp subtle outline). |
-| **`TextPrimary`** | `#F0F6FC` | `Color(0xFFF0F6FC)` | High-emphasis body text, major currency balance titles (100% white-silver). |
-| **`TextSecondary`** | `#8B949E` | `Color(0xFF8B949E)` | Medium-emphasis labels, subtitles, timestamp strings. |
-| **`TextTertiary`** | `#484F58` | `Color(0xFF484F58)` | Low-emphasis placeholders, disabled icons, inactive state tracks. |
+| Principle | Why, for Kavindu | Where it shows |
+|---|---|---|
+| **One number first** | He opens the app to answer "can I spend today?" | The dashboard hero is the Safe-to-Spend figure; monthly net in/out sits underneath as context |
+| **Amber, not red** | He avoids looking at money he's worried about. Alarm red makes an avoider look away | All attention states (overdue invoice, high-risk subscription, freeze break) use amber `#F59E0B` with deep-amber text `#B45309`. There is no red in the palette |
+| **No punishment for gaps** | Gaps killed his Google Sheet | No streaks, lives or "0 spent" days. The MacBook Quest's levels are real rupee amounts, so progress only ever goes forward (NFR-2) |
+| **Money in his terms** | Rupees, rent, PickMe, a MacBook | Figures as `LKR 34,000` in a dedicated numeric font. Goal impact as "days of MacBook" rather than percentages |
+| **Friction only where it helps** | He is impulsive with discretionary spending | One tap to log a coffee, but a pause with the goal-day cost before spending from a frozen account |
 
 ---
 
-## 3. Typography Hierarchy
+## 2. Colour
 
-The typography engine is anchored on **Plus Jakarta Sans** and **Inter**, prioritizing optical legibility at high data density:
+### 2.1 Core palette
 
-| Style Role | Font Weight | Size (sp) | Tracking | Primary Application |
-| :--- | :--- | :--- | :--- | :--- |
-| **Display Large** | ExtraBold (800) | 36sp | -1.0sp | Net Worth & Hero Balance figures (`LKR 510,500`) |
-| **Display Medium** | Bold (700) | 28sp | -0.5sp | Section hero headers, Safe-to-spend metric callouts |
-| **Headline Large** | Bold (700) | 22sp | -0.2sp | Screen titles (Cockpit, Income Hub, Goal Velocity) |
-| **Headline Small** | SemiBold (600) | 18sp | 0.0sp | Card group headers, bottom sheet titles |
-| **Title Medium** | SemiBold (600) | 16sp | +0.1sp | Transaction names, stream titles, button labels |
-| **Body Large** | Medium (500) | 15sp | +0.15sp | Explanatory descriptions, scenario narrative text |
-| **Body Small** | Regular (400) | 13sp | +0.2sp | Secondary metadata, dates, account numbers |
-| **Label Small** | Bold (700) | 11sp | +0.5sp | Pill tags (`REALIZED`, `DISCRETIONARY`, `OVERDUE`) |
+| Token | Hex | Role |
+|---|---|---|
+| `NeoGreen` | `#00C950` | Signal green: primary fills, progress, the Quest road, the Safe-to-Spend hero gradient (to `#00A844`) |
+| `NeoGreenDark` | `#006E28` | Material `primary`; green text on white, money in |
+| `NeoGreenLight` / `NeoGreenFixed` | `#3BE366` / `#6BFF84` | Light green accents, the "USD Ref" chip on the goal card |
+| `NeoSurface` | `#F7F9FB` | App background |
+| `NeoCard` | `#FFFFFF` | Cards and bottom sheets |
+| `NeoCardLow` / `NeoContainer` / `NeoContainerHigh` | `#F2F4F6` / `#ECEEF0` / `#E6E8EA` | Nested surfaces, chips, inputs |
+| `NeoBorder` / `NeoTrack` | `#E2E8F0` | Card borders, dividers, empty chart tracks |
+| `NeoTextPrimary` | `#191C1E` | Primary text |
+| `NeoTextSecondary` | `#565E74` | Secondary text |
+| `NeoTextTertiary` | `#595F66` | Muted text |
+| `OnAccent` | `#FFFFFF` | Text and icons on green |
 
----
+### 2.2 Attention (no red)
 
-## 4. Component Design Patterns
+| Token | Hex | Role |
+|---|---|---|
+| `NeoAmber` | `#F59E0B` | Warning fills: overdue invoice, high risk, freeze |
+| `NeoRose` | `#B45309` | Attention text. Deep amber, readable on white; named "Rose" for history |
+| `NeoErrorContainer` | `#FEF3C7` | Pale amber background behind attention messages |
 
-### 4.1. The Topographic Titanium Debit Card
-- **Background**: Deep gradient blending from `#1A2035` through `#0D1117`.
-- **Topographic Contours**: Subtle vector contour curves overlaid at 12% alpha.
-- **Physical EMV Gold Chip**: Rendered with brushed gold gradient (`#E5A93C` to `#FAD961`) and micro-contact circuit division lines.
-- **Cardholder Detail**: Styled with monospaced letter spacing, displaying masked account numbers and holographic Pulse logo.
+### 2.3 Categories
 
-### 4.2. Safe-To-Spend Arc Gauge (`SafeToSpendGauge.kt`)
-- Custom Canvas drawing a 240-degree sweep arc.
-- Inactive track rendered in `#21262D`.
-- Dynamic active stroke painted using an angled `SweepGradient` (`#135BFB` $\to$ `#00E5FF` $\to$ `#10B981`).
-- Center readout displaying live remaining liquid allowance after accounting for committed liabilities (LKR 34,000 rent) and savings targets.
+| Token | Hex | Used for |
+|---|---|---|
+| `FoodColor` | `#F97316` | Food & dining: his coffee and UberEats |
+| `TransportColor` | `#3B82F6` | Transport: PickMe |
+| `RentColor` / `TechColor` | `#8B5CF6` | Rent; tech & equipment |
+| `CryptoColor` | `#EAB308` | Crypto income |
 
-### 4.3. Committed vs. Discretionary Stacked Capsule (`CommittedVsDiscretionaryBar.kt`)
-- A single 16dp rounded capsule bar with segmented fill:
-  - **Committed Split**: `#135BFB` (Rent, WiFi, loan dues).
-  - **Discretionary Split**: `#F59E0B` or `#00E5FF` (Dining, cafe, entertainment).
-  - **Unspent Margin**: `#21262D` (Buffer runway).
-- Accompanied by interactive legend indicators showing percentage splits and absolute LKR values.
-
-### 4.4. Floating Pill Navigation Dock
-- Suspended 16dp above the display bottom edge with 24dp rounded corners.
-- Background: `Color(0xFF161B22).copy(alpha = 0.92f)` with blur backdrop filter.
-- Active tab pill: Glow pill container highlighted in `#135BFB` with high-contrast `#FFFFFF` icon.
-- Inactive tabs: Muted `#8B949E` with 200ms spring scale transition on tap.
+`Color.kt` also keeps compatibility aliases from the old dark theme (`BackgroundDark`, `SurfaceDark`, `EmeraldPrimary`, …). They now map onto the light palette, so older components render in the new theme.
 
 ---
 
-## 5. Micro-Interactions & Animation Standards
+## 3. Typography
 
-1. **Velocity Slider Response**: Continuous visual feedback on savings goal allocation slider (`MacBookGoalCard.kt`). Adjusting the slider instantly triggers spring interpolation on the daily velocity badge and target completion calendar date.
-2. **One-Tap Nuke Animation**: When cancelling a Zombie subscription in `ExpenseScreen.kt`, the card triggers a red flash animation, collapses vertically with `shrinkVertically()`, and updates the annual savings drag counter.
-3. **Pill Status Badges**: Overdue invoices pulse with an amber glow border, drawing immediate focus without obstructing user navigation.
-4. **Haptic Feel**: Touch targets maintain standard $48\times 48\text{dp}$ interaction boxes with bounded ripple effects.
+Two bundled font families (SIL Open Font License), plus the system font for body text:
+
+| Family | Use |
+|---|---|
+| **Space Grotesk** (`Numeric`) | Large money figures: display styles |
+| **Bricolage Grotesque** (`Display`) | Headlines, titles, labels |
+| System default | Body text and small labels |
+
+| Style | Family | Weight | Size / line | Example |
+|---|---|---|---|---|
+| `displayLarge` | Space Grotesk | Bold | 44 / 48 sp, −1 sp | Defined for hero figures |
+| `displayMedium` | Space Grotesk | Bold | 34 / 40 sp | Defined for secondary figures |
+| `headlineLarge` | Bricolage | ExtraBold | 30 / 36 sp | Screen titles |
+| `headlineMedium` | Bricolage | Bold | 24 / 30 sp | Section heads |
+| `headlineSmall`, `titleLarge` | Bricolage | Bold | 20 / 26 sp | Card and sheet titles |
+| `titleMedium` | Bricolage | SemiBold | 16 / 22 sp | Transaction and stream names |
+| `titleSmall`, `labelLarge` | Bricolage | SemiBold | 14 / 20 sp | Buttons, chips |
+| `bodyLarge` | System | Normal | 16 / 24 sp | Explanations |
+| `bodyMedium` | System | Normal | 14 / 20 sp | Secondary copy |
+| `labelSmall` | System | Medium | 11 / 16 sp | Tags such as `Overdue` |
+
+In practice, screens set the `Numeric` family directly on money figures with their own sizes (9 places), rather than using the two display styles.
+
+---
+
+## 4. Shape and spacing
+
+- **Corners:** cards 20–24 dp, inner tiles 14–18 dp, chips and dock buttons fully round (`CircleShape`). 24 dp is the most common radius in the code.
+- **Elevation:** soft, low-contrast shadows (`#0F172A` at 5–12% alpha) instead of borders on hero elements.
+- **Screen gutters:** about 20–22 dp; bottom sheets use 22 dp horizontal padding.
+
+---
+
+## 5. Components
+
+| Component | File | What it shows Kavindu |
+|---|---|---|
+| Safe-to-Spend hero | `DashboardScreen.kt` (`SafeToSpendHero`) | Green gradient card: today's allowance, days left, the month's net, in and out. Can be masked |
+| Committed vs discretionary bar | `components/CommittedVsDiscretionaryBar.kt` | One capsule split into committed and discretionary, with amounts |
+| MacBook goal card | `components/MacBookGoalCard.kt` | Saved vs target, required pace pill, "USD Ref" chip with target change since set |
+| Quest map | `components/QuestMap.kt` | The goal as 10 levels of LKR 49,000 along a green road, with the next checkpoint |
+| Category donut | `components/CategoryDonutChart.kt` | Where the month's spending went, by category colour |
+| Transaction visuals | `ui/common/TransactionVisuals.kt` | One icon and colour per income source and expense category, used in every list |
+| Income stream card | `components/IncomeStreamCard.kt` | Source, client, original currency and the LKR equivalent, plus status |
+| Profile avatar | `components/ProfileAvatar.kt` | His initials on a colour derived from them |
+| Empty state | `components/EmptyStateView.kt` | Storyset illustration and one next step, never a blank screen (NFR-9) |
+| Floating illustration | `components/FloatingIllustration.kt` | Gently floating Storyset art on sign-in and onboarding |
+
+**Navigation:** a floating, fully rounded bottom dock with **Today · Analytics · Income · Quest · Audit**. The Income Hub is the centre button.
+
+**Illustrations:** Storyset (Freepik) `.webp` files in `res/drawable-nodpi/`: `finance_app`, `insights`, `no_data`, `piggy_bank`, `stressed`, `success`, `wallet`, plus `logo_mark`.
+
+---
+
+## 6. Accessibility
+
+Accessibility has not been checked yet (NFR-8).
+
+- **Already true:** the palette has no red, and attention states use dark amber text on pale amber.
+- **Still to verify:** that every green/amber state also has an icon or text label, and that layouts survive a 200% font scale.
