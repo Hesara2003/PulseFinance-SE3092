@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.components
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,13 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
-import com.se3092.pulsefinance.ui.theme.NeoTrack
 
 @Composable
 fun CommittedVsDiscretionaryBar(
@@ -50,12 +44,12 @@ fun CommittedVsDiscretionaryBar(
             .shadow(
                 elevation = 6.dp,
                 shape = RoundedCornerShape(24.dp),
-                ambientColor = Color(0x0C0F172A),
-                spotColor = Color(0x0C0F172A)
+                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.05f),
+                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.05f)
             ),
         shape = RoundedCornerShape(24.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier
@@ -70,14 +64,14 @@ fun CommittedVsDiscretionaryBar(
                 Text(
                     text = "COMMITTED VS. DISCRETIONARY",
                     style = MaterialTheme.typography.labelSmall,
-                    color = NeoTextTertiary,
+                    color = MaterialTheme.pulseColors.textTertiary,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp
                 )
                 Text(
                     text = "Total LKR ${String.format("%,.0f", committedAmountLkr + discretionaryAmountLkr)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = NeoTextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -91,14 +85,14 @@ fun CommittedVsDiscretionaryBar(
                     .fillMaxWidth()
                     .height(12.dp)
                     .clip(CircleShape)
-                    .background(NeoTrack)
+                    .background(MaterialTheme.pulseColors.track)
             ) {
                 if (committedRatio > 0f) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(committedRatio)
                             .height(12.dp)
-                            .background(NeoTextPrimary)
+                            .background(MaterialTheme.colorScheme.onSurface)
                     )
                 }
                 if (discretionaryRatio > 0f) {
@@ -106,7 +100,7 @@ fun CommittedVsDiscretionaryBar(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(12.dp)
-                            .background(NeoGreen)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
                     )
                 }
             }
@@ -122,21 +116,21 @@ fun CommittedVsDiscretionaryBar(
                         modifier = Modifier
                             .size(10.dp)
                             .clip(CircleShape)
-                            .background(NeoTextPrimary)
+                            .background(MaterialTheme.colorScheme.onSurface)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Column {
                         Text(
                             text = "Committed ${(committedRatio * 100).toInt()}%",
                             style = MaterialTheme.typography.bodySmall,
-                            color = NeoTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
                         )
                         Text(
                             text = "LKR ${String.format("%,.0f", committedAmountLkr)} (Rent/Bills)",
                             style = MaterialTheme.typography.labelSmall,
-                            color = NeoTextTertiary,
+                            color = MaterialTheme.pulseColors.textTertiary,
                             fontSize = 11.sp
                         )
                     }
@@ -147,21 +141,21 @@ fun CommittedVsDiscretionaryBar(
                         modifier = Modifier
                             .size(10.dp)
                             .clip(CircleShape)
-                            .background(NeoGreen)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = "Discretionary ${(discretionaryRatio * 100).toInt()}%",
                             style = MaterialTheme.typography.bodySmall,
-                            color = NeoTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
                         )
                         Text(
                             text = "LKR ${String.format("%,.0f", discretionaryAmountLkr)} (Lifestyle)",
                             style = MaterialTheme.typography.labelSmall,
-                            color = NeoTextTertiary,
+                            color = MaterialTheme.pulseColors.textTertiary,
                             fontSize = 11.sp
                         )
                     }

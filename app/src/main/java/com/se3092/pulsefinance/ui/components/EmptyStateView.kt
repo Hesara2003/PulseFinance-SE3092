@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.components
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -22,9 +23,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 
 /** Friendly "nothing here yet" panel; shows [illustration] when given, otherwise [icon]. */
 @Composable
@@ -52,7 +50,7 @@ fun EmptyStateView(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = NeoTextTertiary,
+                tint = MaterialTheme.pulseColors.textTertiary,
                 modifier = Modifier.size(54.dp)
             )
         }
@@ -60,7 +58,7 @@ fun EmptyStateView(
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            color = NeoTextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
@@ -68,7 +66,7 @@ fun EmptyStateView(
         Text(
             text = message,
             style = MaterialTheme.typography.bodySmall,
-            color = NeoTextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
     }

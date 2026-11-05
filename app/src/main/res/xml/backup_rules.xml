@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 11 and older (android:fullBackupContent). Backups are off (allowBackup="false");
+    these rules also keep the finance cache and preferences out if backup is ever turned on.
+    Nothing is lost: Firestore restores his records when he signs in on a new phone (#96).
+-->
 <full-backup-content>
-    <include domain="file" path="." />
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="file" path="." />
 </full-backup-content>

@@ -32,7 +32,7 @@ flowchart TB
     end
     subgraph DOM["Domain — models, use cases, repository interfaces"]
         UC["9 use cases"]
-        RI["7 repository interfaces"]
+        RI["9 repository interfaces"]
     end
     subgraph DATA["Data — repository implementations"]
         IMPL["*RepositoryImpl + cacheBackedFlow"]
@@ -52,13 +52,11 @@ flowchart TB
     IMPL --> RATES
 ```
 
-**Dependency direction:** UI → ViewModel → domain ← data. Screens hold no business logic; they collect `uiState` and call ViewModel functions.
+**Dependency direction:** UI → ViewModel → domain ← data. Screens hold no business logic: they collect `uiState`, call ViewModel functions and lay things out. Rules such as "how many days is this invoice overdue" (`IncomeStream.daysOverdue()`) or "group subscriptions by account" (`DetectSubscriptionsUseCase.groupByAccount()`) live in the domain and are unit-tested.
 
-**One honest exception:** the domain layer is not entirely free of Android code.
-- `ExportDataToCsvUseCase` builds an Android share `Intent`.
-- `ConvertCurrencyUseCase` wraps the data-layer `ExchangeRateService`.
+**The domain layer has no Android code.** `ExportDataToCsvUseCase` only builds the CSV text; the screen hands it to the share sheet (`ui/common/CsvShare.kt`).
 
-Everything else in `domain/` is plain Kotlin and is unit-tested on the JVM.
+**One honest exception:** `ConvertCurrencyUseCase` wraps the data-layer `ExchangeRateService`, so this one use case depends on a data class rather than an interface. Everything in `domain/` is plain Kotlin and is unit-tested on the JVM.
 
 ---
 
@@ -69,11 +67,11 @@ flowchart LR
     subgraph SCR["Screens"]
         S_AUTH["AuthScreen<br/>+ Onboarding 1–3"]
         S_SET["SetupScreen<br/>first-run salary · sources · commitments"]
-        S_DASH["DashboardScreen<br/>SafeToSpendGauge · CommittedVsDiscretionaryBar"]
+        S_DASH["DashboardScreen<br/>DashboardSections · SafeToSpendHero<br/>CommittedVsDiscretionaryBar"]
         S_INC["IncomeScreen<br/>AddIncome + Payslip sheets"]
-        S_EXP["ExpenseScreen<br/>AddExpense sheet · subscription audit"]
-        S_GOAL["GoalScreen<br/>MacBookGoalCard · QuestMap"]
-        S_ANA["AnalyticsScreen<br/>CategoryDonutChart"]
+        S_EXP["ExpenseScreen (subscription audit)<br/>AuditSections · SubscriptionCard"]
+        S_GOAL["GoalScreen<br/>GoalCard · QuestMap"]
+        S_ANA["AnalyticsScreen<br/>CategoryDonutChart · ledger with delete"]
     end
 
     subgraph VMS["ViewModels"]
@@ -135,22 +133,24 @@ flowchart LR
     V_EXP --> H_USE
     V_GOAL --> U_VEL & U_RATE & U_FX
     V_GOAL --> R_GOAL & R_INC & R_EXP
-    V_ANA --> R_INC & R_EXP
+    V_ANA --> R_INC & R_EXP & R_ACC
 
     classDef planned fill:#fff,stroke:#999,stroke-dasharray:5 4,color:#666
 ```
 
 Every ViewModel also uses `AuthRepository` to get the signed-in user's ID; only `AuthViewModel`'s link is drawn.
 
+**Shared UI, not drawn:** every screen shows confirmations and errors through `PulseNoticeHost` (one on-theme pop-up), asks before deleting an expense with `DeleteTransactionDialog`, and reads its colours from `MaterialTheme.colorScheme` and `MaterialTheme.pulseColors` ([Design system](DESIGN_SYSTEM.md)). Large screens are split into section composables: `DashboardSections.kt` (greeting, Seasonal Peak, accounts, presets, Lately, weekly card) and, for the audit, `AuditSections.kt` and `SubscriptionCard.kt`.
+
 | Screen | What Kavindu does there | ViewModel uses | Solves |
 |---|---|---|---|
 | Auth + Onboarding | Signs in with email or Google; in debug builds a demo drawer fills the demo account | `AuthRepository`, `AccountRepository` (creates his four default accounts and tells whether he is new) | FR-AUTH-1, 2, 7 |
 | Setup (new accounts only) | Enters his salary, picks his income sources and how variable each is, lists fixed commitments | Onboarding, Expense | FR-AUTH-4, 5 |
-| Dashboard | Sees today's Safe-to-Spend, the overdue "Milestone 2" banner, the committed/discretionary bar, the Seasonal Peak warning and sets the amount aside; shares a bank SMS; exports CSV | `CalculateFinancialSummary`, `BankSmsParser`, `SeasonalPeakChecker`, `ExportDataToCsv`; Account, Income, Expense, Goal, SeasonalReserve | P1, P2, P5, P7, P11 |
+| Dashboard | Sees today's Safe-to-Spend, the overdue "Milestone 2" banner, the committed/discretionary bar, the Seasonal Peak warning and sets the amount aside; logs an expense in ≤ 3 taps from a preset; long-presses a Lately card to delete an expense; shares a bank SMS; exports CSV | `CalculateFinancialSummary`, `BankSmsParser`, `SeasonalPeakChecker`, `ExportDataToCsv`; Account, Income, Expense, Goal, SeasonalReserve | P1, P2, P5, P7, P11 |
 | Income | Logs salary from a payslip (EPF, APIT), AdSense in USD at the credited LKR, freelance invoices, crypto profit or loss | `ConvertCurrency`, `CalculatePayslip`; Income, TaxConfig | P1, P2, P3, P4, P10 |
-| Expenses | Logs a PickMe in ≤ 3 taps, reviews detected subscriptions, gets a reminder when spending from a frozen account | `DetectSubscriptions`; Expense, Goal, Account, SubscriptionReview; `UsageStatsHelper` | P5, P6, P11 |
+| Audit (expenses) | Reviews detected subscriptions grouped by account, answers "did you use it?", marks Keep or Cancel; gets a reminder when spending from a frozen account | `DetectSubscriptions`; Expense, Goal, Account, SubscriptionReview; `UsageStatsHelper` | P5, P6, P11 |
 | Goal | Sees the required LKR 1,330/day pace for the MacBook, his actual savings rate, "days of MacBook" for each habit | `CalculateGoalVelocity`, `CalculateSavingsRate`, `ConvertCurrency`; Goal, Income, Expense | P8 |
-| Analytics | Week/month/day/year donut and daily bars ("LKR 24,000 on coffee"), searchable ledger | Income, Expense | P7 |
+| Analytics | Week/month/day/year donut and daily bars ("LKR 24,000 on coffee"), a ledger filtered by keyword, category, account and date, and ⋮ → Delete on any expense | Income, Expense, Account | P7 |
 
 ---
 
@@ -169,6 +169,8 @@ Every ViewModel also uses `AuthRepository` to get the signed-in user's ID; only 
 
 `SubscriptionReviewRepository` and `TaxConfigRepository` skip Room and rely on Firestore's own offline cache: one small map and one config document.
 
+**Sign-out** empties the Room cache (`AuthRepositoryImpl.signOut`), so the previous user's records don't stay on the device; they sync back from Firestore on the next sign-in. The clear runs `NonCancellable`, because the Dashboard that starts sign-out is left at once.
+
 ### 4.2 Writes: Kavindu logs a coffee with no signal
 
 ```mermaid
@@ -181,11 +183,12 @@ sequenceDiagram
     participant Room as Room cache
     participant FS as Firestore (persistent cache)
 
-    K->>UI: Taps the "Coffee · LKR 850" preset, then Save
-    UI->>VM: onPresetSelected(...) · submitExpense()
+    K->>UI: Taps his usual "Coffee · LKR 850" preset, then Log Expense
+    UI->>VM: openAddExpense(preset) · submitExpense()
     VM->>Repo: saveExpense(expense)
     Repo->>Room: insertExpense(entity)
     Room-->>UI: Flow re-emits — coffee is on screen, Safe-to-Spend drops
+    VM-->>UI: UiNotice "Expense logged · LKR 850 · Coffee" (PulseNoticeHost, cup icon)
     Repo->>FS: set(users/{uid}/expenses/{id}) — fire-and-forget
     Note over FS: Offline: kept in Firestore's disk queue
     FS-->>FS: Back online: upload to server
@@ -210,7 +213,7 @@ Writes don't wait for the server. Awaiting the Firestore task would hang until t
 | Reveal and copy his account number for a freelance invoice (FR-ACC-6, 7) | `BiometricHelper`, `DashboardScreen` | `BiometricPrompt` (biometric or device PIN); the clipboard is cleared after 60 seconds |
 | "Last opened" for Netflix and Spotify (FR-SUB-5) | `UsageStatsHelper`, `ExpenseViewModel` | `UsageStatsManager`; only works if usage access is granted (in-context prompt not built yet, NFR-12) |
 | Daily rates (FR-INC-5) | `ExchangeRateService` | `HttpURLConnection` on `Dispatchers.IO`, 4 s timeouts, at most once a day |
-| CSV export (FR-DATA-1) | `ExportDataToCsvUseCase` | Builds a CSV and an `ACTION_SEND` share intent |
+| CSV export (FR-DATA-1) | `ExportDataToCsvUseCase` → `DashboardViewModel.exportCsv()` → `ui/common/CsvShare.kt` | The use case builds the CSV text (pure Kotlin); the screen opens the `ACTION_SEND` share sheet |
 | APIT bands (FR-LK-2) | `TaxConfigRepositoryImpl` | Firestore `config/apitBands`, validated; falls back to bundled bands |
 
 ---
@@ -221,7 +224,7 @@ Writes don't wait for the server. Awaiting the Firestore task would hang until t
 |---|---|
 | `DatabaseModule` | `AppDatabase` (Room, `fallbackToDestructiveMigration`) and the four DAOs |
 | `FirebaseModule` | `FirebaseAuth`; `FirebaseFirestore` with `PersistentCacheSettings` (the offline write queue) |
-| `RepositoryModule` | `@Binds` for `Auth`, `Expense`, `Income`, `Goal`, `Account`, `SubscriptionReview` and `TaxConfig` repositories |
+| `RepositoryModule` | `@Binds` for the 9 repositories: `Auth`, `Account`, `Expense`, `Income`, `Goal`, `SubscriptionReview`, `TaxConfig`, `Onboarding` and `SeasonalReserve` |
 
 Data sources (`FirebaseAuthDataSource`, `FirestoreDataSource`, `ExchangeRateService`) and use cases use constructor `@Inject`. ViewModels are `@HiltViewModel` and obtained with `hiltViewModel()` in `AppNavGraph`.
 

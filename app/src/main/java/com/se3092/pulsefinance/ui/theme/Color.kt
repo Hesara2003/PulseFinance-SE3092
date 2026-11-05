@@ -2,12 +2,14 @@ package com.se3092.pulsefinance.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+// The raw brand palette. Screens don't use these directly: Theme.kt maps them onto the
+// Material 3 colour roles (MaterialTheme.colorScheme) and MaterialTheme.pulseColors.
+
 // Vivid Neo-Fintech Design System Palette
 val NeoGreen = Color(0xFF00C950)            // primary-container: Signal Emerald
 val NeoGreenDark = Color(0xFF006E28)        // primary: Deep Trust Green
 val NeoGreenLight = Color(0xFF3BE366)       // primary-fixed-dim
 val NeoGreenFixed = Color(0xFF6BFF84)       // primary-fixed
-val NeoPrimaryFixed = NeoGreenFixed         // primary-fixed alias
 val NeoGreenGlow = Color(0x3800C950)        // glow for shadow/elevation
 
 // Canvas & Surfaces (Crisp Porcelain White)
@@ -36,41 +38,11 @@ val NeoAmber = Color(0xFFF59E0B)            // Warning / Overdue
 val NeoRose = Color(0xFFB45309)             // attention text (deep amber, readable on white)
 val NeoErrorContainer = Color(0xFFFEF3C7)   // attention container (pale amber)
 
-/** Text and icons drawn on top of a green fill. */
-val OnAccent = Color.White
-
-// Category Visual Tokens
+// Category and chart colours (MaterialTheme.pulseColors.food / transport / rent / violet)
 val FoodColor = Color(0xFFF97316)
 val TransportColor = Color(0xFF3B82F6)
 val RentColor = Color(0xFF8B5CF6)
-val TechColor = Color(0xFF8B5CF6)
-val CryptoColor = Color(0xFFEAB308)
-
-// Role names used by the newer components (avatar, Quest map, hero), mapped onto the palette
-val Saffron = NeoGreen                      // accent fill: progress, the Quest road
-val SaffronSoft = NeoGreenLight
-val Teal = NeoGreenDark                     // accent text, money in
-val WarmAmber = NeoAmber
-val WarmWhite = NeoTextPrimary              // primary text
-val Mist = NeoTextSecondary
-val Dusk = Color(0xFF8A93A3)                // quiet text
-val Ink = NeoTextPrimary
-val InkRaised = NeoCard
-val InkHigh = NeoCardLow
-val InkHigher = NeoContainerHigh
-
-// Compatibility Aliases for existing components
-val EmeraldPrimary = NeoGreen
-val EmeraldLight = NeoGreenLight
-val EmeraldDark = NeoGreenDark
-val CyanAccent = Color(0xFF06B6D4)
 val VioletAccent = Color(0xFF8B5CF6)
-val AmberWarning = NeoAmber
-val RoseError = NeoRose
-val BackgroundDark = NeoSurface
-val SurfaceDark = NeoCard
-val SurfaceElevatedDark = NeoCardLow
-val TextPrimaryDark = NeoTextPrimary
-val TextSecondaryDark = NeoTextSecondary
-val TextMutedDark = NeoTextTertiary
-val BorderDark = NeoBorder
+
+/** Quiet text (MaterialTheme.pulseColors.textQuiet). */
+val Dusk = Color(0xFF8A93A3)

@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.components
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.ui.common.goalIllustration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
@@ -42,19 +43,6 @@ import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.SavingsGoal
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.signedLkr
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoContainer
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenFixed
-import com.se3092.pulsefinance.ui.theme.NeoOnPrimaryFixed
-import com.se3092.pulsefinance.ui.theme.NeoOnSecondaryFixed
-import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
-import com.se3092.pulsefinance.ui.theme.NeoSurfaceHighest
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import kotlin.math.abs
 
 @Composable
@@ -72,12 +60,12 @@ fun GoalCard(
             .shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(24.dp),
-                ambientColor = Color(0x0A0F172A),
-                spotColor = Color(0x0A0F172A)
+                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.04f),
+                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.04f)
             ),
         shape = RoundedCornerShape(24.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             // Ambient Radial Gradient in Top-Right
@@ -88,7 +76,7 @@ fun GoalCard(
                     .background(
                         Brush.radialGradient(
                             colors = listOf(
-                                NeoGreenFixed.copy(alpha = 0.20f),
+                                MaterialTheme.pulseColors.primaryFixed.copy(alpha = 0.20f),
                                 Color.Transparent
                             )
                         )
@@ -116,7 +104,7 @@ fun GoalCard(
                             modifier = Modifier
                                 .size(48.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(NeoCardLow),
+                                .background(MaterialTheme.colorScheme.surfaceContainerLow),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
@@ -131,14 +119,14 @@ fun GoalCard(
                             Box(
                                 modifier = Modifier
                                     .clip(CircleShape)
-                                    .background(NeoSecondaryContainer)
+                                    .background(MaterialTheme.colorScheme.secondaryContainer)
                                     .padding(horizontal = 8.dp, vertical = 2.dp)
                             ) {
                                 Text(
                                     text = "Savings Goal",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = NeoOnSecondaryFixed
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
@@ -147,7 +135,7 @@ fun GoalCard(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 style = MaterialTheme.typography.titleMedium,
-                                color = NeoTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 17.sp
                             )
@@ -156,7 +144,7 @@ fun GoalCard(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = NeoTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp
                             )
                         }
@@ -167,14 +155,14 @@ fun GoalCard(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(NeoContainer)
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
                             .clickable(onClick = onMoreClick),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = "Target settings",
-                            tint = NeoTextSecondary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -185,7 +173,7 @@ fun GoalCard(
                 // Inner Progress Container
                 Surface(
                     shape = RoundedCornerShape(18.dp),
-                    color = NeoCardLow,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -201,14 +189,14 @@ fun GoalCard(
                             Text(
                                 text = "Progress to Target",
                                 style = MaterialTheme.typography.labelMedium,
-                                color = NeoTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
                                 text = percentageStr,
                                 style = MaterialTheme.typography.titleMedium,
-                                color = NeoGreenDark,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 16.sp
                             )
@@ -222,7 +210,7 @@ fun GoalCard(
                                 .fillMaxWidth()
                                 .height(12.dp)
                                 .clip(CircleShape)
-                                .background(NeoSurfaceHighest)
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                                 .padding(1.dp)
                         ) {
                             val fillWidthFraction = progress.coerceIn(0.015f, 1f)
@@ -231,7 +219,7 @@ fun GoalCard(
                                     .fillMaxWidth(fillWidthFraction)
                                     .height(10.dp)
                                     .clip(CircleShape)
-                                    .background(NeoGreen)
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
                             ) {
                                 // Subtle highlight edge at the right
                                 Box(
@@ -239,7 +227,7 @@ fun GoalCard(
                                         .size(width = 8.dp, height = 10.dp)
                                         .align(Alignment.CenterEnd)
                                         .clip(CircleShape)
-                                        .background(Color.White.copy(alpha = 0.5f))
+                                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f))
                                 )
                             }
                         }
@@ -254,13 +242,13 @@ fun GoalCard(
                                 Text(
                                     text = "Saved so far",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = NeoTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp
                                 )
                                 Text(
                                     text = "LKR ${String.format("%,.0f", goal.currentSavedLkr)}",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = NeoTextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 17.sp
                                 )
@@ -270,13 +258,13 @@ fun GoalCard(
                                 Text(
                                     text = "Total Target",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = NeoTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp
                                 )
                                 Text(
                                     text = "LKR ${String.format("%,.0f", goal.targetAmountLkr)}",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = NeoTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 17.sp
                                 )
@@ -291,7 +279,7 @@ fun GoalCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(NeoGreenFixed)
+                            .background(MaterialTheme.pulseColors.primaryFixed)
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Row(
@@ -302,12 +290,12 @@ fun GoalCard(
                                 text = "💵 USD Ref:",
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = NeoOnPrimaryFixed
+                                color = MaterialTheme.pulseColors.onPrimaryFixed
                             )
                             Text(
                                 text = "$${String.format("%,.0f", goal.usdReferencePrice)} · ${usdTargetNote(goal)}",
                                 fontSize = 11.sp,
-                                color = NeoOnPrimaryFixed
+                                color = MaterialTheme.pulseColors.onPrimaryFixed
                             )
                         }
                     }
@@ -320,7 +308,7 @@ fun GoalCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(CircleShape)
-                        .background(NeoContainer)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
                         .padding(horizontal = 14.dp, vertical = 10.dp)
                 ) {
                     Row(
@@ -330,21 +318,21 @@ fun GoalCard(
                         Icon(
                             imageVector = Icons.Default.Speed,
                             contentDescription = "Pace",
-                            tint = NeoGreenDark,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
                             text = buildAnnotatedString {
-                                withStyle(SpanStyle(color = NeoTextSecondary, fontSize = 13.sp)) {
+                                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)) {
                                     append("Required Pace: ")
                                 }
-                                withStyle(SpanStyle(color = NeoTextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)) {
+                                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)) {
                                     append("LKR ${String.format("%,.0f", goal.requiredDailySavingsLkr)}")
                                 }
-                                withStyle(SpanStyle(color = NeoTextSecondary, fontSize = 13.sp)) {
+                                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)) {
                                     append("/day ")
                                 }
-                                withStyle(SpanStyle(color = NeoTextSecondary, fontSize = 12.sp)) {
+                                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)) {
                                     append("(~LKR ${String.format("%,.0f", goal.requiredMonthlySavingsLkr)}/mo)")
                                 }
                             }

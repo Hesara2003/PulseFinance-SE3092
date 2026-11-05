@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.auth
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.ui.components.FloatingIllustration
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -62,17 +63,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoContainer
-import com.se3092.pulsefinance.ui.theme.NeoContainerHigh
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
-import com.se3092.pulsefinance.ui.theme.NeoTrack
 
 @Composable
 fun OnboardingStep1(modifier: Modifier = Modifier) {
@@ -91,8 +81,8 @@ fun OnboardingStep1(modifier: Modifier = Modifier) {
         // Headline & Narrative
         Text(
             text = buildAnnotatedString {
-                withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = NeoTextPrimary)) { append("Pulse") }
-                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = NeoGreenDark)) { append("Finance") }
+                withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)) { append("Pulse") }
+                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = MaterialTheme.colorScheme.primary)) { append("Finance") }
             },
             style = MaterialTheme.typography.headlineLarge,
             fontSize = 38.sp,
@@ -105,7 +95,7 @@ fun OnboardingStep1(modifier: Modifier = Modifier) {
         Text(
             text = "Every rupee, every income stream, one clear picture",
             style = MaterialTheme.typography.titleMedium,
-            color = NeoTextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
             textAlign = TextAlign.Center
@@ -116,7 +106,7 @@ fun OnboardingStep1(modifier: Modifier = Modifier) {
         Text(
             text = "Designed to help modern tech workers manage cash flow, eliminate invisible leaks, and reach goals efficiently.",
             style = MaterialTheme.typography.bodyMedium,
-            color = NeoTextTertiary,
+            color = MaterialTheme.pulseColors.textTertiary,
             fontSize = 13.5.sp,
             textAlign = TextAlign.Center,
             lineHeight = 19.sp,
@@ -132,8 +122,8 @@ fun OnboardingStep1(modifier: Modifier = Modifier) {
         ) {
             Surface(
                 shape = CircleShape,
-                color = NeoContainer,
-                border = BorderStroke(1.dp, NeoBorder.copy(alpha = 0.6f))
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -143,22 +133,22 @@ fun OnboardingStep1(modifier: Modifier = Modifier) {
                     Icon(
                         imageVector = Icons.Default.VerifiedUser,
                         contentDescription = null,
-                        tint = NeoGreenDark,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
                         text = "Firebase Secured",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = NeoTextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
 
             Surface(
                 shape = CircleShape,
-                color = NeoContainer,
-                border = BorderStroke(1.dp, NeoBorder.copy(alpha = 0.6f))
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -168,14 +158,14 @@ fun OnboardingStep1(modifier: Modifier = Modifier) {
                     Icon(
                         imageVector = Icons.Default.Bolt,
                         contentDescription = null,
-                        tint = NeoGreenDark,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(15.dp)
                     )
                     Text(
                         text = "Real-Time Sync",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = NeoTextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
