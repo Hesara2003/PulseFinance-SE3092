@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.components
 
+import androidx.compose.material3.MaterialTheme
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -25,7 +26,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.se3092.pulsefinance.ui.theme.NeoGreen
 
 /** Illustration bobbing gently over a soft green glow — the onboarding hero. */
 @Composable
@@ -55,7 +55,7 @@ fun FloatingIllustration(
             modifier = Modifier
                 .size(imageSize - 20.dp)
                 .clip(CircleShape)
-                .background(Brush.radialGradient(listOf(NeoGreen.copy(alpha = 0.18f), Color.Transparent)))
+                .background(Brush.radialGradient(listOf(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f), Color.Transparent)))
         )
         Image(
             painter = painterResource(imageRes),

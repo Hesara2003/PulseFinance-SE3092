@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.auth
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.R
 import com.se3092.pulsefinance.ui.components.FloatingIllustration
 import androidx.compose.foundation.BorderStroke
@@ -45,19 +46,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoContainer
-import com.se3092.pulsefinance.ui.theme.NeoErrorContainer
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
-import com.se3092.pulsefinance.ui.theme.NeoTrack
 
 @Composable
 fun OnboardingStep3(modifier: Modifier = Modifier) {
@@ -77,7 +65,7 @@ fun OnboardingStep3(modifier: Modifier = Modifier) {
         Text(
             text = "Kill Zombie Leaks &\nHit Milestone Goals",
             style = MaterialTheme.typography.headlineLarge,
-            color = NeoTextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 23.sp,
             textAlign = TextAlign.Center,
@@ -89,7 +77,7 @@ fun OnboardingStep3(modifier: Modifier = Modifier) {
         Text(
             text = "Spot the subscriptions you forgot about and see exactly how much sooner your goal arrives when you cut them.",
             style = MaterialTheme.typography.bodyMedium,
-            color = NeoTextTertiary,
+            color = MaterialTheme.pulseColors.textTertiary,
             fontSize = 13.5.sp,
             textAlign = TextAlign.Center,
             lineHeight = 19.sp,
@@ -107,8 +95,8 @@ fun OnboardingStep3(modifier: Modifier = Modifier) {
             Surface(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp),
-                color = NeoCard,
-                border = BorderStroke(1.dp, NeoBorder),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 shadowElevation = 2.dp
             ) {
                 Row(
@@ -120,13 +108,13 @@ fun OnboardingStep3(modifier: Modifier = Modifier) {
                         modifier = Modifier
                             .size(28.dp)
                             .clip(CircleShape)
-                            .background(NeoGreen.copy(alpha = 0.15f)),
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Radar,
                             contentDescription = null,
-                            tint = NeoGreenDark,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -135,12 +123,12 @@ fun OnboardingStep3(modifier: Modifier = Modifier) {
                             text = "Leak Radar",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = NeoTextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Every account you use",
                             fontSize = 9.5.sp,
-                            color = NeoTextTertiary
+                            color = MaterialTheme.pulseColors.textTertiary
                         )
                     }
                 }
@@ -150,8 +138,8 @@ fun OnboardingStep3(modifier: Modifier = Modifier) {
             Surface(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp),
-                color = NeoCard,
-                border = BorderStroke(1.dp, NeoBorder),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 shadowElevation = 2.dp
             ) {
                 Row(
@@ -163,13 +151,13 @@ fun OnboardingStep3(modifier: Modifier = Modifier) {
                         modifier = Modifier
                             .size(28.dp)
                             .clip(CircleShape)
-                            .background(NeoSecondaryContainer),
+                            .background(MaterialTheme.colorScheme.secondaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
                             contentDescription = null,
-                            tint = NeoTextSecondary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(15.dp)
                         )
                     }
@@ -178,12 +166,12 @@ fun OnboardingStep3(modifier: Modifier = Modifier) {
                             text = "Cost Shift",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = NeoTextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Waste into wealth",
                             fontSize = 9.5.sp,
-                            color = NeoTextTertiary
+                            color = MaterialTheme.pulseColors.textTertiary
                         )
                     }
                 }

@@ -1,5 +1,10 @@
 package com.se3092.pulsefinance.ui.components
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
+import androidx.compose.material3.MaterialTheme
+import com.se3092.pulsefinance.ui.common.goalIllustration
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -28,7 +33,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.LaptopMac
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,17 +58,7 @@ import com.se3092.pulsefinance.domain.model.QuestProgress
 import com.se3092.pulsefinance.ui.common.compactAmount
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.theme.Display
-import com.se3092.pulsefinance.ui.theme.Dusk
-import com.se3092.pulsefinance.ui.theme.OnAccent
-import com.se3092.pulsefinance.ui.theme.InkHigh
-import com.se3092.pulsefinance.ui.theme.InkHigher
-import com.se3092.pulsefinance.ui.theme.InkRaised
-import com.se3092.pulsefinance.ui.theme.Mist
 import com.se3092.pulsefinance.ui.theme.Numeric
-import com.se3092.pulsefinance.ui.theme.Saffron
-import com.se3092.pulsefinance.ui.theme.SaffronSoft
-import com.se3092.pulsefinance.ui.theme.Teal
-import com.se3092.pulsefinance.ui.theme.WarmWhite
 import kotlin.math.sin
 
 private enum class NodeState { CLEARED, CURRENT, AHEAD }
@@ -84,57 +78,59 @@ private fun QuestProgress.levelLabel(): String =
 // ---------------------------------------------------------------------------------------------
 
 @Composable
-fun QuestCard(quest: QuestProgress, initials: String, onClick: () -> Unit) {
+fun QuestCard(quest: QuestProgress, initials: String, goalTitle: String, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
-        color = InkRaised,
-        border = BorderStroke(1.dp, Saffron.copy(alpha = 0.25f))
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f))
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "MACBOOK QUEST",
-                        color = Teal,
+                        text = "${goalTitle.ifBlank { "Savings" }.uppercase()} QUEST",
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.4.sp
+                        letterSpacing = 1.4.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = quest.levelLabel(),
                         fontFamily = Display,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 22.sp,
-                        color = WarmWhite
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     quest.currentLevel?.let {
-                        Text(text = "Next checkpoint: ${lkr(it.thresholdLkr)} saved", fontSize = 13.sp, color = Mist)
+                        Text(text = "Next checkpoint: ${lkr(it.thresholdLkr)} saved", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                Icon(Icons.Default.ChevronRight, contentDescription = "Open quest", tint = Mist)
+                Icon(Icons.Default.ChevronRight, contentDescription = "Open quest", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            QuestTrack(quest = quest, initials = initials)
+            QuestTrack(quest = quest, initials = initials, goalTitle = goalTitle)
 
             Row(verticalAlignment = Alignment.Bottom) {
                 Column(modifier = Modifier.weight(1f)) {
                     if (quest.isComplete) {
-                        Text("Fully funded", fontFamily = Display, fontWeight = FontWeight.Bold, color = Teal, fontSize = 16.sp)
+                        Text("Fully funded", fontFamily = Display, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
                     } else {
                         Text(
                             text = lkr(quest.toClearCurrentLkr),
                             fontFamily = Numeric,
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
-                            color = WarmWhite
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "to clear this level" + (quest.daysToClearAtPace?.let { " · about $it days at your pace" } ?: ""),
                             fontSize = 12.sp,
-                            color = Mist
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -143,7 +139,7 @@ fun QuestCard(quest: QuestProgress, initials: String, onClick: () -> Unit) {
                     fontFamily = Numeric,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 13.sp,
-                    color = Dusk
+                    color = MaterialTheme.pulseColors.textQuiet
                 )
             }
         }
@@ -152,7 +148,8 @@ fun QuestCard(quest: QuestProgress, initials: String, onClick: () -> Unit) {
 
 /** A horizontal row of level nodes joined by a road, with the avatar on the current level. */
 @Composable
-private fun QuestTrack(quest: QuestProgress, initials: String) {
+private fun QuestTrack(quest: QuestProgress, initials: String, goalTitle: String) {
+    val scheme = MaterialTheme.colorScheme // read here: Canvas drawing is not @Composable
     val pulse = rememberPulse()
     BoxWithConstraints(
         modifier = Modifier
@@ -166,10 +163,10 @@ private fun QuestTrack(quest: QuestProgress, initials: String) {
             val stepPx = size.width / count
             val firstX = stepPx / 2
             val lastX = size.width - stepPx / 2
-            drawLine(InkHigher, Offset(firstX, y), Offset(lastX, y), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
+            drawLine(scheme.surfaceContainerHigh, Offset(firstX, y), Offset(lastX, y), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
             val reachedX = firstX + stepPx * (quest.clearedLevels - 1 + quest.levelProgress).coerceAtLeast(0f)
             if (reachedX > firstX) {
-                drawLine(Saffron, Offset(firstX, y), Offset(reachedX.coerceAtMost(lastX), y), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
+                drawLine(scheme.primaryContainer, Offset(firstX, y), Offset(reachedX.coerceAtMost(lastX), y), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
             }
         }
         quest.levels.forEach { level ->
@@ -190,18 +187,18 @@ private fun QuestTrack(quest: QuestProgress, initials: String) {
                 when {
                     state == NodeState.CURRENT -> {
                         Canvas(Modifier.fillMaxSize()) {
-                            drawCircle(Saffron.copy(alpha = 0.35f * (1 - pulse)), radius = size.minDimension / 2 * (0.8f + 0.4f * pulse))
+                            drawCircle(scheme.primaryContainer.copy(alpha = 0.35f * (1 - pulse)), radius = size.minDimension / 2 * (0.8f + 0.4f * pulse))
                         }
                         ProfileAvatar(initials = initials, size = 26.dp)
                     }
-                    isFinal -> FinalNode(size = nodeSize, reached = state == NodeState.CLEARED)
-                    state == NodeState.CLEARED -> Box(Modifier.fillMaxSize().clip(CircleShape).background(Saffron))
+                    isFinal -> FinalNode(size = nodeSize, reached = state == NodeState.CLEARED, goalTitle = goalTitle)
+                    state == NodeState.CLEARED -> Box(Modifier.fillMaxSize().clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer))
                     else -> Box(
                         Modifier
                             .fillMaxSize()
                             .clip(CircleShape)
-                            .background(InkRaised)
-                            .border(2.dp, InkHigher, CircleShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(2.dp, MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape)
                     )
                 }
             }
@@ -218,7 +215,8 @@ private fun QuestTrack(quest: QuestProgress, initials: String) {
  * Each level is labelled with its real rupee checkpoint.
  */
 @Composable
-fun QuestMap(quest: QuestProgress, initials: String, modifier: Modifier = Modifier) {
+fun QuestMap(quest: QuestProgress, initials: String, goalTitle: String, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme // read here: Canvas drawing is not @Composable
     val pulse = rememberPulse()
     val rowHeight = 66.dp
     val rows = quest.levelCount + 1 // + the start
@@ -246,11 +244,11 @@ fun QuestMap(quest: QuestProgress, initials: String, modifier: Modifier = Modifi
             // Full road ahead (dashed), then the travelled part on top (solid saffron)
             drawPath(
                 road(rows - 1),
-                color = InkHigher,
+                color = scheme.surfaceContainerHigh,
                 style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 14f)))
             )
             if (quest.clearedLevels > 0) {
-                drawPath(road(quest.clearedLevels), color = Saffron, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
+                drawPath(road(quest.clearedLevels), color = scheme.primaryContainer, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
             }
         }
 
@@ -260,7 +258,7 @@ fun QuestMap(quest: QuestProgress, initials: String, modifier: Modifier = Modifi
                 .offset(x = width * xFraction(0) - 8.dp, y = yOf(0) - 8.dp)
                 .size(16.dp)
                 .clip(CircleShape)
-                .background(Saffron)
+                .background(MaterialTheme.colorScheme.primaryContainer)
         )
         MapLabel(
             title = "Start",
@@ -288,29 +286,29 @@ fun QuestMap(quest: QuestProgress, initials: String, modifier: Modifier = Modifi
                 contentAlignment = Alignment.Center
             ) {
                 when {
-                    isFinal -> FinalNode(size = nodeSize, reached = state == NodeState.CLEARED)
+                    isFinal -> FinalNode(size = nodeSize, reached = state == NodeState.CLEARED, goalTitle = goalTitle)
                     state == NodeState.CURRENT -> {
                         Canvas(Modifier.fillMaxSize()) {
-                            drawCircle(Saffron.copy(alpha = 0.35f * (1 - pulse)), radius = size.minDimension / 2 * (0.75f + 0.5f * pulse))
-                            drawCircle(Saffron, radius = size.minDimension / 2 * 0.78f, style = Stroke(width = 3.dp.toPx()))
+                            drawCircle(scheme.primaryContainer.copy(alpha = 0.35f * (1 - pulse)), radius = size.minDimension / 2 * (0.75f + 0.5f * pulse))
+                            drawCircle(scheme.primaryContainer, radius = size.minDimension / 2 * 0.78f, style = Stroke(width = 3.dp.toPx()))
                         }
                         ProfileAvatar(initials = initials, size = 32.dp)
                     }
                     state == NodeState.CLEARED -> Box(
-                        modifier = Modifier.fillMaxSize().clip(CircleShape).background(Saffron),
+                        modifier = Modifier.fillMaxSize().clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Cleared", tint = OnAccent, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Check, contentDescription = "Cleared", tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(18.dp))
                     }
                     else -> Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape)
-                            .background(InkRaised)
-                            .border(2.dp, InkHigher, CircleShape),
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(2.dp, MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "$i", fontFamily = Numeric, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Dusk)
+                        Text(text = "$i", fontFamily = Numeric, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.pulseColors.textQuiet)
                     }
                 }
             }
@@ -355,7 +353,7 @@ private fun MapLabel(
             fontFamily = Display,
             fontWeight = if (emphasis) FontWeight.ExtraBold else FontWeight.SemiBold,
             fontSize = if (emphasis) 16.sp else 14.sp,
-            color = if (emphasis) WarmWhite else Mist,
+            color = if (emphasis) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = if (onRight) TextAlign.Start else TextAlign.End
@@ -365,30 +363,29 @@ private fun MapLabel(
             fontFamily = Numeric,
             fontWeight = FontWeight.Medium,
             fontSize = 12.sp,
-            color = if (emphasis) Teal else Dusk
+            color = if (emphasis) MaterialTheme.colorScheme.primary else MaterialTheme.pulseColors.textQuiet
         )
     }
 }
 
-/** The "boss" level: the goal itself, drawn as a laptop inside a saffron ring. */
+/** The "boss" level: the goal itself, drawn as its picture inside a saffron ring. */
 @Composable
-private fun FinalNode(size: Dp, reached: Boolean) {
+private fun FinalNode(size: Dp, reached: Boolean, goalTitle: String) {
     Box(
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
             .background(
-                if (reached) Brush.linearGradient(listOf(SaffronSoft, Saffron))
-                else Brush.linearGradient(listOf(InkHigh, InkRaised))
+                if (reached) Brush.linearGradient(listOf(MaterialTheme.pulseColors.primaryLight, MaterialTheme.colorScheme.primaryContainer))
+                else Brush.linearGradient(listOf(MaterialTheme.colorScheme.surfaceContainerLow, MaterialTheme.colorScheme.surface))
             )
-            .border(2.5.dp, Saffron, CircleShape),
+            .border(2.5.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.LaptopMac,
-            contentDescription = "Goal",
-            tint = if (reached) OnAccent else Saffron,
-            modifier = Modifier.size(size * 0.5f)
+        Image(
+            painter = painterResource(goalIllustration(goalTitle)),
+            contentDescription = goalTitle.ifBlank { "Goal" },
+            modifier = Modifier.size(size * 0.7f)
         )
     }
 }

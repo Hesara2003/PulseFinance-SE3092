@@ -1,6 +1,7 @@
 package com.se3092.pulsefinance.ui.screens.setup
 
 import com.se3092.pulsefinance.domain.model.AccountType
+import com.se3092.pulsefinance.domain.model.DEFAULT_RUNWAY_MONTHS
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.FixedCommitment
@@ -35,6 +36,10 @@ data class SetupUiState(
     /** Active sources and how variable each one is (FR-AUTH-5). */
     val sources: Map<IncomeSource, IncomeVariability> = mapOf(IncomeSource.SALARY to IncomeVariability.LOW),
     val commitments: List<CommitmentDraft> = listOf(CommitmentDraft(0, "Rent", "", ExpenseCategory.RENT)),
+    /** Emergency buffer, in months of the commitments above (FR-AUTH-6). */
+    val runwayMonths: Int = DEFAULT_RUNWAY_MONTHS,
+    /** Optional: what he has already set aside towards that buffer. */
+    val runwaySavedInput: String = "",
     val isSaving: Boolean = false,
     val isDone: Boolean = false,
     val errorMessage: String? = null
@@ -42,6 +47,8 @@ data class SetupUiState(
     val salaryLkr: Double? get() = salaryInput.replace(",", "").toDoubleOrNull()?.takeIf { it > 0 }
     val completeCommitments: List<CommitmentDraft> get() = commitments.filter { it.isComplete }
     val commitmentsTotalLkr: Double get() = completeCommitments.sumOf { it.amountLkr ?: 0.0 }
+    val runwayTargetLkr: Double get() = runwayMonths * commitmentsTotalLkr
+    val runwaySavedLkr: Double? get() = runwaySavedInput.replace(",", "").toDoubleOrNull()?.takeIf { it >= 0 }
     val isLastStep: Boolean get() = step == LAST_STEP
 
     /** Why he can't move past the current step, or null when he can. */
@@ -49,7 +56,9 @@ data class SetupUiState(
         get() = when (step) {
             0 -> if (salaryInput.isNotBlank() && salaryLkr == null) "Enter your salary as a number, or leave it blank" else null
             1 -> if (sources.isEmpty()) "Pick at least one way you earn money" else null
-            else -> null
+            else -> if (runwaySavedInput.isNotBlank() && runwaySavedLkr == null) {
+                "Enter what you've already set aside as a number, or leave it blank"
+            } else null
         }
 
     /** What setup captured. A salary he entered always counts as an active, steady-by-default source. */
@@ -61,7 +70,9 @@ data class SetupUiState(
             sources
         },
         fixedCommitments = completeCommitments.map { FixedCommitment(it.title.trim(), it.amountLkr!!, it.category) },
-        completedAt = now
+        completedAt = now,
+        runwayMonths = runwayMonths,
+        runwaySavedLkr = runwaySavedLkr ?: 0.0
     )
 
     companion object {

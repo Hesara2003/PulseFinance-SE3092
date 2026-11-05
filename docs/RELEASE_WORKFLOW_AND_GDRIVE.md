@@ -69,8 +69,9 @@ git push origin v1.0.0
 4. **Publish the OAuth consent screen** (Google Cloud → APIs & Services → OAuth consent screen → Publish app). While it is in *Testing* mode, Google expires refresh tokens after 7 days and the upload silently stops working.
 
 **Two things to know:**
-- **Secrets are read when a run is queued, not when it starts.** A run queued before you added or changed a secret uses the old (or empty) value, and logs "Neither GDRIVE_REFRESH_TOKEN nor GDRIVE_SA_KEY secret is configured. Skipping…". The run still shows success. Start a fresh run with Option C to check.
-- **The workflow skips the upload, it doesn't fail,** when no credentials are set. A green run is not proof of an upload. The upload step logs `✅ Upload Complete!` and a Drive link when it works.
+- **Secrets are read when a run is queued, not when it starts.** A run queued before you added or changed a secret uses the old (or empty) value, so the upload step fails with "Google Drive upload is not configured" and lists the missing secrets. Start a fresh run with Option C once the secrets are in.
+- **A run that cannot upload fails; it is never green.** The upload step needs either all three of `GDRIVE_REFRESH_TOKEN`, `GDRIVE_CLIENT_ID` and `GDRIVE_CLIENT_SECRET`, or `GDRIVE_SA_KEY`. If none of those is complete, it stops with an error annotation that names what is missing. (Until 05/11/2026 it only printed a warning and succeeded, so a run could be green with nothing in Drive; that was issue #100.) When an upload works, the step logs `✅ Upload Complete!` and a Drive link.
+- **Forks have no secrets,** so a push to `main` in a fork fails at this step. Disable the workflow in the fork if you don't want Drive uploads there.
 
 ### 3.2 Method B: Service account (Shared Drives only)
 

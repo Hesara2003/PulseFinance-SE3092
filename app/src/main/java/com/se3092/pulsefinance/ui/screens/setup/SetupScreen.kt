@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.setup
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,19 +54,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.IncomeVariability
+import com.se3092.pulsefinance.domain.model.MAX_RUNWAY_MONTHS
+import com.se3092.pulsefinance.domain.model.MIN_RUNWAY_MONTHS
 import com.se3092.pulsefinance.ui.common.lkr
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoSurface
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
-import com.se3092.pulsefinance.ui.theme.NeoTrack
-import com.se3092.pulsefinance.ui.theme.OnAccent
 
 /** Three short steps after a new account's first sign-in (FR-AUTH-4, FR-AUTH-5). */
 @Composable
@@ -82,7 +73,7 @@ fun SetupScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(NeoSurface)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .imePadding()
             .padding(horizontal = 20.dp)
@@ -96,7 +87,7 @@ fun SetupScreen(
         ) {
             if (state.step > 0) {
                 IconButton(onClick = viewModel::back) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = NeoTextPrimary)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                 }
             } else {
                 Spacer(modifier = Modifier.width(48.dp))
@@ -111,12 +102,12 @@ fun SetupScreen(
                             .weight(1f)
                             .height(5.dp)
                             .clip(CircleShape)
-                            .background(if (index <= state.step) NeoGreen else NeoTrack)
+                            .background(if (index <= state.step) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.pulseColors.track)
                     )
                 }
             }
             TextButton(onClick = viewModel::skip, enabled = !state.isSaving) {
-                Text("Skip", color = NeoTextSecondary, fontWeight = FontWeight.SemiBold)
+                Text("Skip", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -130,7 +121,7 @@ fun SetupScreen(
             Text(
                 text = "STEP ${state.step + 1} OF ${SetupUiState.LAST_STEP + 1}",
                 style = MaterialTheme.typography.labelSmall,
-                color = NeoGreenDark,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp
             )
@@ -140,7 +131,7 @@ fun SetupScreen(
                 else -> CommitmentsStep(state, viewModel)
             }
             state.errorMessage?.let {
-                Text(text = it, color = NeoRose, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text(text = it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -153,10 +144,10 @@ fun SetupScreen(
                 .fillMaxWidth()
                 .padding(vertical = 16.dp)
                 .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent)
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
         ) {
             if (state.isSaving) {
-                CircularProgressIndicator(modifier = Modifier.size(22.dp), color = OnAccent, strokeWidth = 2.5.dp)
+                CircularProgressIndicator(modifier = Modifier.size(22.dp), color = MaterialTheme.colorScheme.onPrimaryContainer, strokeWidth = 2.5.dp)
             } else {
                 Text(
                     text = if (state.isLastStep) "Finish setup" else "Continue",
@@ -177,11 +168,11 @@ private fun StepHeader(title: String, subtitle: String) {
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
-            color = NeoTextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp
         )
-        Text(text = subtitle, fontSize = 13.5.sp, color = NeoTextSecondary, lineHeight = 19.sp)
+        Text(text = subtitle, fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 19.sp)
     }
 }
 
@@ -195,7 +186,7 @@ private fun SalaryStep(state: SetupUiState, viewModel: SetupViewModel) {
         value = state.salaryInput,
         onValueChange = viewModel::onSalaryChanged,
         label = { Text("Monthly take-home") },
-        prefix = { Text("LKR ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
+        prefix = { Text("LKR ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true,
         shape = RoundedCornerShape(16.dp),
@@ -216,8 +207,8 @@ private fun SourcesStep(state: SetupUiState, viewModel: SetupViewModel) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            color = NeoCard,
-            border = BorderStroke(1.dp, if (variability != null) NeoGreen else NeoBorder)
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, if (variability != null) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.outlineVariant)
         ) {
             Column(modifier = Modifier.padding(start = 6.dp, end = 14.dp, top = 4.dp, bottom = 12.dp)) {
                 Row(
@@ -230,9 +221,9 @@ private fun SourcesStep(state: SetupUiState, viewModel: SetupViewModel) {
                     Checkbox(
                         checked = variability != null,
                         onCheckedChange = { viewModel.toggleSource(source) },
-                        colors = CheckboxDefaults.colors(checkedColor = NeoGreen, checkmarkColor = OnAccent)
+                        colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primaryContainer, checkmarkColor = MaterialTheme.colorScheme.onPrimaryContainer)
                     )
-                    Text(source.displayName, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeoTextPrimary)
+                    Text(source.displayName, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
                 if (variability != null) {
                     Row(
@@ -252,7 +243,7 @@ private fun SourcesStep(state: SetupUiState, viewModel: SetupViewModel) {
                     Text(
                         text = variability.description,
                         fontSize = 12.sp,
-                        color = NeoTextTertiary,
+                        color = MaterialTheme.pulseColors.textTertiary,
                         modifier = Modifier.padding(start = 10.dp, top = 6.dp)
                     )
                 }
@@ -276,7 +267,7 @@ private fun CommitmentsStep(state: SetupUiState, viewModel: SetupViewModel) {
             OutlinedTextField(
                 value = draft.title,
                 onValueChange = { viewModel.onCommitmentTitleChanged(draft.id, it) },
-                placeholder = { Text("e.g. Rent", color = NeoTextTertiary) },
+                placeholder = { Text("e.g. Rent", color = MaterialTheme.pulseColors.textTertiary) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.weight(1.2f),
@@ -285,8 +276,8 @@ private fun CommitmentsStep(state: SetupUiState, viewModel: SetupViewModel) {
             OutlinedTextField(
                 value = draft.amountInput,
                 onValueChange = { viewModel.onCommitmentAmountChanged(draft.id, it) },
-                placeholder = { Text("34,000", color = NeoTextTertiary) },
-                prefix = { Text("LKR ", color = NeoGreenDark, fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+                placeholder = { Text("34,000", color = MaterialTheme.pulseColors.textTertiary) },
+                prefix = { Text("LKR ", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
@@ -294,7 +285,7 @@ private fun CommitmentsStep(state: SetupUiState, viewModel: SetupViewModel) {
                 colors = setupFieldColors()
             )
             IconButton(onClick = { viewModel.removeCommitment(draft.id) }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Close, contentDescription = "Remove ${draft.title.ifBlank { "commitment" }}", tint = NeoTextSecondary)
+                Icon(Icons.Default.Close, contentDescription = "Remove ${draft.title.ifBlank { "commitment" }}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -316,17 +307,68 @@ private fun CommitmentsStep(state: SetupUiState, viewModel: SetupViewModel) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            color = NeoCardLow
+            color = MaterialTheme.colorScheme.surfaceContainerLow
         ) {
             Row(
                 modifier = Modifier.padding(14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Committed every month", fontSize = 13.sp, color = NeoTextSecondary, modifier = Modifier.weight(1f))
-                Text(lkr(state.commitmentsTotalLkr), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = NeoTextPrimary)
+                Text("Committed every month", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                Text(lkr(state.commitmentsTotalLkr), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
         }
     }
+
+    RunwaySection(state, viewModel)
+}
+
+/** Emergency buffer: how many months of the costs above to keep aside in case income stops (FR-AUTH-6). */
+@Composable
+private fun RunwaySection(state: SetupUiState, viewModel: SetupViewModel) {
+    Text(
+        text = "Your safety buffer",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+    Text(
+        text = "If your income stopped, how many months of these costs would you like set aside? " +
+            "You can change this later from Today.",
+        fontSize = 13.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        (MIN_RUNWAY_MONTHS..MAX_RUNWAY_MONTHS).forEach { months ->
+            SetupPill(
+                label = if (months == 1) "1 month" else "$months months",
+                isSelected = months == state.runwayMonths,
+                onClick = { viewModel.onRunwayMonthsChanged(months) }
+            )
+        }
+    }
+    if (state.commitmentsTotalLkr > 0) {
+        Text(
+            text = "${state.runwayMonths} months of your costs is ${lkr(state.runwayTargetLkr)}.",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+    OutlinedTextField(
+        value = state.runwaySavedInput,
+        onValueChange = viewModel::onRunwaySavedChanged,
+        label = { Text("Already set aside (optional)") },
+        placeholder = { Text("11,200", color = MaterialTheme.pulseColors.textTertiary) },
+        prefix = { Text("LKR ", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        singleLine = true,
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.fillMaxWidth(),
+        colors = setupFieldColors()
+    )
 }
 
 @Composable
@@ -334,7 +376,7 @@ private fun SetupPill(label: String, isSelected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .clip(CircleShape)
-            .background(if (isSelected) NeoGreen else NeoCardLow)
+            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
@@ -343,15 +385,15 @@ private fun SetupPill(label: String, isSelected: Boolean, onClick: () -> Unit) {
             text = label,
             fontSize = 12.5.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-            color = if (isSelected) OnAccent else NeoTextSecondary
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
 @Composable
 private fun setupFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = NeoGreen,
-    unfocusedBorderColor = NeoBorder,
-    focusedTextColor = NeoTextPrimary,
-    unfocusedTextColor = NeoTextPrimary
+    focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
 )

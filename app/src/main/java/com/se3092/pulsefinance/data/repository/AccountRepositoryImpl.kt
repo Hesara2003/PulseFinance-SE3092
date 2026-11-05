@@ -21,7 +21,7 @@ class AccountRepositoryImpl @Inject constructor(
 
     override fun getAccounts(userId: String): Flow<List<Account>> = cacheBackedFlow(
         tag = TAG,
-        local = accountDao.getAccounts(userId).map { entities -> entities.map { it.toDomain() } },
+        local = accountDao.getAccounts(userId).map { entities -> entities.map { it.toDomain().withoutPlaceholderNumber() } },
         sync = {
             firestoreDataSource.observeAccounts(userId).collect { dtos ->
                 accountDao.replaceAll(userId, dtos.map { AccountEntity.fromDomain(it.toDomain()) })
@@ -61,7 +61,8 @@ class AccountRepositoryImpl @Inject constructor(
     /**
      * Gives a brand-new user one payment channel per place money leaves from — the scenario's
      * card, auto-debit account, cash and exchange wallet — so expenses can be attributed from the
-     * first entry. Channels only; balances start at zero and nothing else is pre-filled.
+     * first entry. Channels only; balances start at zero, account numbers are blank, and nothing
+     * else is pre-filled.
      * Requires a server round-trip so an empty offline cache is never mistaken for a new user.
      */
     override suspend fun ensureDefaultAccounts(userId: String): Result<Boolean> = runCatching {
@@ -74,21 +75,26 @@ class AccountRepositoryImpl @Inject constructor(
                     name = type.displayName,
                     type = type,
                     balanceLkr = 0.0,
-                    isAutoDebitSource = type == AccountType.BANK_SECONDARY,
-                    accountNumber = when (type) {
-                        AccountType.BANK_PRIMARY -> "8001452178"
-                        AccountType.BANK_SECONDARY -> "1002938472"
-                        else -> ""
-                    }
+                    isAutoDebitSource = type == AccountType.BANK_SECONDARY
                 )
             ).getOrThrow()
         }
         true
     }
 
-    private companion object {
-        const val TAG = "AccountRepository"
-        val defaultChannels = listOf(
+    companion object {
+        private const val TAG = "AccountRepository"
+
+        /**
+         * Made-up numbers that earlier builds gave every new account. They were never the user's
+         * own, so accounts created then show no number instead of a fake one.
+         */
+        private val PLACEHOLDER_ACCOUNT_NUMBERS = setOf("8001452178", "1002938472")
+
+        internal fun Account.withoutPlaceholderNumber(): Account =
+            if (accountNumber in PLACEHOLDER_ACCOUNT_NUMBERS) copy(accountNumber = "") else this
+
+        private val defaultChannels = listOf(
             "acc_primary_bank" to AccountType.BANK_PRIMARY,
             "acc_secondary_bank" to AccountType.BANK_SECONDARY,
             "acc_cash" to AccountType.CASH,

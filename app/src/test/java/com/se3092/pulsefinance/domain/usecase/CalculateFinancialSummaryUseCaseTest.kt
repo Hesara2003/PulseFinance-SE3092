@@ -231,4 +231,31 @@ class CalculateFinancialSummaryUseCaseTest {
         assertEquals(expectedDaily, summary.safeToSpendDailyLkr, 0.01)
         assertFalse(summary.incomeBasisIsAverage)
     }
+
+    @Test
+    fun `a month pushed below zero by a crypto loss still counts, and an empty month is skipped`() {
+        val cal = Calendar.getInstance()
+        cal.set(2026, Calendar.MAY, 10, 12, 0, 0)
+        val now = cal.timeInMillis
+        fun income(id: String, source: IncomeSource, amount: Double, monthOffset: Int) = IncomeStream(
+            id = id, source = source, title = id, clientOrPlatform = "x",
+            originalAmount = amount, currency = Currency.LKR, amountInLkr = amount,
+            status = InvoiceStatus.RECEIVED,
+            dateReceivedOrExpected = Periods.month(now, monthOffset).startMillis + 1000
+        )
+        // April: salary 100,000 and a 250,000 crypto loss -> -150,000. March: nothing logged.
+        // February: 300,000. Basis = (-150,000 + 300,000) / 2 = 75,000.
+        // (Before, April was dropped for being below zero, so the loss vanished and the basis was 300,000.)
+        val summary = useCase(
+            listOf(
+                income("april-salary", IncomeSource.SALARY, 100_000.0, -1),
+                income("april-loss", IncomeSource.CRYPTO, -250_000.0, -1),
+                income("feb-salary", IncomeSource.SALARY, 300_000.0, -3)
+            ),
+            emptyList(),
+            null,
+            now
+        )
+        assertEquals(75_000.0, summary.incomeBasisLkr, 0.01)
+    }
 }

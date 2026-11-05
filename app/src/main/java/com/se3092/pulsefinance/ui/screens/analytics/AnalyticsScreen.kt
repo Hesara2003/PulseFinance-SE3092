@@ -1,5 +1,14 @@
 package com.se3092.pulsefinance.ui.screens.analytics
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
+import androidx.compose.runtime.remember
+import com.se3092.pulsefinance.ui.components.PulseNoticeHost
+import com.se3092.pulsefinance.ui.components.DeleteTransactionDialog
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.MoreVert
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
@@ -22,7 +31,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,7 +38,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,10 +47,8 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.LocalTaxi
-import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.DatePickerDialog
@@ -85,32 +90,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.se3092.pulsefinance.ui.theme.OnAccent
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoContainer
-import com.se3092.pulsefinance.ui.theme.NeoErrorContainer
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Payments
 import com.se3092.pulsefinance.ui.common.TransactionItem
-import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.relativeDayLabel
 import com.se3092.pulsefinance.ui.common.signedLkr
-import com.se3092.pulsefinance.ui.common.transactionVisual
 import com.se3092.pulsefinance.ui.components.CommittedVsDiscretionaryBar
 import com.se3092.pulsefinance.ui.components.EmptyStateView
-import com.se3092.pulsefinance.ui.theme.NeoSurface
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
+import com.se3092.pulsefinance.ui.common.accountIllustration
+import com.se3092.pulsefinance.ui.common.categoryIllustration
+import com.se3092.pulsefinance.ui.common.transactionIllustration
 
 @Composable
 fun AnalyticsScreen(
@@ -118,6 +109,18 @@ fun AnalyticsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showDateRangePicker by rememberSaveable { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<TransactionItem?>(null) }
+
+    pendingDelete?.let { tx ->
+        DeleteTransactionDialog(
+            transaction = tx,
+            onConfirm = {
+                viewModel.deleteExpense(tx)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null }
+        )
+    }
 
     if (showDateRangePicker) {
         TransactionDateRangeDialog(
@@ -133,7 +136,7 @@ fun AnalyticsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(NeoSurface)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -165,7 +168,7 @@ fun AnalyticsScreen(
                         text = "PulseFinance",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = NeoTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 17.sp,
                         letterSpacing = (-0.2).sp
                     )
@@ -180,7 +183,7 @@ fun AnalyticsScreen(
                         text = "Financial Analytics & Clarity",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = NeoTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -191,7 +194,7 @@ fun AnalyticsScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(NeoContainer),
+                            .background(MaterialTheme.colorScheme.surfaceContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         ProfileAvatar(initials = state.initials, size = 34.dp)
@@ -212,7 +215,7 @@ fun AnalyticsScreen(
                 item {
                     Surface(
                         shape = CircleShape,
-                        color = NeoContainer,
+                        color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -235,8 +238,8 @@ fun AnalyticsScreen(
                                         .then(
                                             if (isSelected) {
                                                 Modifier
-                                                    .shadow(6.dp, CircleShape, spotColor = NeoGreenGlow)
-                                                    .background(NeoGreen)
+                                                    .shadow(6.dp, CircleShape, spotColor = MaterialTheme.pulseColors.primaryGlow)
+                                                    .background(MaterialTheme.colorScheme.primaryContainer)
                                             } else {
                                                 Modifier.background(Color.Transparent)
                                             }
@@ -249,7 +252,7 @@ fun AnalyticsScreen(
                                         text = label,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                                         fontSize = 12.sp,
-                                        color = if (isSelected) OnAccent else NeoTextSecondary
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -265,12 +268,12 @@ fun AnalyticsScreen(
                             .shadow(
                                 elevation = 8.dp,
                                 shape = RoundedCornerShape(24.dp),
-                                ambientColor = Color(0x0A0F172A),
-                                spotColor = Color(0x0A0F172A)
+                                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.04f),
+                                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.04f)
                             ),
                         shape = RoundedCornerShape(24.dp),
-                        color = NeoCard,
-                        border = BorderStroke(1.dp, NeoBorder)
+                        color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Column(
                             modifier = Modifier
@@ -288,14 +291,14 @@ fun AnalyticsScreen(
                                     modifier = Modifier
                                         .size(34.dp)
                                         .clip(CircleShape)
-                                        .background(NeoCardLow)
+                                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
                                         .clickable { viewModel.shiftPeriod(-1) },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.ChevronLeft,
                                         contentDescription = "Previous Period",
-                                        tint = NeoTextSecondary,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -305,7 +308,7 @@ fun AnalyticsScreen(
                                 Text(
                                     text = state.periodLabel,
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = NeoTextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
                                 )
@@ -316,7 +319,7 @@ fun AnalyticsScreen(
                                     modifier = Modifier
                                         .size(34.dp)
                                         .clip(CircleShape)
-                                        .background(NeoCardLow)
+                                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
                                         .alpha(if (state.canGoForward) 1f else 0.35f)
                                         .clickable(enabled = state.canGoForward) { viewModel.shiftPeriod(1) },
                                     contentAlignment = Alignment.Center
@@ -324,7 +327,7 @@ fun AnalyticsScreen(
                                     Icon(
                                         imageVector = Icons.Default.ChevronRight,
                                         contentDescription = "Next Period",
-                                        tint = NeoTextSecondary,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -336,7 +339,7 @@ fun AnalyticsScreen(
                             Text(
                                 text = lkr(state.totalSpentLkr, 2),
                                 style = MaterialTheme.typography.headlineLarge,
-                                color = NeoTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 28.sp,
                                 letterSpacing = (-0.5).sp
@@ -345,7 +348,7 @@ fun AnalyticsScreen(
                             Text(
                                 text = "Spent · ${lkr(state.incomeLkr)} received in the same period",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = NeoTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 13.sp
                             )
 
@@ -373,7 +376,7 @@ fun AnalyticsScreen(
                                                 .width(18.dp)
                                                 .height(144.dp)
                                                 .clip(CircleShape)
-                                                .background(NeoContainer)
+                                                .background(MaterialTheme.colorScheme.surfaceContainer)
                                                 .padding(2.dp),
                                             contentAlignment = Alignment.BottomCenter
                                         ) {
@@ -386,10 +389,10 @@ fun AnalyticsScreen(
                                                     .then(
                                                         if (isSelected) {
                                                             Modifier
-                                                                .shadow(8.dp, CircleShape, spotColor = NeoGreen)
-                                                                .background(NeoGreen)
+                                                                .shadow(8.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primaryContainer)
+                                                                .background(MaterialTheme.colorScheme.primaryContainer)
                                                         } else {
-                                                            Modifier.background(NeoGreen)
+                                                            Modifier.background(MaterialTheme.colorScheme.primaryContainer)
                                                         }
                                                     )
                                             )
@@ -402,14 +405,14 @@ fun AnalyticsScreen(
                                             text = day.primaryLabel,
                                             fontSize = 13.sp,
                                             fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
-                                            color = if (isSelected) NeoGreenDark else NeoTextPrimary
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                         )
                                         // Day of week (e.g. Sun, Mon)
                                         Text(
                                             text = day.secondaryLabel,
                                             fontSize = 11.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            color = if (isSelected) NeoGreenDark else NeoTextSecondary
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
@@ -441,7 +444,7 @@ fun AnalyticsScreen(
                             val selectedDay = state.selectedBar
                             if (selectedDay != null) Surface(
                                 shape = RoundedCornerShape(14.dp),
-                                color = NeoCardLow,
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
@@ -461,7 +464,7 @@ fun AnalyticsScreen(
                                                 .scale(dotScale)
                                                 .alpha(dotAlpha)
                                                 .clip(CircleShape)
-                                                .background(NeoGreen)
+                                                .background(MaterialTheme.colorScheme.primaryContainer)
                                         )
                                         val unit = if (state.interval == AnalyticsInterval.WEEKLY) "day" else "week"
                                         val labelText = if (selectedDay.isPeak) {
@@ -472,7 +475,7 @@ fun AnalyticsScreen(
                                         Text(
                                             text = labelText,
                                             fontSize = 12.sp,
-                                            color = NeoTextSecondary,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontWeight = FontWeight.Medium
                                         )
                                     }
@@ -481,7 +484,7 @@ fun AnalyticsScreen(
                                         text = "LKR ${String.format("%,.2f", selectedDay.amountLkr)}",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = NeoTextPrimary
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
@@ -523,7 +526,7 @@ fun AnalyticsScreen(
                             Text(
                                 text = "Transactions",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = NeoTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp
                             )
@@ -533,7 +536,7 @@ fun AnalyticsScreen(
                                     text = if (state.showAllTransactions) "Show less" else "View all (${state.transactions.size})",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = NeoGreenDark,
+                                    color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
                                         .clickable { viewModel.toggleViewAll() }
@@ -546,18 +549,18 @@ fun AnalyticsScreen(
                         OutlinedTextField(
                             value = state.searchQuery,
                             onValueChange = viewModel::onSearchQueryChanged,
-                            placeholder = { Text("Search by merchant or note...", fontSize = 13.sp, color = NeoTextTertiary) },
+                            placeholder = { Text("Search by merchant or note...", fontSize = 13.sp, color = MaterialTheme.pulseColors.textTertiary) },
                             leadingIcon = {
-                                Icon(imageVector = Icons.Default.Search, contentDescription = "Search", tint = NeoTextSecondary, modifier = Modifier.size(18.dp))
+                                Icon(imageVector = Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                             },
                             singleLine = true,
                             shape = RoundedCornerShape(14.dp),
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = NeoGreen,
-                                unfocusedBorderColor = NeoBorder,
-                                focusedTextColor = NeoTextPrimary,
-                                unfocusedTextColor = NeoTextPrimary
+                                focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             )
                         )
 
@@ -573,9 +576,9 @@ fun AnalyticsScreen(
                                     label = { Text("All", fontSize = 11.5.sp) },
                                     shape = CircleShape,
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = NeoGreen,
-                                        selectedLabelColor = OnAccent,
-                                        labelColor = NeoTextSecondary
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 )
                             }
@@ -589,9 +592,9 @@ fun AnalyticsScreen(
                                     label = { Text(cat.displayName, fontSize = 11.5.sp) },
                                     shape = CircleShape,
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = NeoGreen,
-                                        selectedLabelColor = OnAccent,
-                                        labelColor = NeoTextSecondary
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 )
                             }
@@ -623,12 +626,12 @@ fun AnalyticsScreen(
                                     } else null,
                                     shape = CircleShape,
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = NeoGreen,
-                                        selectedLabelColor = OnAccent,
-                                        selectedLeadingIconColor = OnAccent,
-                                        selectedTrailingIconColor = OnAccent,
-                                        labelColor = NeoTextSecondary,
-                                        iconColor = NeoTextSecondary
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 )
                             }
@@ -639,9 +642,9 @@ fun AnalyticsScreen(
                                     label = { Text("All accounts", fontSize = 11.5.sp) },
                                     shape = CircleShape,
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = NeoGreen,
-                                        selectedLabelColor = OnAccent,
-                                        labelColor = NeoTextSecondary
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 )
                             }
@@ -653,15 +656,15 @@ fun AnalyticsScreen(
                                     },
                                     label = { Text(account.name, fontSize = 11.5.sp) },
                                     leadingIcon = {
-                                        Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Image(painterResource(accountIllustration(account.type)), contentDescription = null, modifier = Modifier.size(20.dp))
                                     },
                                     shape = CircleShape,
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = NeoGreen,
-                                        selectedLabelColor = OnAccent,
-                                        selectedLeadingIconColor = OnAccent,
-                                        labelColor = NeoTextSecondary,
-                                        iconColor = NeoTextSecondary
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 )
                             }
@@ -690,7 +693,11 @@ fun AnalyticsScreen(
                 }
 
                 items(visibleTransactions, key = { it.id }) { tx ->
-                    TransactionLedgerCard(tx = tx)
+                    TransactionLedgerCard(
+                        tx = tx,
+                        // Only expenses can be deleted here; income is managed on the Income screen.
+                        onDelete = tx.expenseId?.let { { pendingDelete = tx } }
+                    )
                 }
 
                 item {
@@ -698,6 +705,12 @@ fun AnalyticsScreen(
                 }
             }
         }
+
+        PulseNoticeHost(
+            notice = state.notice,
+            onDismiss = viewModel::dismissNotice,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
     }
 }
 
@@ -725,10 +738,10 @@ private fun TransactionDateRangeDialog(
                         onConfirm(Period(utcDayToLocal(start), utcDayToLocal(end) + DAY_MILLIS))
                     }
                 }
-            ) { Text("Apply", color = NeoGreenDark, fontWeight = FontWeight.Bold) }
+            ) { Text("Apply", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = NeoTextSecondary) }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     ) {
         DateRangePicker(
@@ -761,8 +774,8 @@ private fun CategoryBreakdownCard(totals: List<CategoryTotal>) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -771,13 +784,12 @@ private fun CategoryBreakdownCard(totals: List<CategoryTotal>) {
             Text(
                 text = "WHERE IT WENT",
                 style = MaterialTheme.typography.labelSmall,
-                color = NeoTextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.sp,
                 letterSpacing = 1.sp
             )
             totals.forEach { total ->
-                val visual = expenseCategoryVisual(total.category)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -788,22 +800,18 @@ private fun CategoryBreakdownCard(totals: List<CategoryTotal>) {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(26.dp)
-                                    .clip(CircleShape)
-                                    .background(visual.container),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(visual.icon, contentDescription = null, tint = visual.tint, modifier = Modifier.size(14.dp))
-                            }
-                            Text(text = total.category.displayName, fontSize = 13.sp, color = NeoTextPrimary)
+                            Image(
+                                painter = painterResource(categoryIllustration(total.category)),
+                                contentDescription = null,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Text(text = total.category.displayName, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Text(
                             text = "${lkr(total.amountLkr)} · ${(total.share * 100).toInt()}%",
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = NeoTextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     Box(
@@ -811,14 +819,14 @@ private fun CategoryBreakdownCard(totals: List<CategoryTotal>) {
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(CircleShape)
-                            .background(NeoContainer)
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth(total.share.coerceAtLeast(0.02f))
                                 .fillMaxHeight()
                                 .clip(CircleShape)
-                                .background(if (total.category.isTypicallyCommitted) NeoTextSecondary else NeoGreen)
+                                .background(if (total.category.isTypicallyCommitted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primaryContainer)
                         )
                     }
                 }
@@ -828,20 +836,20 @@ private fun CategoryBreakdownCard(totals: List<CategoryTotal>) {
 }
 
 @Composable
-private fun TransactionLedgerCard(tx: TransactionItem) {
-    val visual = transactionVisual(tx)
+private fun TransactionLedgerCard(tx: TransactionItem, onDelete: (() -> Unit)? = null) {
+    var menuOpen by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
                 elevation = 4.dp,
                 shape = RoundedCornerShape(16.dp),
-                ambientColor = Color(0x060F172A),
-                spotColor = Color(0x060F172A)
+                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.02f),
+                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.02f)
             ),
         shape = RoundedCornerShape(16.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
@@ -857,16 +865,15 @@ private fun TransactionLedgerCard(tx: TransactionItem) {
             ) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(visual.container),
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = visual.icon,
-                        contentDescription = tx.title,
-                        tint = visual.tint,
-                        modifier = Modifier.size(22.dp)
+                    Image(
+                        painter = painterResource(transactionIllustration(tx)),
+                        contentDescription = null,
+                        modifier = Modifier.size(38.dp)
                     )
                 }
 
@@ -874,7 +881,7 @@ private fun TransactionLedgerCard(tx: TransactionItem) {
                     Text(
                         text = tx.title,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = NeoTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                         maxLines = 1,
@@ -884,7 +891,7 @@ private fun TransactionLedgerCard(tx: TransactionItem) {
                     Text(
                         text = tx.subtitle,
                         style = MaterialTheme.typography.labelSmall,
-                        color = NeoTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -896,7 +903,7 @@ private fun TransactionLedgerCard(tx: TransactionItem) {
                 Text(
                     text = signedLkr(tx.amountLkr),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (tx.isIncoming) NeoGreenDark else NeoTextPrimary,
+                    color = if (tx.isIncoming) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 )
@@ -904,9 +911,37 @@ private fun TransactionLedgerCard(tx: TransactionItem) {
                 Text(
                     text = tx.originalAmountLabel ?: relativeDayLabel(tx.timestamp),
                     style = MaterialTheme.typography.labelSmall,
-                    color = NeoTextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 )
+            }
+
+            if (onDelete != null) {
+                Box {
+                    IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More options for ${tx.title}",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = menuOpen,
+                        onDismissRequest = { menuOpen = false },
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold) },
+                            leadingIcon = { Icon(Icons.Default.DeleteOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                menuOpen = false
+                                onDelete()
+                            }
+                        )
+                    }
+                }
             }
         }
     }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bottom-dock icon in the style of the illustrated preset icons (no blob: the dock draws it for the selected tab). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path android:pathData="M4,40c6,-9 12,-13 19,-13s13,5 21,13z" android:fillColor="#FF2FBF4A" android:strokeColor="#FF1E2A22" android:strokeWidth="1.8" android:strokeLineJoin="round" />
+    <path android:pathData="M23,27v-19" android:fillColor="#00000000" android:strokeColor="#FF1E2A22" android:strokeWidth="2" android:strokeLineCap="round" />
+    <path android:pathData="M23,8.5h14l-3.5,4.5l3.5,4.5h-14z" android:fillColor="#FFF5B82E" android:strokeColor="#FF1E2A22" android:strokeWidth="1.8" android:strokeLineJoin="round" />
+    <path android:pathData="M10,36.5l4,-3M30,34l5,3" android:fillColor="#00000000" android:strokeColor="#FF1E8E35" android:strokeWidth="1.6" android:strokeLineCap="round" />
+</vector>

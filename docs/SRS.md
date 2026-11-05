@@ -259,7 +259,7 @@ flowchart LR
 | FR-AUTH-3 | The system shall store every record under the signed-in user's ID, so the same data appears on any device he signs in to. | §3.5 (F2: "no cloud synchronisation") | F2 | M | Done |
 | FR-AUTH-4 | Onboarding shall capture his salary, his active Income Sources (Salary, Freelance, AdSense, Crypto) and his fixed monthly commitments (e.g. rent LKR 34,000) in three short steps. | §3.2, §3.3 | F2 (single source) | M | Done |
 | FR-AUTH-5 | Onboarding shall let him state each source's expected variability (low / moderate / highly volatile). | §3.2 ("different levels of predictability") | F2 | C | Done |
-| FR-AUTH-6 | Onboarding shall let him set an emergency-runway buffer of 1–6 months of committed costs. | §3.1 (LKR 11,200 savings) | — | C | Planned |
+| FR-AUTH-6 | Onboarding shall let him set an emergency-runway buffer of 1–6 months of committed costs. | §3.1 (LKR 11,200 savings) | — | C | Done |
 | FR-AUTH-7 | A debug-build-only demo drawer shall fill in the credentials of a real, pre-seeded Firebase account; credentials shall come from build configuration, never from source code, and the drawer shall not exist in release builds. | §6.4 (live demo), §4.3 (no hard-coded data) | — | M | Done |
 
 ### 5.2 Income (FR-INC)
@@ -330,7 +330,7 @@ flowchart LR
 | FR-ANA-2 | Analytics shall switch between Week and Month periods. | §3.3, §4.1 lens 5 | F3 | M | Done |
 | FR-ANA-3 | Analytics shall show a daily spending bar chart and highlight the peak spending day. | §3.3 ("LKR 24,000 on coffee… genuinely shocking") | F3 | S | Done |
 | FR-ANA-4 | Analytics shall additionally offer Day and Year periods. | §4.1 lens 5 | — | C | Done |
-| FR-ANA-5 | The transaction list shall be searchable by merchant/keyword and filterable by account, category and date. | §3.2 ("could not reconcile which payment corresponded to which project") | F3 | C | Partial |
+| FR-ANA-5 | The transaction list shall be searchable by merchant/keyword and filterable by account, category and date. | §3.2 ("could not reconcile which payment corresponded to which project") | F3 | C | Done |
 
 ### 5.8 Accounts and Spending Freeze (FR-ACC)
 
@@ -464,13 +464,12 @@ Status as of 05/11/2026, checked against the code on `main`.
 |---|---|---|---|
 | **Must** | FR-AUTH-1, 3, 4, 7 · FR-INC-1–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1–6 · FR-ANA-1, 2 · FR-ACC-1 · FR-LK-1, 2, 6 · NFR-1, 3–7, 9, 12 | NFR-2 (savings rate only) | — |
 | **Should** | FR-AUTH-2 · FR-EXP-4, 7 · FR-SUB-4, 5, 6 · FR-GOAL-5, 6 · FR-ANA-3 · FR-ACC-2–7 · FR-LK-3–5 · FR-DATA-1 · NFR-10, 11 | — | NFR-8 (not yet verified) |
-| **Could** | FR-AUTH-5 · FR-GOAL-7 · FR-ANA-4 | FR-ANA-5 | FR-AUTH-6 |
+| **Could** | FR-AUTH-5, 6 · FR-GOAL-7 · FR-ANA-4, 5 | — | — |
 
 ### 10.1 Open gaps
 
 | ID | Gap |
 |---|---|
-| FR-ANA-5 | Search by keyword and filter by category work; filtering by account and date does not exist. |
 | NFR-8 | Colour-only status and 200% font scale have not been checked. |
 
 ---
