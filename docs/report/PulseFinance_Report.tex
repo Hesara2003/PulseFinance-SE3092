@@ -545,7 +545,7 @@ users/
     accounts/{accountId}        AccountDto   where money is held or paid from  (P5)
     expenses/{expenseId}        ExpenseDto   money out                         (P5, P6, P7)
     income_streams/{incomeId}   IncomeDto    money in, received or invoiced    (P1-P4)
-    goals/{goalId}              GoalDto      the MacBook goal                  (P8)
+    goals/{goalId}              GoalDto      the savings goal (his MacBook)    (P8)
 
 config/                                  read-only for signed-in users
   apitBands                     ApitConfigDto   APIT tax schedule              (FR-LK-2, C-16)
@@ -553,10 +553,26 @@ config/                                  read-only for signed-in users
 
 The three maps on the user document are small, are always read together with the user, and are written with \code{SetOptions.merge()} so that they never overwrite one another. Keeping them as maps rather than subcollections avoids three extra listeners per screen.
 
+\subsection{Why this structure}
+\begin{tabularx}{\textwidth}{@{}p{4.6cm}L@{}}
+\toprule
+\textbf{Decision} & \textbf{Why, for Kavindu's data}\\
+\midrule
+Everything he records lives under \code{users/{uid}} & Ownership is the path itself, so the security rule is one comparison and no query needs a \code{where userId == ...} filter. His records cannot mix with another user's, and deleting his account is deleting one subtree (\req{NFR-5}).\\
+One collection per kind of record, not one mixed ``transactions'' collection & Income carries a currency, rate and invoice status (\prob{P1}--\prob{P4}); an expense carries a category and committed flag (\prob{P7}). Separate collections let the rules validate each shape, and let each screen listen only to what it shows: the Income hub never downloads his expenses.\\
+A document per record, not an array in one document & He logs a coffee or a PickMe most days, so a year is hundreds of expenses. One large document would approach Firestore's 1\,MiB limit and every new expense would rewrite the whole list; a document per record keeps writes small and lets each offline write queue on its own (\req{FR-EXP-6}).\\
+Small settings as map fields on the user document & Reviews, reserves and onboarding are a few entries each, read with the user and merged on write, so they need no extra listener.\\
+\code{config} at the top level & The APIT bands are the same for every user and read-only for the app (\req{FR-LK-2}).\\
+\code{userId} also stored in every record & Redundant with the path, but the rules check that the two match, so a record can never claim another user.\\
+\code{paymentAccountName} copied onto each expense & Firestore has no joins; the ledger and the subscription audit (\req{FR-SUB-6}) show where money went without loading accounts. Accepted cost: renaming an account does not rename its old expenses.\\
+Money stored in LKR, with income also keeping its original amount, currency and rate & Every total is a plain sum, and a later rate change never moves last month's numbers (\req{NFR-6}, ADR-0001).\\
+\bottomrule
+\end{tabularx}
+
 \subsection{Accounts}
 Path: \code{users/{uid}/accounts/{accountId}}.
 
-On first sign-in, \code{ensureDefaultAccounts} creates one zero-balance account per place Kavindu's money leaves from, so every expense can be attributed from the first entry. It checks the server first, so an empty offline cache is never mistaken for a new user.
+On first sign-in, \code{ensureDefaultAccounts} creates one zero-balance account per place Kavindu's money leaves from, so every expense can be attributed from the first entry. Nothing else is invented: account numbers start empty. It checks the server first, so an empty offline cache is never mistaken for a new user.
 
 \begin{tabularx}{\textwidth}{@{}p{4.1cm}p{1.7cm}p{3.2cm}L@{}}
 \toprule
@@ -567,7 +583,7 @@ On first sign-in, \code{ensureDefaultAccounts} creates one zero-balance account 
 \code{type} & string & \code{BANK_SECONDARY} & Primary, secondary, cash or crypto exchange (\req{FR-ACC-1})\\
 \code{balanceLkr} & number & 0 & His own record, never imported (C-13)\\
 \code{isAutoDebitSource} & boolean & true & Where the gym and forgotten subscriptions are charged (\prob{P6})\\
-\code{accountNumber} & string & 1002938472 & Shown masked until biometric reveal (\req{FR-ACC-6})\\
+\code{accountNumber} & string & empty & When set, shown masked until biometric reveal (\req{FR-ACC-6})\\
 \code{isFrozen}, \code{frozenUntilMillis} & boolean, number & false, null & Spending Freeze (\req{FR-ACC-3})\\
 \code{freezeBreakCount} & number & 0 & Times he spent from a frozen account (\req{FR-ACC-5})\\
 \bottomrule
@@ -626,6 +642,15 @@ Path: \code{users/{uid}/goals/{goalId}}.
 
 With a USD price, the app shows \(\text{target} \times \text{today's rate} \div \text{rate at set}\). If the rupee weakens from 300 to 306, his target becomes \lkr{499,800} and the goal card says ``Target + \lkr{9,800} since \ldots''.
 
+\subsection{Multi-currency handling}
+\begin{enumerate}
+  \item \textbf{Everything is reported in LKR, and nothing is recomputed later.} Each income entry stores its original amount, its currency, the rate used and the LKR result. A later rate change never moves last month's numbers, so October still matches his bank statement in March (\req{NFR-6}).
+  \item \textbf{The fetched rate is only a suggestion} (ADR-0001). The form pre-fills the day's rate from open.er-api.com (USD$\rightarrow$LKR) and CoinGecko (USDT, ETH), cached once a day (C-17). When his AdSense payout lands he can type the LKR his bank actually credited, and the effective rate is derived from it (\req{FR-INC-5}, \req{FR-INC-6}).
+  \item \textbf{Offline fallback.} If no rate has ever been fetched, the app assumes USD$\rightarrow$LKR 305.00, 1 USDT = 1 USD and 1 ETH = 2,600 USD, and labels the rate ``Offline benchmark''.
+  \item \textbf{Crypto results are signed.} A loss is a negative \code{originalAmount} and \code{amountInLkr}; the Income Basis keeps losses and leaves profits out of the three-month average (\req{FR-INC-7}, \req{FR-DASH-3}).
+  \item \textbf{The goal is the only value that follows the live rate}, and only when it has a USD reference price (\req{FR-GOAL-6}).
+\end{enumerate}
+
 \subsection{Maps on the user document}
 \begin{lstlisting}
 "subscriptionReviews": {
@@ -665,36 +690,49 @@ Path: \code{config/apitBands}.
 The payslip calculator validates the schedule (starts at 0, contiguous, rates between 0 and 1) and falls back to the bands bundled in the app if the document is missing or invalid. For a gross salary of \lkr{140,000} this gives APIT of \lkr{2,400} and employee EPF of \lkr{11,200}, leaving a take-home of \lkr{126,400} -- the figure Kavindu could not recall from his payslip (\prob{P10}).
 
 \subsection{Security rules}
+\code{firestore.rules} keeps each user to their own records \emph{and} checks what is written, matching the DTOs:
 \begin{lstlisting}
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      match /accounts/{accountId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      match /income_streams/{incomeId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      match /expenses/{expenseId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      match /goals/{goalId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-    }
-    match /config/{docId} {
-      allow read: if request.auth != null;
-      allow write: if false;
-    }
-  }
+match /users/{userId} {
+  allow read, write: if isOwner(userId);            // the three maps, merged
+  match /expenses/{id}       { allow read, delete: if isOwner(userId);
+                               allow create, update: if isOwner(userId) && validExpense(userId); }
+  match /income_streams/{id} { ... validIncome(userId) }
+  match /goals/{id}          { ... validGoal(userId) }
+  match /accounts/{id}       { ... validAccount(userId) }
 }
+match /config/{docId} { allow read: if request.auth != null; allow write: if false; }
 \end{lstlisting}
-Unauthenticated requests are refused; another signed-in user can never read Kavindu's documents; configuration is read-only from the app; every other path is denied by default.
+
+\begin{tabularx}{\textwidth}{@{}p{2.2cm}L@{}}
+\toprule
+\textbf{Record} & \textbf{Checked on every create and update}\\
+\midrule
+Expense & \code{userId} equals the path; title text up to 200 characters; \code{amountLkr} a number $\geq 0$; \code{category} one of the eight categories; \code{timestamp} a number\\
+Income & \code{userId}; \code{source} one of Salary, Freelance, AdSense, Crypto; \code{currency} one of LKR, USD, USDT, ETH; \code{status} one of three; amounts are numbers (negative allowed for a crypto loss); \code{exchangeRateToLkr} a number $> 0$\\
+Goal & \code{userId}; title; target and saved amounts numbers $\geq 0$; USD fields a number or null\\
+Account & \code{userId}; name; \code{type} one of the four; \code{balanceLkr} a number; \code{freezeBreakCount} a whole number $\geq 0$; account number at most 34 characters (IBAN length)\\
+\bottomrule
+\end{tabularx}
+
+The rules check the document as it will be after the write, so partial updates (marking an invoice received, adding to the goal) are validated whole. Unknown extra fields are allowed, so an older app version keeps working. Unauthenticated requests are refused, another signed-in user can never read or write Kavindu's documents, a record cannot claim another user's \code{userId}, configuration is read-only from the app, and every other path is denied by default. The rules were tested against the Firestore emulator with 21 cases: 10 app-shaped writes, reads and deletes allowed, and 11 invalid or foreign writes denied.
+
+\subsection{Indexing strategy}
+\begin{tabularx}{\textwidth}{@{}p{5.6cm}L@{}}
+\toprule
+\textbf{Query} & \textbf{Index that serves it}\\
+\midrule
+\code{expenses} ordered by \code{timestamp}, newest first (live) & Automatic single-field index on \code{timestamp}\\
+\code{income_streams} ordered by \code{dateReceivedOrExpected} (live) & Automatic single-field index\\
+\code{goals}, \code{accounts}: whole collection (live) & None needed: no filter or sort\\
+\code{accounts} \code{limit(1)} from the server (is this a new user?) & None needed\\
+\code{users/{uid}}, \code{config/apitBands} by ID & Document lookup, no index\\
+\bottomrule
+\end{tabularx}
+
+\textbf{No composite index is needed, so \code{firestore.indexes.json} declares none.} This is deliberate. Filtering happens on the device: the Analytics periods and the category, account and date filters (\req{FR-ANA-5}), Safe-to-Spend and the subscription scan all run over records already in the Room cache, which must be there anyway for offline use (\req{NFR-3}). One person's records -- hundreds a year -- filter instantly; a server query per filter would cost reads, fail offline, and need a composite index for each filter-and-sort pair. If a history ever grew to tens of thousands of records, the expense listener would load only a recent window (\code{where timestamp >= start}, ordered by \code{timestamp}), which is still a single field. A composite index would only be needed for a server query that filters on one field and sorts on another, such as subscriptions ordered by date.
 
 \subsection{Local cache and entity-relationship model}
-Room (\code{AppDatabase}, version 3) mirrors the four collections in the tables \code{accounts}, \code{expenses}, \code{income_streams} and \code{savings_goals}. It is only a cache: it uses \code{fallbackToDestructiveMigration()}, and pending offline writes are not lost when it is rebuilt because they are queued in Firestore's own cache.
+Room (\code{AppDatabase}, version 3) mirrors the four collections in the tables \code{accounts}, \code{expenses}, \code{income_streams} and \code{savings_goals}. It is only a cache: it uses \code{fallbackToDestructiveMigration()}, and pending offline writes are not lost when it is rebuilt because they are queued in Firestore's own cache. For the same reason it is emptied on sign-out and excluded from Android backups and device transfer; Firestore restores his records when he signs in.
 
 \begin{figure}[H]
 \centering
@@ -794,7 +832,7 @@ The wireframes below show each main screen as built, with the layout, labels and
 \callout{2} & \textbf{Overdue invoice, amber not red.} Names the client and amount, with one-tap ``Mark received''. Unpaid invoices are never part of the allowance. \prob{P2}, \req{FR-DASH-2}, \req{FR-DASH-5}\\
 \callout{3} & \textbf{Committed vs discretionary bar} with amounts: rent and broadband against coffee, PickMe and UberEats. \prob{P7}, \req{FR-DASH-4}\\
 \callout{4} & \textbf{Seasonal Peak warning} 30 days ahead, with last year's excess if known and a one-tap ``Set aside'' that holds the amount back from Safe-to-Spend. \prob{P11}, \req{FR-LK-4}, \req{FR-LK-5}\\
-\callout{5} & \textbf{One-tap presets} from his own most repeated spends, topped up with Sri Lankan starters. Three taps, five seconds. \prob{P9}, \req{FR-EXP-3}, \req{NFR-1}\\
+\callout{5} & \textbf{One-tap presets} from his own most repeated spends, each with its last amount, topped up with Sri Lankan starter shortcuts that fill in everything but the amount -- a guessed price would be wrong for most people. Three taps, five seconds. Below them, \textbf{Lately} shows his newest records; long-pressing an expense deletes it after a confirmation. \prob{P9}, \req{FR-EXP-3}, \req{NFR-1}\\
 \callout{6} & \textbf{Accounts.} Masked numbers revealed by fingerprint; a frozen account shows as locked. \prob{P5}, \req{FR-ACC-2}, \req{FR-ACC-3}, \req{FR-ACC-6}\\
 \callout{7} & \textbf{Freeze Breaks} counted without blame; spending is never refused. \req{FR-ACC-4}, \req{FR-ACC-5}\\
 \bottomrule
@@ -999,13 +1037,21 @@ The wireframes below show each main screen as built, with the layout, labels and
 \callout{1} & \textbf{Day, week, month, year}, with previous and next. Weekly is the default because his impulsive spending shows up within days. \req{FR-ANA-2}, \req{FR-ANA-4}\\
 \callout{2} & \textbf{Daily bars with the peak day highlighted}, so the day that broke the week is obvious at a glance. \prob{P7}, \req{FR-ANA-3}\\
 \callout{3} & \textbf{Where it went.} The category donut is where ``LKR 24,000 on coffee'' becomes visible; committed categories are labelled so rent does not read as overspending. \prob{P7}, \req{FR-ANA-1}\\
-\callout{4} & \textbf{Search and filters} by merchant or note, category, account and date range, so a payment can be matched to a freelance project or a cash week reviewed. \prob{P2}, \req{FR-ANA-5}\\
+\callout{4} & \textbf{Search and filters} by merchant or note, category, account and date range, so a payment can be matched to a freelance project or a cash week reviewed. Every expense row has \textbf{$\vdots$ $\rightarrow$ Delete}, behind a confirmation, so a mistake from any period can be removed. \prob{P2}, \req{FR-ANA-5}\\
 \bottomrule
 \end{tabularx}
 \end{minipage}
 
 \subsection{Visual language}
-The theme is light (porcelain white \texttt{\#F7F9FB}, white cards) with one signal green (\texttt{\#00C950}, text \texttt{\#006E28}). \textbf{There is no red in the palette}: every attention state -- an overdue invoice, a high-risk subscription, a freeze break -- uses amber (\texttt{\#F59E0B}) with deep-amber text (\texttt{\#B45309}). Kavindu avoids looking at money he is worried about, and alarm colours make avoiders look away. Money figures use Space Grotesk; headings use Bricolage Grotesque; illustrations are from Storyset. The full design system is in \code{docs/DESIGN_SYSTEM.md}.
+The theme is light (porcelain white \texttt{\#F7F9FB}, white cards) with one signal green (\texttt{\#00C950}, text \texttt{\#006E28}). Attention states -- an overdue invoice, a freeze break, an error -- use amber (\texttt{\#F59E0B}) with deep-amber text (\texttt{\#B45309}), not red: Kavindu avoids looking at money he is worried about, and alarm colours make avoiders look away. \textbf{One deliberate exception:} the subscription audit marks ``Still charging'' and the Cancel actions in rose (\texttt{\#E11D48}), because a forgotten subscription draining money is the one thing he should not look away from (\prob{P6}).
+
+\begin{itemize}
+  \item \textbf{Material 3 theming.} \code{Theme.kt} maps the brand palette onto every Material 3 colour role (\code{primary}, \code{primaryContainer}, \code{background}, \code{surface} and its containers, \code{outlineVariant}, \code{error}, \ldots), and \code{MaterialTheme.pulseColors} adds the few roles Material 3 lacks (warning amber, the audit's status palettes, chart colours). Screens read colours only through the theme; none hard-codes one.
+  \item \textbf{Illustrated icons.} Things he recognises -- a coffee, a PickMe, rent, his bank, a salary, his goal -- use small illustrated icons in the Storyset style; plain Material icons are kept for controls such as close, the eye toggle and a frozen account's lock. The bottom dock uses the same style, with the selected tab in colour on a soft green blob.
+  \item \textbf{One pop-up for feedback.} Every confirmation and error appears as the same white card below the status bar, showing what was saved (``Expense logged \textperiodcentered{} \lkr{850} \textperiodcentered{} Coffee'', with the cup), then dismisses itself.
+  \item \textbf{Motion.} Tabs use a Material shared-axis transition (300\,ms) in the direction of the tab tapped.
+\end{itemize}
+Money figures use Space Grotesk; headings use Bricolage Grotesque; illustrations are from Storyset. The full design system is in \code{docs/DESIGN_SYSTEM.md}.
 
 % ============================================================================
 \section{Design Decisions and Justifications}
@@ -1084,17 +1130,17 @@ Each decision is stated with the part of Kavindu's scenario that forced it, the 
 \decision{13}{Amber instead of red, and one number first}
 {He avoids looking at money he is worried about; his tools became ``too unpleasant to open'' (F1--F4).}
 {A conventional red/amber/green status palette; a dashboard of many equal-weight figures.}
-{The palette has no red; attention states are amber with dark text. The dashboard leads with one actionable number, Safe to Spend Today, with net cash flow as context underneath.}
+{Attention states are amber with dark text; the only red is in the subscription audit, for charges he must not ignore (\prob{P6}). The dashboard leads with one actionable number, Safe to Spend Today, with net cash flow as context underneath.}
 
 \decision{14}{Sensitive numbers behind biometrics; no card data at all}
 {He needs his bank account number for freelance invoices (\prob{P2}), but a finance app must not leave it on screen.}
 {Plain display; storing card numbers and CVVs for a ``card'' view (forbidden, C-14).}
-{Account numbers are masked (\textbullet\textbullet\textbullet\textbullet{} 2178) and revealed only after \code{BiometricPrompt}; a copied number is cleared from the clipboard after 60 seconds; screens are excluded from screenshots with \code{FLAG_SECURE}; no card number or CVV exists anywhere in the app (\req{FR-ACC-6}, \req{FR-ACC-7}, \req{NFR-10}).}
+{Account numbers are masked (\textbullet\textbullet\textbullet\textbullet{} 1234) and revealed only after \code{BiometricPrompt}; a copied number is cleared from the clipboard after 60 seconds; screens are excluded from screenshots with \code{FLAG_SECURE}; no card number or CVV exists anywhere in the app (\req{FR-ACC-6}, \req{FR-ACC-7}, \req{NFR-10}).}
 
 \decision{15}{All calculations in domain use cases with unit tests}
 {His Google Sheet's formulas broke when rows were inserted (F1). The numbers are the product: if they are wrong once, he stops trusting them.}
 {Calculations inside ViewModels or Composables (untestable on the JVM, and against C-3).}
-{Safe-to-Spend, goal velocity, savings rate, payslip, subscriptions, seasonal peaks, SMS parsing and CSV export are plain Kotlin use cases with JVM unit tests run in CI on every pull request.}
+{Safe-to-Spend, goal velocity, savings rate, payslip, subscriptions, seasonal peaks, SMS parsing and CSV export are plain Kotlin use cases with JVM unit tests run in CI on every pull request. Composables hold no rules at all, and the domain layer has no Android imports.}
 
 \decision{16}{One quantified goal}
 {The scenario is about one goal, the MacBook, which is ``emotionally present and financially invisible'' (\prob{P8}).}
@@ -1117,7 +1163,9 @@ Planned & 2 & FR-AUTH-6 (emergency-runway buffer); NFR-8 (accessibility at 200\%
 \end{tabularx}
 
 \subsection{Testing}
-Domain logic is covered by JVM unit tests in \code{app/src/test}, run with \code{./gradlew testDebugUnitTest}: the Safe-to-Spend summary, goal velocity and the USD-linked target, savings rate, the payslip and APIT bands including the Firestore fallback, subscription detection, Seasonal Peaks including personal peaks and gap-aware averages, the bank SMS parser and CSV export. Representative cases are taken from Kavindu's scenario -- for example, a \lkr{140,000} gross salary must produce APIT of \lkr{2,400}, and a goal of \lkr{490,000} with \lkr{11,200} saved over 360 days must require \lkr{1,330} per day.
+Domain logic is covered by JVM unit tests in \code{app/src/test}, run with \code{./gradlew testDebugUnitTest}: the Safe-to-Spend summary, goal velocity and the USD-linked target, savings rate, the payslip and APIT bands including the Firestore fallback, subscription detection, Seasonal Peaks including personal peaks and gap-aware averages, the bank SMS parser and CSV export. Representative cases are taken from Kavindu's scenario -- for example, a \lkr{140,000} gross salary must produce APIT of \lkr{2,400}, and a goal of \lkr{490,000} with \lkr{11,200} saved over 360 days must require \lkr{1,330} per day. Edge cases have their own tests: a three-week logging gap must not count as a month of zero saving, a crypto loss larger than a month's salary must stay in the Income Basis, and an invoice's days overdue and the grouping of subscriptions by account are tested in the domain. In total there are 71 unit tests.
+
+The Firestore security rules were tested separately against the Firestore emulator: 21 cases, of which 10 app-shaped writes, reads and deletes (including partial updates and a negative crypto amount) are allowed and 11 invalid or foreign writes are denied. Visual changes are checked on an emulator and on a Galaxy S23.
 
 \subsection{Delivery}
 \begin{itemize}
@@ -1130,6 +1178,8 @@ Domain logic is covered by JVM unit tests in \code{app/src/test}, run with \code
 \subsection{Known limitations}
 \begin{itemize}
   \item The Room cache is protected by the app sandbox but not encrypted.
+  \item Accounts are the four created on first sign-in; they cannot yet be renamed, added or removed, and an account number cannot be entered in the app.
+  \item Google sign-in in release builds needs the release key's SHA-1 registered in Firebase.
 \end{itemize}
 
 \subsection{Team contributions}
@@ -1139,8 +1189,8 @@ The following summary is taken from the Git history of the repository.
 \toprule
 \textbf{Member} & \textbf{Main contributions}\\
 \midrule
-Hesara & Initial architecture, Room and repository layer, core financial use cases, CI/CD and release pipeline; payslip and APIT, bank SMS parsing, CSV export, Seasonal Peaks, biometric reveal, Spending Freeze, analytics periods and donut (24/10); APIT bands from Firestore, personal Seasonal Peaks and the USD-linked goal (04/11); repository sync and documentation.\\
-Sandali & Google sign-in, cache-backed Firestore sync, subscription detection and review, savings rate, formatters and transaction visuals (13/10); SRS, ADR-0001 and glossary, light-green redesign and the goal quest (16/10); first-run setup, analytics account and date filters, Seasonal Peak ``set aside'', \code{FLAG_SECURE}, illustrated icons, release signing fix and UI polish (05/11).\\
+Hesara & Initial architecture, Room and repository layer, core financial use cases, CI/CD and release pipeline; payslip and APIT, bank SMS parsing, CSV export, Seasonal Peaks, biometric reveal, Spending Freeze, analytics periods and donut (24/10); APIT bands from Firestore, personal Seasonal Peaks and the USD-linked goal (04/11); repository sync and documentation; this technical report.\\
+Sandali & Google sign-in, cache-backed Firestore sync, subscription detection and review, savings rate, formatters and transaction visuals (13/10); SRS, ADR-0001 and glossary, light-green redesign and the goal quest (16/10); first-run setup, analytics account and date filters, Seasonal Peak ``set aside'', \code{FLAG_SECURE}, illustrated icons, release signing fix and UI polish (05/11); validated Firestore rules and the indexes file, sign-out cache clearing, backup exclusion, demo credentials out of the repo, the gap-aware savings rate and Income Basis fixes, Material 3 theming, splitting the Today and Audit screens, and documentation updates (05/11).\\
 Shazaan & QA unit tests for goal pacing, opportunity cost and currency conversion (17/10, being ported to the current API); assigned gap tolerance (NFR-2), accessibility (NFR-8), app-usage risk and in-context permissions (FR-SUB-5, NFR-12).\\
 \bottomrule
 \end{tabularx}
