@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import com.se3092.pulsefinance.ui.common.shareCsv
 import androidx.compose.foundation.ExperimentalFoundationApi
 import com.se3092.pulsefinance.ui.components.DeleteTransactionDialog
 import com.se3092.pulsefinance.ui.common.TransactionItem
@@ -189,7 +190,7 @@ fun DashboardScreen(
                             tint = NeoTextSecondary
                         )
                     }
-                    IconButton(onClick = { viewModel.exportCsv(context) }) {
+                    IconButton(onClick = { shareCsv(context, viewModel.exportCsv()) }) {
                         Icon(
                             imageVector = Icons.Default.FileDownload,
                             contentDescription = "Export CSV",
