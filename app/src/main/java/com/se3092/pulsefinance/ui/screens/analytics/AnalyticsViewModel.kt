@@ -3,17 +3,20 @@ package com.se3092.pulsefinance.ui.screens.analytics
 import com.se3092.pulsefinance.ui.common.initialsFor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.Period
 import com.se3092.pulsefinance.domain.model.Periods
+import com.se3092.pulsefinance.domain.repository.AccountRepository
 import com.se3092.pulsefinance.domain.repository.AuthRepository
 import com.se3092.pulsefinance.domain.repository.ExpenseRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
 import com.se3092.pulsefinance.ui.common.TransactionItem
 import com.se3092.pulsefinance.ui.common.buildLedger
+import com.se3092.pulsefinance.ui.common.filterLedger
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.whenSignedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -61,9 +64,21 @@ data class AnalyticsUiState(
     val transactions: List<TransactionItem> = emptyList(),
     val showAllTransactions: Boolean = false,
     val searchQuery: String = "",
-    val filterCategory: ExpenseCategory? = null
+    val filterCategory: ExpenseCategory? = null,
+    val accounts: List<Account> = emptyList(),
+    val filterAccountId: String? = null,
+    /** When set, the transaction list covers this date range instead of the selected period. */
+    val filterDateRange: Period? = null
 ) {
     val canGoForward: Boolean get() = periodOffset < 0
+    val hasActiveFilters: Boolean
+        get() = searchQuery.isNotBlank() || filterCategory != null || filterAccountId != null || filterDateRange != null
+    val dateRangeLabel: String?
+        get() = filterDateRange?.let { range ->
+            val start = formatDate(range.startMillis, "dd MMM")
+            val end = formatDate(range.endMillis - 1, "dd MMM")
+            if (start == end) start else "$start – $end"
+        }
     val selectedBar: TimelineBar? get() = bars.getOrNull(selectedBarIndex)
 }
 
@@ -73,34 +88,53 @@ private data class AnalyticsControls(
     val selectedBarIndex: Int? = null,
     val showAll: Boolean = false,
     val searchQuery: String = "",
-    val filterCategory: ExpenseCategory? = null
+    val filterCategory: ExpenseCategory? = null,
+    val filterAccountId: String? = null,
+    val filterDateRange: Period? = null
+)
+
+private data class AnalyticsData(
+    val expenses: List<Expense>,
+    val incomes: List<IncomeStream>,
+    val accounts: List<Account>
 )
 
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
     authRepository: AuthRepository,
     expenseRepository: ExpenseRepository,
-    incomeRepository: IncomeRepository
+    incomeRepository: IncomeRepository,
+    accountRepository: AccountRepository
 ) : ViewModel() {
 
     private val controls = MutableStateFlow(AnalyticsControls())
 
-    private val data = authRepository.whenSignedIn<Pair<List<Expense>, List<IncomeStream>>?>(signedOut = null) { userId ->
-        combine(expenseRepository.getExpenses(userId), incomeRepository.getIncomeStreams(userId)) { e, i -> e to i }
+    private val data = authRepository.whenSignedIn<AnalyticsData?>(signedOut = null) { userId ->
+        combine(
+            expenseRepository.getExpenses(userId),
+            incomeRepository.getIncomeStreams(userId),
+            accountRepository.getAccounts(userId),
+            ::AnalyticsData
+        )
     }
 
     private val initials = initialsFor(authRepository.userDisplayName, authRepository.userEmail)
 
     val uiState: StateFlow<AnalyticsUiState> = combine(data, controls) { data, controls ->
         if (data == null) AnalyticsUiState(interval = controls.interval)
-        else buildState(data.first, data.second, controls)
+        else buildState(data.expenses, data.incomes, data.accounts, controls)
     }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = AnalyticsUiState()
     )
 
-    private fun buildState(expenses: List<Expense>, incomes: List<IncomeStream>, controls: AnalyticsControls): AnalyticsUiState {
+    private fun buildState(
+        expenses: List<Expense>,
+        incomes: List<IncomeStream>,
+        accounts: List<Account>,
+        controls: AnalyticsControls
+    ): AnalyticsUiState {
         val now = System.currentTimeMillis()
         val period = when (controls.interval) {
             AnalyticsInterval.DAILY -> Periods.day(now, controls.periodOffset)
@@ -181,15 +215,15 @@ class AnalyticsViewModel @Inject constructor(
             AnalyticsInterval.YEARLY -> formatDate(period.startMillis, "yyyy")
         }
 
-        val ledger = buildLedger(periodIncomes, periodExpenses)
-        val filteredTransactions = ledger.filter { item ->
-            val matchesQuery = controls.searchQuery.isBlank() ||
-                item.title.contains(controls.searchQuery, ignoreCase = true) ||
-                item.subtitle.contains(controls.searchQuery, ignoreCase = true)
-            val matchesCategory = controls.filterCategory == null ||
-                item.subtitle.contains(controls.filterCategory.displayName, ignoreCase = true)
-            matchesQuery && matchesCategory
-        }
+        // A date range reaches past the selected period, so it filters the whole history.
+        val ledger = if (controls.filterDateRange != null) buildLedger(incomes, expenses) else buildLedger(periodIncomes, periodExpenses)
+        val filteredTransactions = filterLedger(
+            items = ledger,
+            query = controls.searchQuery,
+            category = controls.filterCategory,
+            accountId = controls.filterAccountId,
+            dateRange = controls.filterDateRange
+        )
 
         return AnalyticsUiState(
             isLoading = false,
@@ -206,12 +240,24 @@ class AnalyticsViewModel @Inject constructor(
             transactions = filteredTransactions,
             showAllTransactions = controls.showAll,
             searchQuery = controls.searchQuery,
-            filterCategory = controls.filterCategory
+            filterCategory = controls.filterCategory,
+            accounts = accounts,
+            filterAccountId = controls.filterAccountId?.takeIf { id -> accounts.any { it.id == id } },
+            filterDateRange = controls.filterDateRange
         )
     }
 
     fun switchInterval(interval: AnalyticsInterval) {
-        controls.value = AnalyticsControls(interval = interval)
+        // Keep the transaction filters; only the chart period resets.
+        controls.update {
+            AnalyticsControls(
+                interval = interval,
+                searchQuery = it.searchQuery,
+                filterCategory = it.filterCategory,
+                filterAccountId = it.filterAccountId,
+                filterDateRange = it.filterDateRange
+            )
+        }
     }
 
     fun shiftPeriod(delta: Int) {
@@ -232,5 +278,17 @@ class AnalyticsViewModel @Inject constructor(
 
     fun onCategoryFilterChanged(category: ExpenseCategory?) {
         controls.update { it.copy(filterCategory = category) }
+    }
+
+    fun onAccountFilterChanged(accountId: String?) {
+        controls.update { it.copy(filterAccountId = accountId) }
+    }
+
+    fun onDateRangeChanged(range: Period?) {
+        controls.update { it.copy(filterDateRange = range) }
+    }
+
+    fun clearFilters() {
+        controls.update { it.copy(searchQuery = "", filterCategory = null, filterAccountId = null, filterDateRange = null) }
     }
 }
