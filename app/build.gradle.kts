@@ -116,6 +116,9 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    // Daily overdue-invoice reminder
+    implementation(libs.androidx.work.runtime.ktx)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
