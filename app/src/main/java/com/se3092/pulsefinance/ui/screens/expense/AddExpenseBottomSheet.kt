@@ -1,6 +1,8 @@
 package com.se3092.pulsefinance.ui.screens.expense
 
-import com.se3092.pulsefinance.ui.common.presetVisual
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.se3092.pulsefinance.ui.common.presetIllustration
 import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -150,17 +152,15 @@ fun AddExpenseBottomSheet(
                         border = BorderStroke(1.dp, NeoBorder),
                         modifier = Modifier.clickable { onPresetSelect(preset) }
                     ) {
-                        val visual = presetVisual(preset.title, preset.category)
                         Row(
-                            modifier = Modifier.padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+                            modifier = Modifier.padding(start = 6.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(
-                                imageVector = visual.icon,
+                            Image(
+                                painter = painterResource(presetIllustration(preset.title, preset.category)),
                                 contentDescription = null,
-                                tint = visual.tint,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                             Text(
                                 text = "${preset.title} · ${compactAmount(preset.amountLkr)}",
