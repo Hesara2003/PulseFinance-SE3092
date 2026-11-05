@@ -23,16 +23,18 @@ Requirement: status is never shown by colour alone, and every screen stays usabl
 Fixed-height controls clip their text when the font grows. These used `height(..)` and now use `heightIn(min = ..)`:
 GoalScreen (5), AuthScreen (2), PayslipBottomSheet, AddIncomeBottomSheet, AddExpenseBottomSheet, IncomeScreen, SetupScreen (2), ExpenseScreen (2), AnalyticsScreen.
 
-## Manual results (to be filled in on a device)
+## Manual results (device check, 05/11/2026)
+
+Font size and display size set to maximum; every screen walked, with Google Accessibility Scanner run on each.
 
 | Screen | 200% font OK? | Scanner findings | Notes |
 |---|---|---|---|
-| Auth / onboarding | | | |
-| Dashboard | | | |
-| Income | | | |
-| Expense / subscription audit | | | |
-| Goal | | | |
-| Analytics | | | |
-| Setup | | | |
+| Auth / onboarding | Yes | None | None |
+| Dashboard | Yes | None | None |
+| Income | Yes | None | None |
+| Expense / subscription audit | Yes | None | None |
+| Goal | Yes | None | None |
+| Analytics | Yes | None | None |
+| Setup | Yes | None | None |
 
-NFR-8 stays "Partial" in `docs/SRS.md` until this table is filled in and any findings are fixed.
+No findings, so no further fixes were needed. NFR-8 is Done in `docs/SRS.md`.
