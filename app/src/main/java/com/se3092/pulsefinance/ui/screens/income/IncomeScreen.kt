@@ -568,6 +568,7 @@ fun IncomeScreen(
                     IncomeRecordCard(
                         income = income,
                         onMarkReceived = { viewModel.markReceived(income) },
+                        onEdit = { viewModel.showEditSheet(income) },
                         onDelete = { viewModel.deleteIncome(income) }
                     )
                 }
@@ -771,6 +772,7 @@ private fun CryptoNetCard(netLkr: Double, entries: Int) {
 private fun IncomeRecordCard(
     income: IncomeStream,
     onMarkReceived: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     val status = income.effectiveStatus()
@@ -918,8 +920,13 @@ private fun IncomeRecordCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onDelete) {
-                    Text(text = "Delete", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onEdit) {
+                        Text(text = "Edit", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                    }
+                    TextButton(onClick = onDelete) {
+                        Text(text = "Delete", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
                 if (status != InvoiceStatus.RECEIVED) {
                     Button(
