@@ -260,9 +260,9 @@ private fun SubscriptionActivity(sub: DetectedSubscription) {
                     )
                     Text(
                         text = if (unusedLong) {
-                            "App unused for ${sub.lastAppOpenedDaysAgo} days (Usage stats)"
+                            "Last opened ${lastOpenedLabel(sub.lastAppOpenedDaysAgo)} · unused for ${sub.lastAppOpenedDaysAgo} days"
                         } else {
-                            "Linked app active ${sub.lastAppOpenedDaysAgo} days ago"
+                            "Last opened ${lastOpenedLabel(sub.lastAppOpenedDaysAgo)}"
                         },
                         fontSize = 12.sp,
                         fontWeight = if (unusedLong) FontWeight.SemiBold else FontWeight.Normal,

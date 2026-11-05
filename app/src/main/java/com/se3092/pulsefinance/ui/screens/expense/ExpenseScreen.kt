@@ -20,6 +20,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.se3092.pulsefinance.ui.components.EmptyStateView
 import com.se3092.pulsefinance.ui.components.PulseNoticeHost
@@ -29,6 +31,9 @@ fun ExpenseScreen(
     viewModel: ExpenseViewModel
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Picks up usage access granted in system Settings when the user comes back.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshUsageAccess() }
 
     Box(
         modifier = Modifier
@@ -56,6 +61,14 @@ fun ExpenseScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 item { AuditTitle() }
+
+                // Usage access explainer (NFR-12): shown only in context, never at app start.
+                if (state.showUsageAccessCard) item {
+                    UsageAccessCard(
+                        onAllow = viewModel::requestUsageAccess,
+                        onDecline = viewModel::declineUsageAccess
+                    )
+                }
 
                 if (state.flaggedCount > 0) item {
                     LeakAlertCard(flaggedCount = state.flaggedCount, flaggedMonthlyLkr = state.flaggedMonthlyLkr)

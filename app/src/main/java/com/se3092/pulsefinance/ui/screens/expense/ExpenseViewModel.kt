@@ -43,7 +43,9 @@ data class AuditUiState(
     /** Flagged annual cost as a share of what's left to save for the goal; null without a goal. */
     val shareOfGoalRemainingPct: Double? = null,
     val goalTitle: String? = null,
-    val notice: UiNotice? = null
+    val notice: UiNotice? = null,
+    /** True when an app-linked subscription exists and usage access is missing and not declined. */
+    val showUsageAccessCard: Boolean = false
 )
 
 @HiltViewModel
@@ -58,19 +60,25 @@ class ExpenseViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val notice = MutableStateFlow<UiNotice?>(null)
+    private val prefs = context.getSharedPreferences("pulse_usage_access", Context.MODE_PRIVATE)
+    private val hasUsageAccess = MutableStateFlow(UsageStatsHelper.hasUsagePermission(context))
+    private val usageCardDeclined = MutableStateFlow(prefs.getBoolean(KEY_DECLINED, false))
 
     private val data = authRepository.whenSignedIn<AuditUiState?>(signedOut = null) { userId ->
         combine(
             expenseRepository.getExpenses(userId),
             subscriptionReviewRepository.getReviews(userId),
             goalRepository.getPrimaryGoal(userId),
-            accountRepository.getAccounts(userId)
-        ) { expenses, reviews, goal, accounts ->
+            accountRepository.getAccounts(userId),
+            // Re-run detection when access changes so "last opened" appears right after it is granted.
+            hasUsageAccess
+        ) { expenses, reviews, goal, accounts, _ ->
             val subscriptions = detectSubscriptionsUseCase(
                 expenses = expenses,
                 reviews = reviews,
                 accounts = accounts,
-                appUsageDaysProvider = { key -> UsageStatsHelper.getLastOpenedDaysAgo(context, key) }
+                appUsageDaysProvider = { key -> UsageStatsHelper.getLastOpenedDaysAgo(context, key) },
+                appLinkedProvider = { key -> UsageStatsHelper.isAppLinked(key) }
             )
             val flagged = subscriptions.filter { it.isFlagged }
             val monthly = flagged.sumOf { it.monthlyCostLkr }
@@ -90,8 +98,14 @@ class ExpenseViewModel @Inject constructor(
 
     private val initials = initialsFor(authRepository.userDisplayName, authRepository.userEmail)
 
-    val uiState: StateFlow<AuditUiState> = combine(data, notice) { data, notice ->
-        (data ?: AuditUiState()).copy(notice = notice)
+    val uiState: StateFlow<AuditUiState> = combine(
+        data, notice, hasUsageAccess, usageCardDeclined
+    ) { data, notice, hasAccess, declined ->
+        val base = data ?: AuditUiState()
+        base.copy(
+            notice = notice,
+            showUsageAccessCard = !hasAccess && !declined && base.subscriptions.any { it.isAppLinked }
+        )
     }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -147,5 +161,26 @@ class ExpenseViewModel @Inject constructor(
 
     fun dismissNotice() {
         notice.value = null
+    }
+
+    /** Opens the system usage-access screen; the only place this permission is ever requested. */
+    fun requestUsageAccess() {
+        UsageStatsHelper.openUsageSettings(context)
+    }
+
+    /** User declined: hide the card for good; the rest of the audit works without usage data. */
+    fun declineUsageAccess() {
+        prefs.edit().putBoolean(KEY_DECLINED, true).apply()
+        usageCardDeclined.value = true
+    }
+
+    /** Called on resume so granting access in Settings is picked up when the user returns. */
+    fun refreshUsageAccess() {
+        val granted = UsageStatsHelper.hasUsagePermission(context)
+        if (granted != hasUsageAccess.value) hasUsageAccess.value = granted
+    }
+
+    private companion object {
+        const val KEY_DECLINED = "usage_access_declined"
     }
 }
