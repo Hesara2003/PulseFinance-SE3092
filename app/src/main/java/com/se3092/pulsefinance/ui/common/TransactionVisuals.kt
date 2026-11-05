@@ -70,6 +70,8 @@ fun presetIllustration(title: String, category: ExpenseCategory): Int {
         has("gym", "fitness") -> R.drawable.ic_preset_gym
         has("broadband", "fiber", "fibre", "wifi", "internet", "slt") -> R.drawable.ic_preset_wifi
         has("dialog", "mobitel", "airtel", "hutch", "reload", "data", "phone", "mobile") -> R.drawable.ic_preset_phone
+        has("vps", "cloud", "digitalocean", "aws", "github", "claude", "chatgpt", "openai", "figma", "notion") ->
+            R.drawable.ic_preset_tech
         has("netflix", "spotify", "youtube", "prime", "disney") -> R.drawable.ic_preset_subscription
         has("rent", "boarding", "annex") -> R.drawable.ic_preset_house
         else -> when (category) {

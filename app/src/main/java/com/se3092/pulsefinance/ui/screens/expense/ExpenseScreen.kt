@@ -4,6 +4,8 @@ import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import com.se3092.pulsefinance.R
+import com.se3092.pulsefinance.domain.model.ExpenseCategory
+import com.se3092.pulsefinance.ui.common.presetIllustration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.RepeatMode
@@ -37,17 +39,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
-import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.HistoryToggleOff
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SmartToy
@@ -493,11 +492,10 @@ fun ExpenseScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.AccountBalance,
+                                Image(
+                                    painter = painterResource(R.drawable.ic_preset_bank),
                                     contentDescription = null,
-                                    tint = NeoGreenDark,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
                                 Text(
                                     text = accountName,
@@ -691,20 +689,12 @@ private fun ZombieCardItem(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(if (sub.isFlagged || sub.risk == SubscriptionRisk.HIGH) NeoErrorContainer.copy(alpha = 0.6f) else NeoGreenFixed),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (sub.isFlagged || sub.risk == SubscriptionRisk.HIGH) Icons.Default.HistoryToggleOff else Icons.Default.CheckCircle,
-                            contentDescription = sub.title,
-                            tint = if (sub.isFlagged || sub.risk == SubscriptionRisk.HIGH) NeoRose else NeoOnPrimaryFixed,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
+                    // What it is; the status tag and the card border already say how it's doing
+                    Image(
+                        painter = painterResource(presetIllustration(sub.title, ExpenseCategory.SUBSCRIPTION)),
+                        contentDescription = null,
+                        modifier = Modifier.size(46.dp)
+                    )
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
