@@ -4,17 +4,12 @@ import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import com.se3092.pulsefinance.R
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -54,7 +49,6 @@ import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -64,7 +58,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -96,9 +89,7 @@ import com.se3092.pulsefinance.ui.theme.NeoCardLow
 import com.se3092.pulsefinance.ui.theme.NeoContainer
 import com.se3092.pulsefinance.ui.theme.NeoContainerHigh
 import com.se3092.pulsefinance.ui.theme.NeoErrorContainer
-import com.se3092.pulsefinance.ui.theme.NeoGreen
 import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenFixed
 import com.se3092.pulsefinance.ui.theme.NeoGreenLight
 import com.se3092.pulsefinance.ui.theme.NeoInverseOnSurface
 import com.se3092.pulsefinance.ui.theme.NeoInverseSurface
@@ -109,21 +100,13 @@ import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
 import com.se3092.pulsefinance.ui.theme.NeoSurface
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import kotlinx.coroutines.delay
+import com.se3092.pulsefinance.ui.components.PulseNoticeHost
 
 @Composable
 fun ExpenseScreen(
     viewModel: ExpenseViewModel
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-
-    // Auto-dismiss toast
-    LaunchedEffect(state.message) {
-        if (state.message != null) {
-            delay(2800)
-            viewModel.dismissMessage()
-        }
-    }
 
     Box(
         modifier = Modifier
@@ -626,42 +609,11 @@ fun ExpenseScreen(
             }
         }
 
-        // =============================================================================
-        // Top Floating Toast Notification (Exact HTML prototype replica)
-        // =============================================================================
-        AnimatedVisibility(
-            visible = state.message != null,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
-            exit = fadeOut() + slideOutVertically(targetOffsetY = { -it }),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 70.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = NeoInverseSurface,
-                shadowElevation = 14.dp
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Verified,
-                        contentDescription = "Success",
-                        tint = NeoGreenFixed,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Text(
-                        text = state.message.orEmpty(),
-                        color = NeoInverseOnSurface,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
-                    )
-                }
-            }
-        }
+        PulseNoticeHost(
+            notice = state.notice,
+            onDismiss = viewModel::dismissNotice,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
     }
 }
 

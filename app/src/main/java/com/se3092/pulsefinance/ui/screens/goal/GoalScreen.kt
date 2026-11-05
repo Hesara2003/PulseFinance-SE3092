@@ -3,16 +3,11 @@ package com.se3092.pulsefinance.ui.screens.goal
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,7 +34,6 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CancelPresentation
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.LocalCafe
@@ -57,7 +51,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,7 +67,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -86,12 +78,11 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.se3092.pulsefinance.domain.usecase.GoalVelocityReport
-import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.components.MacBookGoalCard
+import com.se3092.pulsefinance.ui.components.GoalCard
 import com.se3092.pulsefinance.ui.components.QuestMap
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
@@ -100,18 +91,17 @@ import com.se3092.pulsefinance.ui.theme.NeoContainer
 import com.se3092.pulsefinance.ui.theme.NeoContainerHigh
 import com.se3092.pulsefinance.ui.theme.NeoGreen
 import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenFixed
 import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
-import com.se3092.pulsefinance.ui.theme.NeoInverseOnSurface
-import com.se3092.pulsefinance.ui.theme.NeoInverseSurface
 import com.se3092.pulsefinance.ui.theme.NeoOnPrimaryFixed
 import com.se3092.pulsefinance.ui.theme.NeoPrimaryFixed
 import com.se3092.pulsefinance.ui.theme.NeoSurface
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.se3092.pulsefinance.ui.components.PulseNoticeHost
+import androidx.annotation.DrawableRes
+import com.se3092.pulsefinance.ui.common.categoryIllustration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,14 +112,6 @@ fun GoalScreen(
     val scope = rememberCoroutineScope()
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    // Auto-dismiss toast
-    LaunchedEffect(state.toastMessage) {
-        if (state.toastMessage != null) {
-            delay(2400)
-            viewModel.dismissToast()
-        }
-    }
 
     Box(
         modifier = Modifier
@@ -178,7 +160,7 @@ fun GoalScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "MacBook Quest",
+                        text = state.goal?.title?.ifBlank { null } ?: "Your goal",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         color = NeoTextSecondary,
@@ -301,6 +283,7 @@ fun GoalScreen(
                             QuestMap(
                                 quest = quest,
                                 initials = state.initials,
+                                goalTitle = state.goal?.title.orEmpty(),
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                             )
                         }
@@ -311,7 +294,7 @@ fun GoalScreen(
                 item {
                     val goal = state.goal
                     if (goal != null) {
-                        MacBookGoalCard(
+                        GoalCard(
                             goal = goal,
                             onMoreClick = { viewModel.openGoalEditor() }
                         )
@@ -376,7 +359,7 @@ fun GoalScreen(
                         }
                         state.opportunities.forEach { opportunity ->
                             OpportunityCostCard(
-                                icon = expenseCategoryVisual(opportunity.category).icon,
+                                illustration = categoryIllustration(opportunity.category),
                                 title = "Trim ${opportunity.category.displayName} by 25%",
                                 subtitle = "${lkr(opportunity.monthlySpendLkr)} last 30 days · saves ${lkr(opportunity.monthlySavingLkr)}/mo",
                                 badgeText = "+${"%.1f".format(opportunity.daysOfGoalPace)} days",
@@ -490,42 +473,11 @@ fun GoalScreen(
             }
         }
 
-        // =============================================================================
-        // Top Floating Toast Notification (Exact HTML prototype replica)
-        // =============================================================================
-        AnimatedVisibility(
-            visible = state.toastMessage != null,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
-            exit = fadeOut() + slideOutVertically(targetOffsetY = { -it }),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 70.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = NeoInverseSurface,
-                shadowElevation = 12.dp
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Success",
-                        tint = NeoGreenFixed,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Text(
-                        text = state.toastMessage ?: "LKR allocation window ready",
-                        color = NeoInverseOnSurface,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
-                    )
-                }
-            }
-        }
+        PulseNoticeHost(
+            notice = state.notice,
+            onDismiss = viewModel::dismissNotice,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
 
         // =============================================================================
         // Interactive Allocation Bottom Sheet
@@ -722,7 +674,7 @@ fun GoalScreen(
 
 @Composable
 private fun OpportunityCostCard(
-    icon: ImageVector,
+    @DrawableRes illustration: Int,
     title: String,
     subtitle: String,
     badgeText: String,
@@ -762,11 +714,10 @@ private fun OpportunityCostCard(
                         .background(NeoCardLow),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = title,
-                        tint = NeoTextPrimary,
-                        modifier = Modifier.size(22.dp)
+                    Image(
+                        painter = painterResource(illustration),
+                        contentDescription = null,
+                        modifier = Modifier.size(38.dp)
                     )
                 }
 
@@ -979,7 +930,7 @@ private fun GoalEditorSheet(
             OutlinedTextField(
                 value = editor.titleInput,
                 onValueChange = { v -> onChange { it.copy(titleInput = v) } },
-                label = { Text("Goal (e.g. MacBook Pro M4)") },
+                label = { Text("Goal (e.g. new laptop, trip to Japan)") },
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),

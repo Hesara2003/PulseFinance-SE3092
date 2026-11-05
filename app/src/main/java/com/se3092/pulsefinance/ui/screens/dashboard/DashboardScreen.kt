@@ -1,5 +1,11 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import com.se3092.pulsefinance.ui.components.DeleteTransactionDialog
+import com.se3092.pulsefinance.ui.common.TransactionItem
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.foundation.combinedClickable
 import com.se3092.pulsefinance.ui.common.presetIllustration
 import com.se3092.pulsefinance.ui.common.transactionIllustration
 import androidx.annotation.DrawableRes
@@ -20,7 +26,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,8 +40,6 @@ import androidx.compose.material.icons.filled.SouthWest
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.WifiTethering
-import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Lock
@@ -52,8 +55,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -62,9 +63,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
 import com.se3092.pulsefinance.domain.model.Account
-import com.se3092.pulsefinance.domain.model.AccountType
 import com.se3092.pulsefinance.ui.common.BiometricHelper
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -93,7 +92,6 @@ import com.se3092.pulsefinance.ui.common.compactAmount
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.signedLkr
 import com.se3092.pulsefinance.ui.components.CommittedVsDiscretionaryBar
-import com.se3092.pulsefinance.ui.components.ExpenseItemCard
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import com.se3092.pulsefinance.ui.components.QuestCard
 import com.se3092.pulsefinance.ui.screens.expense.AddExpenseBottomSheet
@@ -112,8 +110,6 @@ import com.se3092.pulsefinance.ui.theme.NeoContainerHigh
 import com.se3092.pulsefinance.ui.theme.NeoErrorContainer
 import com.se3092.pulsefinance.ui.theme.NeoGreen
 import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenFixed
-import com.se3092.pulsefinance.ui.theme.NeoOnPrimaryFixed
 import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
 import com.se3092.pulsefinance.ui.theme.NeoRose
 import com.se3092.pulsefinance.ui.theme.NeoSurface
@@ -121,6 +117,8 @@ import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import com.se3092.pulsefinance.ui.theme.NeoTrack
+import com.se3092.pulsefinance.ui.components.PulseNoticeHost
+import com.se3092.pulsefinance.ui.common.accountIllustration
 
 @Composable
 fun DashboardScreen(
@@ -132,20 +130,12 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var isBalanceMasked by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
+    var pendingDelete by remember { mutableStateOf<TransactionItem?>(null) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(state.message) {
-        state.message?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.dismissMessage()
-        }
-    }
-
     Scaffold(
         containerColor = NeoSurface,
-        snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.padding(bottom = 76.dp)) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { viewModel.openAddExpense() },
@@ -456,12 +446,12 @@ fun DashboardScreen(
             }
 
             // =========================================================================
-            // 3b. MacBook Quest
+            // 3b. Goal quest
             // =========================================================================
             item {
                 val quest = state.quest
                 if (quest != null) {
-                    QuestCard(quest = quest, initials = state.initials, onClick = onNavigateToGoal)
+                    QuestCard(quest = quest, initials = state.initials, goalTitle = state.primaryGoal?.title.orEmpty(), onClick = onNavigateToGoal)
                 } else if (!state.isLoading) {
                     SetGoalPromptCard(onClick = onNavigateToGoal)
                 }
@@ -535,7 +525,7 @@ fun DashboardScreen(
                             QuickPresetBadge(
                                 illustration = presetIllustration(preset.title, preset.category),
                                 label = preset.title,
-                                amount = compactAmount(preset.amountLkr)
+                                amount = preset.amountLkr?.let(::compactAmount)
                             ) {
                                 viewModel.openAddExpense(preset)
                             }
@@ -594,7 +584,9 @@ fun DashboardScreen(
                                         ?: "%,.0f".format(kotlin.math.abs(tx.amountLkr)),
                                     title = tx.title,
                                     illustration = transactionIllustration(tx),
-                                    isIncoming = tx.isIncoming
+                                    isIncoming = tx.isIncoming,
+                                    // Income is edited on the Income screen; expenses can be deleted here.
+                                    onLongClick = tx.expenseId?.let { { pendingDelete = tx } }
                                 )
                             }
                         }
@@ -722,28 +714,23 @@ fun DashboardScreen(
                 )
             }
 
-            // Real Expense Ledger List (if logged items exist)
-            if (state.recentExpenses.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Everything you logged",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = NeoTextPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                }
-                items(state.recentExpenses, key = { it.id }) { expense ->
-                    ExpenseItemCard(
-                        expense = expense,
-                        onDelete = { viewModel.deleteExpense(expense.id) }
-                    )
-                }
-            }
-
             item {
                 Spacer(modifier = Modifier.height(90.dp)) // Clearance for bottom navigation dock
             }
+        }
+
+        // Scaffold stacks its content from the top, so this floats over the list.
+        PulseNoticeHost(notice = state.notice, onDismiss = viewModel::dismissNotice)
+
+        pendingDelete?.let { tx ->
+            DeleteTransactionDialog(
+                transaction = tx,
+                onConfirm = {
+                    tx.expenseId?.let(viewModel::deleteExpense)
+                    pendingDelete = null
+                },
+                onDismiss = { pendingDelete = null }
+            )
         }
 
         if (state.addExpense.isVisible) {
@@ -918,7 +905,8 @@ private fun SetGoalPromptCard(onClick: () -> Unit) {
 fun QuickPresetBadge(
     @DrawableRes illustration: Int,
     label: String,
-    amount: String,
+    /** Null for a starter shortcut: the user enters the amount. */
+    amount: String?,
     onClick: () -> Unit
 ) {
     Column(
@@ -949,7 +937,7 @@ fun QuickPresetBadge(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        Text(
+        if (amount != null) Text(
             text = amount,
             fontFamily = Numeric,
             fontSize = 11.sp,
@@ -959,14 +947,18 @@ fun QuickPresetBadge(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TransactionSquareCard(
     currency: String,
     amount: String,
     title: String,
     @DrawableRes illustration: Int,
-    isIncoming: Boolean
+    isIncoming: Boolean,
+    /** Long-press action, for expenses (delete); null for income. */
+    onLongClick: (() -> Unit)? = null
 ) {
+    val haptics = LocalHapticFeedback.current
     Surface(
         modifier = Modifier
             .size(width = 136.dp, height = 136.dp)
@@ -975,6 +967,18 @@ fun TransactionSquareCard(
                 shape = RoundedCornerShape(18.dp),
                 ambientColor = Color(0x1F0F172A),
                 spotColor = Color(0x1A0F172A)
+            )
+            .clip(RoundedCornerShape(18.dp))
+            .then(
+                if (onLongClick != null) Modifier.combinedClickable(
+                    onClickLabel = null,
+                    onLongClickLabel = "Delete $title",
+                    onClick = {},
+                    onLongClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onLongClick()
+                    }
+                ) else Modifier
             ),
         shape = RoundedCornerShape(18.dp),
         color = NeoCard,
@@ -1128,7 +1132,7 @@ private fun SafeToSpendHero(
                 )
                 Text(
                     text = if (isLoading) "Working out today's number…"
-                    else "after rent, bills and your MacBook saving · $daysRemaining days left in $monthLabel",
+                    else "after rent, bills and your goal saving · $daysRemaining days left in $monthLabel",
                     fontSize = 13.sp,
                     color = Color.White.copy(alpha = 0.9f)
                 )
@@ -1242,21 +1246,24 @@ private fun AccountCardItem(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(if (account.isFrozen) NeoErrorContainer else NeoGreenFixed),
+                            .background(if (account.isFrozen) NeoErrorContainer else NeoCardLow),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = when {
-                                account.isFrozen -> Icons.Default.Lock
-                                account.type == AccountType.BANK_PRIMARY -> Icons.Default.AccountBalance
-                                account.type == AccountType.BANK_SECONDARY -> Icons.Default.AccountBalance
-                                account.type == AccountType.CRYPTO_EXCHANGE -> Icons.Default.WifiTethering
-                                else -> Icons.Default.SouthWest
-                            },
-                            contentDescription = null,
-                            tint = if (account.isFrozen) NeoRose else NeoOnPrimaryFixed,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        // A frozen account shows the lock, its status; otherwise what kind of account it is.
+                        if (account.isFrozen) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Frozen",
+                                tint = NeoRose,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(accountIllustration(account.type)),
+                                contentDescription = null,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
                     }
                     Column {
                         Text(

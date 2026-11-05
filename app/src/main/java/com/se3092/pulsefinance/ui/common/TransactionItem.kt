@@ -23,10 +23,15 @@ data class TransactionItem(
     val accountId: String? = null
 ) {
     val isIncoming: Boolean get() = amountLkr >= 0
+
+    /** The expense's own id for an expense row, so it can be deleted; null for income. */
+    val expenseId: String? get() = id.takeIf { it.startsWith(EXPENSE_PREFIX) }?.removePrefix(EXPENSE_PREFIX)
 }
 
+private const val EXPENSE_PREFIX = "exp_"
+
 fun Expense.toTransactionItem() = TransactionItem(
-    id = "exp_$id",
+    id = "$EXPENSE_PREFIX$id",
     title = title,
     subtitle = "${category.displayName} · ${if (isCommitted) "Committed" else "Discretionary"}",
     amountLkr = -amountLkr,

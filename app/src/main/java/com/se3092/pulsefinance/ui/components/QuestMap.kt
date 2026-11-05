@@ -1,5 +1,8 @@
 package com.se3092.pulsefinance.ui.components
 
+import com.se3092.pulsefinance.ui.common.goalIllustration
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -28,7 +31,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.LaptopMac
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -84,7 +86,7 @@ private fun QuestProgress.levelLabel(): String =
 // ---------------------------------------------------------------------------------------------
 
 @Composable
-fun QuestCard(quest: QuestProgress, initials: String, onClick: () -> Unit) {
+fun QuestCard(quest: QuestProgress, initials: String, goalTitle: String, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -97,11 +99,13 @@ fun QuestCard(quest: QuestProgress, initials: String, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "MACBOOK QUEST",
+                        text = "${goalTitle.ifBlank { "Savings" }.uppercase()} QUEST",
                         color = Teal,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.4.sp
+                        letterSpacing = 1.4.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = quest.levelLabel(),
@@ -117,7 +121,7 @@ fun QuestCard(quest: QuestProgress, initials: String, onClick: () -> Unit) {
                 Icon(Icons.Default.ChevronRight, contentDescription = "Open quest", tint = Mist)
             }
 
-            QuestTrack(quest = quest, initials = initials)
+            QuestTrack(quest = quest, initials = initials, goalTitle = goalTitle)
 
             Row(verticalAlignment = Alignment.Bottom) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -152,7 +156,7 @@ fun QuestCard(quest: QuestProgress, initials: String, onClick: () -> Unit) {
 
 /** A horizontal row of level nodes joined by a road, with the avatar on the current level. */
 @Composable
-private fun QuestTrack(quest: QuestProgress, initials: String) {
+private fun QuestTrack(quest: QuestProgress, initials: String, goalTitle: String) {
     val pulse = rememberPulse()
     BoxWithConstraints(
         modifier = Modifier
@@ -194,7 +198,7 @@ private fun QuestTrack(quest: QuestProgress, initials: String) {
                         }
                         ProfileAvatar(initials = initials, size = 26.dp)
                     }
-                    isFinal -> FinalNode(size = nodeSize, reached = state == NodeState.CLEARED)
+                    isFinal -> FinalNode(size = nodeSize, reached = state == NodeState.CLEARED, goalTitle = goalTitle)
                     state == NodeState.CLEARED -> Box(Modifier.fillMaxSize().clip(CircleShape).background(Saffron))
                     else -> Box(
                         Modifier
@@ -218,7 +222,7 @@ private fun QuestTrack(quest: QuestProgress, initials: String) {
  * Each level is labelled with its real rupee checkpoint.
  */
 @Composable
-fun QuestMap(quest: QuestProgress, initials: String, modifier: Modifier = Modifier) {
+fun QuestMap(quest: QuestProgress, initials: String, goalTitle: String, modifier: Modifier = Modifier) {
     val pulse = rememberPulse()
     val rowHeight = 66.dp
     val rows = quest.levelCount + 1 // + the start
@@ -288,7 +292,7 @@ fun QuestMap(quest: QuestProgress, initials: String, modifier: Modifier = Modifi
                 contentAlignment = Alignment.Center
             ) {
                 when {
-                    isFinal -> FinalNode(size = nodeSize, reached = state == NodeState.CLEARED)
+                    isFinal -> FinalNode(size = nodeSize, reached = state == NodeState.CLEARED, goalTitle = goalTitle)
                     state == NodeState.CURRENT -> {
                         Canvas(Modifier.fillMaxSize()) {
                             drawCircle(Saffron.copy(alpha = 0.35f * (1 - pulse)), radius = size.minDimension / 2 * (0.75f + 0.5f * pulse))
@@ -370,9 +374,9 @@ private fun MapLabel(
     }
 }
 
-/** The "boss" level: the goal itself, drawn as a laptop inside a saffron ring. */
+/** The "boss" level: the goal itself, drawn as its picture inside a saffron ring. */
 @Composable
-private fun FinalNode(size: Dp, reached: Boolean) {
+private fun FinalNode(size: Dp, reached: Boolean, goalTitle: String) {
     Box(
         modifier = Modifier
             .size(size)
@@ -384,11 +388,10 @@ private fun FinalNode(size: Dp, reached: Boolean) {
             .border(2.5.dp, Saffron, CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.LaptopMac,
-            contentDescription = "Goal",
-            tint = if (reached) OnAccent else Saffron,
-            modifier = Modifier.size(size * 0.5f)
+        Image(
+            painter = painterResource(goalIllustration(goalTitle)),
+            contentDescription = goalTitle.ifBlank { "Goal" },
+            modifier = Modifier.size(size * 0.7f)
         )
     }
 }

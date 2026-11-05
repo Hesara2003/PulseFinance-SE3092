@@ -26,6 +26,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+import com.se3092.pulsefinance.domain.model.ExpenseCategory
+import com.se3092.pulsefinance.ui.common.presetIllustration
+import com.se3092.pulsefinance.ui.components.NoticeTone
+import com.se3092.pulsefinance.ui.components.UiNotice
 
 data class AuditUiState(
     val initials: String = "",
@@ -37,7 +41,7 @@ data class AuditUiState(
     /** Flagged annual cost as a share of what's left to save for the goal; null without a goal. */
     val shareOfGoalRemainingPct: Double? = null,
     val goalTitle: String? = null,
-    val message: String? = null
+    val notice: UiNotice? = null
 )
 
 @HiltViewModel
@@ -51,7 +55,7 @@ class ExpenseViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val message = MutableStateFlow<String?>(null)
+    private val notice = MutableStateFlow<UiNotice?>(null)
 
     private val data = authRepository.whenSignedIn<AuditUiState?>(signedOut = null) { userId ->
         combine(
@@ -83,8 +87,8 @@ class ExpenseViewModel @Inject constructor(
 
     private val initials = initialsFor(authRepository.userDisplayName, authRepository.userEmail)
 
-    val uiState: StateFlow<AuditUiState> = combine(data, message) { data, message ->
-        (data ?: AuditUiState()).copy(message = message)
+    val uiState: StateFlow<AuditUiState> = combine(data, notice) { data, notice ->
+        (data ?: AuditUiState()).copy(notice = notice)
     }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -93,20 +97,20 @@ class ExpenseViewModel @Inject constructor(
 
     fun keepSubscription(subscription: DetectedSubscription) {
         record(subscription, SubscriptionDecision.KEEP, resetUnused = true)
-        message.value = "Keeping ${subscription.title}"
+        notice.value = UiNotice("Keeping ${subscription.title}", "${lkr(subscription.monthlyCostLkr)} a month", illustration = presetIllustration(subscription.title, ExpenseCategory.SUBSCRIPTION))
     }
 
     /** The user cancels with the provider; the app remembers and re-flags it if it charges again. */
     fun markCancelled(subscription: DetectedSubscription) {
         record(subscription, SubscriptionDecision.CANCELLED)
-        message.value = "${subscription.title} marked cancelled — saves ${lkr(subscription.monthlyCostLkr)}/mo"
+        notice.value = UiNotice("${subscription.title} marked cancelled", "Saves ${lkr(subscription.monthlyCostLkr)} a month", illustration = presetIllustration(subscription.title, ExpenseCategory.SUBSCRIPTION))
     }
 
     fun markAllFlaggedCancelled() {
         val flagged = uiState.value.subscriptions.filter { it.isFlagged }
         if (flagged.isEmpty()) return
         flagged.forEach { record(it, SubscriptionDecision.CANCELLED) }
-        message.value = "${flagged.size} marked cancelled — saves ${lkr(flagged.sumOf { it.monthlyCostLkr })}/mo"
+        notice.value = UiNotice("${flagged.size} subscriptions marked cancelled", "Saves ${lkr(flagged.sumOf { it.monthlyCostLkr })} a month")
     }
 
     fun recordUsageAnswer(subscription: DetectedSubscription, usedThisMonth: Boolean) {
@@ -122,10 +126,10 @@ class ExpenseViewModel @Inject constructor(
                 consecutiveUnusedMonths = newUnused
             )
         )
-        message.value = if (usedThisMonth) {
-            "Recorded as used this month 👍"
-        } else {
-            if (newUnused >= 2) "⚠️ High Risk: Unused for $newUnused consecutive months! Cancel recommended." else "Recorded as unused this month."
+        notice.value = when {
+            usedThisMonth -> UiNotice("Recorded as used this month", subscription.title)
+            newUnused >= 2 -> UiNotice("Unused for $newUnused months in a row", "${subscription.title} is high risk. Consider cancelling it.", NoticeTone.ERROR)
+            else -> UiNotice("Recorded as unused this month", subscription.title)
         }
     }
 
@@ -138,7 +142,7 @@ class ExpenseViewModel @Inject constructor(
         )
     }
 
-    fun dismissMessage() {
-        message.value = null
+    fun dismissNotice() {
+        notice.value = null
     }
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cash in hand: a banknote and a coin, in the style of the other preset icons. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path android:pathData="M24,5.5c9.5,0 17.5,5.5 18.5,14.5s-3,19.5 -12.5,21.5s-22.5,0.5 -24.5,-9.5s3.5,-26.5 18.5,-26.5z" android:fillColor="#FFE3F4DD" />
+    <path android:pathData="M9,17.5h26a2,2 0 0 1 2,2v12a2,2 0 0 1 -2,2h-26a2,2 0 0 1 -2,-2v-12a2,2 0 0 1 2,-2z" android:fillColor="#FFA8E6B4" android:strokeColor="#FF1E2A22" android:strokeWidth="1.6" android:strokeLineJoin="round" />
+    <path android:pathData="M6,14h26a2,2 0 0 1 2,2v12a2,2 0 0 1 -2,2h-26a2,2 0 0 1 -2,-2v-12a2,2 0 0 1 2,-2z" android:fillColor="#FF2FBF4A" android:strokeColor="#FF1E2A22" android:strokeWidth="1.6" android:strokeLineJoin="round" />
+    <path android:pathData="M15,22a4,4 0 1 0 8,0a4,4 0 1 0 -8,0z" android:fillColor="#FFFFFFFF" android:strokeColor="#FF1E2A22" android:strokeWidth="1.4" />
+    <path android:pathData="M8,18.5v0.1M30,25.5v0.1" android:fillColor="#00000000" android:strokeColor="#FF1E8E35" android:strokeWidth="2.2" android:strokeLineCap="round" />
+    <path android:pathData="M32,34a6,6 0 1 0 12,0a6,6 0 1 0 -12,0z" android:fillColor="#FFF5B82E" android:strokeColor="#FF1E2A22" android:strokeWidth="1.6" />
+    <path android:pathData="M35.5,34a2.5,2.5 0 1 0 5,0a2.5,2.5 0 1 0 -5,0z" android:fillColor="#00000000" android:strokeColor="#FFB7791F" android:strokeWidth="1.2" />
+</vector>

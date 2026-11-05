@@ -1,5 +1,8 @@
 package com.se3092.pulsefinance.ui.components
 
+import com.se3092.pulsefinance.ui.common.goalIllustration
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LaptopMac
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Icon
@@ -56,7 +58,7 @@ import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import kotlin.math.abs
 
 @Composable
-fun MacBookGoalCard(
+fun GoalCard(
     goal: SavingsGoal,
     modifier: Modifier = Modifier,
     onMoreClick: () -> Unit = {}
@@ -109,7 +111,7 @@ fun MacBookGoalCard(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        // Laptop Glyphs Container
+                        // The goal's picture, from its name
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
@@ -117,11 +119,10 @@ fun MacBookGoalCard(
                                 .background(NeoCardLow),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.LaptopMac,
-                                contentDescription = "Hardware Milestone",
-                                tint = NeoGreen,
-                                modifier = Modifier.size(26.dp)
+                            Image(
+                                painter = painterResource(goalIllustration(goal.title)),
+                                contentDescription = null,
+                                modifier = Modifier.size(40.dp)
                             )
                         }
 

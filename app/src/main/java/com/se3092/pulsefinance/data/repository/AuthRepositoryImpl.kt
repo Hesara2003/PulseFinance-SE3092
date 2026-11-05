@@ -23,6 +23,9 @@ class AuthRepositoryImpl @Inject constructor(
     override val userDisplayName: String?
         get() = firebaseAuthDataSource.userDisplayName
 
+    override val userPhotoUrl: String?
+        get() = firebaseAuthDataSource.userPhotoUrl
+
     override fun observeAuthState(): Flow<String?> =
         firebaseAuthDataSource.observeAuthState()
 
