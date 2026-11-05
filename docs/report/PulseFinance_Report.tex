@@ -33,7 +33,7 @@
 \usepackage{titlesec}
 \usepackage{amsmath,amssymb}
 \usepackage{xurl}
-\usepackage[hidelinks]{hyperref}
+\usepackage[colorlinks=true,linkcolor=pftext,citecolor=pftext,filecolor=pftext,urlcolor=pflink]{hyperref}
 
 % ---- Colours from ui/theme/Color.kt ------------------------------------------
 \definecolor{pfgreen}{HTML}{00C950}
@@ -49,6 +49,7 @@
 \definecolor{pfblue}{HTML}{3B82F6}
 \definecolor{pfviolet}{HTML}{8B5CF6}
 \definecolor{pforange}{HTML}{F97316}
+\definecolor{pflink}{HTML}{1E88E5}
 
 % ---- Layout -----------------------------------------------------------------
 \setlength{\parskip}{0.55em}
@@ -89,6 +90,8 @@
  }
 \ExplSyntaxOff
 \emergencystretch=3em
+% A link on its own line: \linkline{label}{url}
+\newcommand{\linkline}[2]{\par\smallskip\noindent\textbf{#1:}\par\nopagebreak\noindent\url{#2}\par\smallskip}
 \newcommand{\req}[1]{\textsf{\textbf{\color{pfgreendark}#1}}}
 \newcommand{\prob}[1]{\textsf{\textbf{\color{pfamberdark}#1}}}
 \newcommand{\lkr}[1]{LKR~#1}
@@ -491,7 +494,8 @@ Daily exchange rates (\req{FR-INC-5}) & \code{ExchangeRateService} & HTTPS on \c
 \label{sec:schema}
 
 \subsection{Collections}
-Everything Kavindu records lives under his own user document, so a single rule protects it all (\req{NFR-5}) and the same data appears on any device he signs in on (\req{FR-AUTH-3}). App-wide configuration that is not his data lives in a separate read-only \code{config} collection. The live database is in the Firebase console at \url{https://console.firebase.google.com/project/finance-app-se3092/firestore/databases/-default-/data} (project members only).
+Everything Kavindu records lives under his own user document, so a single rule protects it all (\req{NFR-5}) and the same data appears on any device he signs in on (\req{FR-AUTH-3}). App-wide configuration that is not his data lives in a separate read-only \code{config} collection.
+\linkline{Live database (Firebase console, project members only)}{https://console.firebase.google.com/project/finance-app-se3092/firestore/databases/-default-/data}
 
 \begin{lstlisting}
 users/
@@ -700,7 +704,8 @@ Room (\code{AppDatabase}, version 3) mirrors the four collections in the tables 
 % ============================================================================
 \section{Annotated Wireframes}
 \label{sec:wireframes}
-The wireframes below are annotated designs of the main screens, made in Figma: Today, Log an Expense, Income and Quest. The high-fidelity wireframes can be viewed in Figma at \url{https://www.figma.com/design/LvHHjUqY2v2T1Awmhsk4RH/PulseFinance-Annotated-Wireframes?node-id=16-547&p=f}. Each numbered callout is explained beside the screen: what the element does for Kavindu and which of his problems it answers. The bottom dock (Today, Analytics, Income, Quest, Audit) is the same on every screen after setup. Amounts and names in the wireframes are illustrative values drawn from Kavindu's scenario, not data from a real account.
+The wireframes below are annotated designs of the main screens, made in Figma: Today, Log an Expense, Income and Quest. Each numbered callout is explained beside the screen: what the element does for Kavindu and which of his problems it answers. The bottom dock (Today, Analytics, Income, Quest, Audit) is the same on every screen after setup. Amounts and names in the wireframes are illustrative values drawn from Kavindu's scenario, not data from a real account.
+\linkline{High-fidelity wireframes (Figma)}{https://www.figma.com/design/LvHHjUqY2v2T1Awmhsk4RH/PulseFinance-Annotated-Wireframes?node-id=16-547&p=f}
 
 % ---- Dashboard -----------------------------------------------------------------
 \subsection{Today (dashboard)}
@@ -867,12 +872,51 @@ Domain logic is covered by JVM unit tests in \code{app/src/test}, run with \code
 
 The Firestore security rules were tested separately against the Firestore emulator: 21 cases, of which 10 app-shaped writes, reads and deletes (including partial updates and a negative crypto amount) are allowed and 11 invalid or foreign writes are denied. Visual changes are checked on an emulator and on a Galaxy S23.
 
+\subsection{Project management}
+The project was run on GitHub from the requirements onwards, so every requirement can be followed from the SRS to the code that implements it and the pull request that merged it.
+
+\begin{itemize}
+  \item \textbf{One issue per requirement.} Each functional and non-functional requirement in Section~\ref{sec:requirements} became a user-story issue with acceptance criteria, labelled with its MoSCoW priority (\code{priority: must}, \code{should}, \code{could}). Bugs and engineering tasks found along the way became their own issues.
+  \item \textbf{Epics with sub-issues.} The issues are grouped under eleven epics -- one per feature area, such as Sign-in \& onboarding, Multi-stream income, Subscription audit and Quality -- using GitHub sub-issues, so each epic shows its progress (for example 15 of 18 done).
+  \item \textbf{A project board.} The \emph{PulseFinance -- SE3092} board tracks every issue with its assignee, status (Todo, In Progress, Done), work type, priority and linked pull requests (Figure~\ref{fig:board}). Built-in workflows add new issues to the board and move them as their pull requests merge.
+  \item \textbf{Pull requests close issues.} Work happens on a branch per issue; its pull request says \texttt{Closes \#N}, describes the change with evidence, and states its risk (``Merge Danger''). Merging closes the issue and marks it Done on the board (Figure~\ref{fig:issue}).
+  \item \textbf{Checks on every pull request.} Three GitHub Actions workflows run: an Android quality gate (unit tests, lint and a debug build), the Firestore rules tests, and the release build.
+\end{itemize}
+
+\begin{tabularx}{\textwidth}{@{}LrrL@{}}
+\toprule
+\textbf{Item} & \textbf{Total} & \textbf{Done} & \textbf{Notes}\\
+\midrule
+Epics & 11 & -- & One per feature area; parents of the issues below\\
+User stories & 82 & 78 & One per requirement, with acceptance criteria and priority\\
+Bugs & 9 & 8 & Found in reviews and audits\\
+Tasks & 15 & 10 & Engineering, delivery and documentation work\\
+Pull requests & 38 & 32 merged & 23 close issues with \texttt{Closes \#N}; Hesara 18, Sandali 15, Shazaan 5\\
+\bottomrule
+\end{tabularx}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,trim={0 0 0 125},clip]{figures/pm-project-board.png}
+\caption{The project board: the Sign-in \& onboarding epic expanded, each requirement with its assignee, status and linked pull request.}
+\label{fig:board}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,trim={0 0 0 125},clip]{figures/pm-issue.png}
+\caption{An issue with acceptance criteria, a label, its parent epic (15 of 18 sub-issues done), its board status and a linked pull request.}
+\label{fig:issue}
+\end{figure}
+
 \subsection{Delivery}
+\linkline{Source code (GitHub)}{https://github.com/Hesara2003/PulseFinance-SE3092}
+\linkline{Latest installable build (APK, Google Drive)}{https://drive.google.com/drive/folders/1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d}
+
 \begin{itemize}
   \item \textbf{Repository and workflow.} Every change goes through a pull request on \code{Hesara2003/PulseFinance-SE3092}, is reviewed by another team member and is merged with a merge commit so that the history records who did what.
   \item \textbf{Continuous integration.} \code{ci.yml} runs the unit tests, lint and a debug build on pull requests and pushes to \code{main}.
   \item \textbf{Release.} \code{release-apk-to-drive.yml} builds and signs the release APK and AAB on every push to \code{main} and uploads them to the team's Google Drive folder, so an installable build of the current \code{main} is always available.
-  \item \textbf{Work tracking.} Requirements are tracked as GitHub issues (one user story per requirement, grouped into eleven epics, plus bugs and tasks) on a project board.
 \end{itemize}
 
 \subsection{Known limitations}
