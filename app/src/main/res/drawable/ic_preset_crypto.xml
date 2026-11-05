@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One-tap preset icon in the style of the Storyset illustrations (drawable-nodpi). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path android:pathData="M24,5.5c9.5,0 17.5,5.5 18.5,14.5s-3,19.5 -12.5,21.5s-22.5,0.5 -24.5,-9.5s3.5,-26.5 18.5,-26.5z" android:fillColor="#FFFFF3D1" />
+    <path android:pathData="M9,24a15,15 0 1 0 30,0a15,15 0 1 0 -30,0z" android:fillColor="#FFF5B82E" android:strokeColor="#FF1E2A22" android:strokeWidth="1.6" android:strokeLineJoin="round" />
+    <path android:pathData="M13,24a11,11 0 1 0 22,0a11,11 0 1 0 -22,0z" android:fillColor="#00000000" android:strokeColor="#FF1E2A22" android:strokeWidth="1.2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M24,14.5l6,9.5l-6,3.5l-6,-3.5z" android:fillColor="#FFFFFFFF" android:strokeColor="#FF1E2A22" android:strokeWidth="1.6" android:strokeLineJoin="round" />
+    <path android:pathData="M18,26l6,3.5l6,-3.5l-6,8.5z" android:fillColor="#FFFFFFFF" android:strokeColor="#FF1E2A22" android:strokeWidth="1.6" android:strokeLineJoin="round" />
+</vector>
