@@ -466,6 +466,8 @@ fun AnalyticsScreen(
                                         val unit = if (state.interval == AnalyticsInterval.WEEKLY) "day" else "week"
                                         val labelText = if (selectedDay.isPeak) {
                                             "Peak $unit: ${selectedDay.primaryLabel} ${selectedDay.secondaryLabel}"
+                                        } else if (!selectedDay.hasRecords) {
+                                            "${selectedDay.primaryLabel} ${selectedDay.secondaryLabel}"
                                         } else {
                                             "Spent: ${selectedDay.primaryLabel} ${selectedDay.secondaryLabel}"
                                         }
@@ -478,7 +480,11 @@ fun AnalyticsScreen(
                                     }
 
                                     Text(
-                                        text = "LKR ${String.format("%,.2f", selectedDay.amountLkr)}",
+                                        text = if (selectedDay.hasRecords) {
+                                            "LKR ${String.format("%,.2f", selectedDay.amountLkr)}"
+                                        } else {
+                                            "No data recorded"
+                                        },
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = NeoTextPrimary

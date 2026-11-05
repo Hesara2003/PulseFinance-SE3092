@@ -37,8 +37,31 @@ data class TimelineBar(
     val secondaryLabel: String,
     val fillRatio: Float,
     val amountLkr: Double,
-    val isPeak: Boolean
+    val isPeak: Boolean,
+    /** False when nothing was recorded in this bucket: a Logging Gap, not "0 spent" (NFR-2). */
+    val hasRecords: Boolean = true
 )
+
+/** One bar per bucket; buckets with no expense records are flagged instead of reading as zero spending. */
+internal fun timelineBars(
+    buckets: List<Triple<String, String, Period>>,
+    periodExpenses: List<Expense>
+): List<TimelineBar> {
+    val inBucket = buckets.map { (_, _, range) -> periodExpenses.filter { it.timestamp in range } }
+    val totals = inBucket.map { items -> items.sumOf { it.amountLkr } }
+    val peak = totals.maxOrNull() ?: 0.0
+    val peakIndex = if (peak > 0) totals.indexOf(peak) else -1
+    return buckets.mapIndexed { i, (primary, secondary, _) ->
+        TimelineBar(
+            primaryLabel = primary,
+            secondaryLabel = secondary,
+            fillRatio = if (peak > 0) (totals[i] / peak).toFloat() else 0f,
+            amountLkr = totals[i],
+            isPeak = i == peakIndex,
+            hasRecords = inBucket[i].isNotEmpty()
+        )
+    }
+}
 
 data class CategoryTotal(
     val category: ExpenseCategory,
@@ -173,18 +196,7 @@ class AnalyticsViewModel @Inject constructor(
                 Triple(formatDate(startCal.timeInMillis, "MMM"), formatDate(startCal.timeInMillis, "yy"), Period(startCal.timeInMillis, endCal.timeInMillis))
             }
         }
-        val bucketTotals = buckets.map { (_, _, range) -> periodExpenses.filter { it.timestamp in range }.sumOf { it.amountLkr } }
-        val peak = bucketTotals.maxOrNull() ?: 0.0
-        val peakIndex = if (peak > 0) bucketTotals.indexOf(peak) else -1
-        val bars = buckets.mapIndexed { i, (primary, secondary, _) ->
-            TimelineBar(
-                primaryLabel = primary,
-                secondaryLabel = secondary,
-                fillRatio = if (peak > 0) (bucketTotals[i] / peak).toFloat() else 0f,
-                amountLkr = bucketTotals[i],
-                isPeak = i == peakIndex
-            )
-        }
+        val bars = timelineBars(buckets, periodExpenses)
 
         val total = periodExpenses.sumOf { it.amountLkr }
         val categoryTotals = periodExpenses
