@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.goal
 
+import java.util.Locale
 import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.text.style.TextAlign
@@ -350,7 +351,7 @@ fun GoalScreen(
                                 illustration = categoryIllustration(opportunity.category),
                                 title = "Trim ${opportunity.category.displayName} by 25%",
                                 subtitle = "${lkr(opportunity.monthlySpendLkr)} last 30 days · saves ${lkr(opportunity.monthlySavingLkr)}/mo",
-                                badgeText = "+${"%.1f".format(opportunity.daysOfGoalPace)} days",
+                                badgeText = "+${"%.1f".format(Locale.US, opportunity.daysOfGoalPace)} days",
                                 onClick = { viewModel.openAllocateWith(opportunity.monthlySavingLkr) }
                             )
                         }
@@ -608,7 +609,7 @@ fun GoalScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(
-                                    text = "Covers ~${String.format("%.1f", days)} days of your required pace",
+                                    text = "Covers ~${String.format(Locale.US, "%.1f", days)} days of your required pace",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.primary

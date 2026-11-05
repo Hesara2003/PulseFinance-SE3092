@@ -2,6 +2,7 @@ package com.se3092.pulsefinance.ui.screens.dashboard
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import java.util.Locale
 import com.se3092.pulsefinance.ui.screens.expense.ExpensePreset
 import com.se3092.pulsefinance.domain.model.MAX_RUNWAY_MONTHS
 import com.se3092.pulsefinance.domain.model.MIN_RUNWAY_MONTHS
@@ -360,7 +361,7 @@ internal fun SafetyBufferCard(
                     text = if (runway.isFunded) {
                         "Fully funded · ${money(runway.savedLkr)} covers ${months(runway.months)}"
                     } else {
-                        "${money(runway.savedLkr)} set aside · covers ${"%.1f".format(runway.monthsCovered)} of ${runway.months} months"
+                        "${money(runway.savedLkr)} set aside · covers ${"%.1f".format(Locale.US, runway.monthsCovered)} of ${runway.months} months"
                     },
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -379,7 +380,7 @@ internal fun SafetyBufferCard(
                 Text(text = "Add to it", fontSize = 11.sp, color = MaterialTheme.pulseColors.textTertiary)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf(5_000.0, 10_000.0, 25_000.0).forEach { amount ->
-                        BufferChip(label = "+${"%,.0f".format(amount)}", selected = false, onClick = { onAdd(amount) })
+                        BufferChip(label = "+${"%,.0f".format(Locale.US, amount)}", selected = false, onClick = { onAdd(amount) })
                     }
                 }
             }
@@ -620,7 +621,7 @@ internal fun LatelySection(
                     TransactionSquareCard(
                         currency = tx.originalAmountLabel?.substringBefore(' ') ?: "LKR",
                         amount = tx.originalAmountLabel?.substringAfter(' ')
-                            ?: "%,.0f".format(kotlin.math.abs(tx.amountLkr)),
+                            ?: "%,.0f".format(Locale.US, kotlin.math.abs(tx.amountLkr)),
                         title = tx.title,
                         illustration = transactionIllustration(tx),
                         isIncoming = tx.isIncoming,
@@ -633,12 +634,23 @@ internal fun LatelySection(
     }
 }
 
+/**
+ * The weekly summary's Freeze Break line (FR-ACC-5), or null when he has never broken a freeze.
+ * The count is a running total: a break isn't dated, so it can't honestly be said to be this week's.
+ */
+internal fun freezeBreakLabel(totalFreezeBreaks: Int): String? = when {
+    totalFreezeBreaks <= 0 -> null
+    totalFreezeBreaks == 1 -> "1 Freeze Break so far"
+    else -> "$totalFreezeBreaks Freeze Breaks so far"
+}
+
 /** Discretionary spending this week, against last week, with a Mon–Sun bar for each day. */
 @Composable
 internal fun WeeklyDiscretionaryCard(
     weekDiscretionaryLkr: Double,
     weekChangePct: Int?,
-    weekBars: List<DayBar>
+    weekBars: List<DayBar>,
+    totalFreezeBreaks: Int = 0
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -731,6 +743,21 @@ internal fun WeeklyDiscretionaryCard(
                             fontWeight = if (bar.isToday) FontWeight.ExtraBold else FontWeight.Medium
                         )
                     }
+                }
+            }
+
+            freezeBreakLabel(totalFreezeBreaks)?.let { label ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(Icons.Default.AcUnit, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp))
+                    Text(
+                        text = "$label · spent from a frozen account",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }

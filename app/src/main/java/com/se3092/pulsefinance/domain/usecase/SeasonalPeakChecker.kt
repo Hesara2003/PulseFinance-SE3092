@@ -150,6 +150,6 @@ class SeasonalPeakChecker @Inject constructor() {
 
         fun monthName(month: Int): String = DateFormatSymbols.getInstance(Locale.ENGLISH).months[month]
 
-        fun formatLkr(amount: Double): String = "LKR ${"%,.0f".format(amount)}"
+        fun formatLkr(amount: Double): String = "LKR ${"%,.0f".format(Locale.US, amount)}"
     }
 }

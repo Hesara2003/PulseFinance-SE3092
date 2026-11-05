@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.goal
 
+import java.util.Locale
 import com.se3092.pulsefinance.ui.common.initialsFor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -182,7 +183,7 @@ class GoalViewModel @Inject constructor(
                         val days = goal.requiredDailySavingsLkr.takeIf { it > 0 }?.let { deposit / it } ?: 0.0
                         Celebration(
                             "${lkr(deposit)} set aside",
-                            "That covers ${"%.1f".format(days)} days of your required pace. " +
+                            "That covers ${"%.1f".format(Locale.US, days)} days of your required pace. " +
                                 "${lkr(goal.targetAmountLkr - newTotal)} to go for ${goal.title}."
                         )
                     }
