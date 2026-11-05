@@ -57,6 +57,8 @@ import com.se3092.pulsefinance.ui.screens.goal.GoalScreen
 import com.se3092.pulsefinance.ui.screens.goal.GoalViewModel
 import com.se3092.pulsefinance.ui.screens.income.IncomeScreen
 import com.se3092.pulsefinance.ui.screens.income.IncomeViewModel
+import com.se3092.pulsefinance.ui.screens.setup.SetupScreen
+import com.se3092.pulsefinance.ui.screens.setup.SetupViewModel
 import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
@@ -80,7 +82,7 @@ fun AppNavGraph(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val showBottomBar = currentRoute != Screen.Auth.route
+    val showBottomBar = currentRoute != Screen.Auth.route && currentRoute != Screen.Setup.route
 
     Scaffold(
         containerColor = NeoSurface,
@@ -277,9 +279,21 @@ fun AppNavGraph(
                 val authViewModel: AuthViewModel = hiltViewModel()
                 AuthScreen(
                     viewModel = authViewModel,
-                    onAuthSuccess = {
-                        navController.navigate(Screen.Dashboard.route) {
+                    onAuthSuccess = { needsSetup ->
+                        navController.navigate(if (needsSetup) Screen.Setup.route else Screen.Dashboard.route) {
                             popUpTo(Screen.Auth.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(Screen.Setup.route) {
+                val setupViewModel: SetupViewModel = hiltViewModel()
+                SetupScreen(
+                    viewModel = setupViewModel,
+                    onFinished = {
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(Screen.Setup.route) { inclusive = true }
                         }
                     }
                 )

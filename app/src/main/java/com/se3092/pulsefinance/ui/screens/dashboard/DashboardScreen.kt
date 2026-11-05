@@ -42,6 +42,8 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -291,6 +293,58 @@ fun DashboardScreen(
                                 color = NeoTextSecondary,
                                 lineHeight = 17.sp
                             )
+                            // One-tap set-aside: holds the amount back from Safe-to-Spend until the peak (FR-LK-5)
+                            val reserve = state.seasonalReserve
+                            if (reserve != null) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(SaffronSoft)
+                                        .padding(start = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Saffron,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "${lkr(reserve.amountLkr)} set aside · held back from Safe-to-Spend",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = NeoTextPrimary,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(horizontal = 8.dp)
+                                    )
+                                    TextButton(onClick = viewModel::undoSeasonalSetAside) {
+                                        Text("Undo", color = Saffron, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    }
+                                }
+                            } else if (alert.suggestedSetAsideLkr > 0) {
+                                Button(
+                                    onClick = viewModel::setAsideForSeasonalPeak,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(44.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Saffron, contentColor = Color.White)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Savings,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Set aside ${lkr(alert.suggestedSetAsideLkr)}",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                            }
                         }
                     }
                 }

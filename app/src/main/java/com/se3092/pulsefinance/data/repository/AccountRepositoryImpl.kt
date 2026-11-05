@@ -64,8 +64,8 @@ class AccountRepositoryImpl @Inject constructor(
      * first entry. Channels only; balances start at zero and nothing else is pre-filled.
      * Requires a server round-trip so an empty offline cache is never mistaken for a new user.
      */
-    override suspend fun ensureDefaultAccounts(userId: String): Result<Unit> = runCatching {
-        if (firestoreDataSource.hasAnyAccountOnServer(userId)) return@runCatching
+    override suspend fun ensureDefaultAccounts(userId: String): Result<Boolean> = runCatching {
+        if (firestoreDataSource.hasAnyAccountOnServer(userId)) return@runCatching false
         defaultChannels.forEach { (id, type) ->
             saveAccount(
                 Account(
@@ -83,6 +83,7 @@ class AccountRepositoryImpl @Inject constructor(
                 )
             ).getOrThrow()
         }
+        true
     }
 
     private companion object {

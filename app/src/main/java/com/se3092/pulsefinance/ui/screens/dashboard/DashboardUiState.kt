@@ -7,6 +7,7 @@ import com.se3092.pulsefinance.domain.model.GoalQuest
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.QuestProgress
 import com.se3092.pulsefinance.domain.model.SavingsGoal
+import com.se3092.pulsefinance.domain.model.SeasonalReserve
 import com.se3092.pulsefinance.domain.usecase.SeasonalAlert
 import com.se3092.pulsefinance.ui.common.TransactionItem
 import com.se3092.pulsefinance.ui.screens.expense.AddExpenseFormState
@@ -48,6 +49,8 @@ data class DashboardUiState(
     val addExpense: AddExpenseFormState = AddExpenseFormState(),
     val message: String? = null,
     val seasonalAlert: SeasonalAlert? = null,
+    /** What he already set aside for [seasonalAlert]'s peak, if anything. */
+    val seasonalReserve: SeasonalReserve? = null,
     val frozenWarning: FrozenExpenseWarning? = null,
     val revealedAccountIds: Set<String> = emptySet()
 ) {

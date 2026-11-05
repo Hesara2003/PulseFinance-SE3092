@@ -2,6 +2,8 @@ package com.se3092.pulsefinance.data.remote.firebase
 
 import android.util.Log
 import com.google.android.gms.tasks.Task
+import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
@@ -11,6 +13,8 @@ import com.se3092.pulsefinance.data.remote.dto.ApitConfigDto
 import com.se3092.pulsefinance.data.remote.dto.ExpenseDto
 import com.se3092.pulsefinance.data.remote.dto.GoalDto
 import com.se3092.pulsefinance.data.remote.dto.IncomeDto
+import com.se3092.pulsefinance.domain.model.OnboardingProfile
+import com.se3092.pulsefinance.domain.model.SeasonalReserve
 import com.se3092.pulsefinance.domain.model.SubscriptionDecision
 import com.se3092.pulsefinance.domain.model.SubscriptionReview
 import kotlinx.coroutines.channels.awaitClose
@@ -182,6 +186,63 @@ class FirestoreDataSource @Inject constructor(
         userDoc(userId).set(payload, SetOptions.merge()).logFailure("saveSubscriptionReview")
     }
 
+    // ---------------- Seasonal Peak reserves (FR-LK-5) ----------------
+    // Stored as a map on the user document: seasonalReserves.<peakKey> = {amountLkr, setAsideAt, peakDateMillis}
+    fun observeSeasonalReserves(userId: String): Flow<Map<String, SeasonalReserve>> = callbackFlow {
+        val listener = userDoc(userId).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
+            @Suppress("UNCHECKED_CAST")
+            val raw = snapshot?.get(FIELD_SEASONAL_RESERVES) as? Map<String, Map<String, Any?>> ?: emptyMap()
+            val reserves = raw.mapNotNull { (key, value) ->
+                val amount = (value["amountLkr"] as? Number)?.toDouble() ?: return@mapNotNull null
+                key to SeasonalReserve(
+                    peakKey = key,
+                    amountLkr = amount,
+                    setAsideAt = (value["setAsideAt"] as? Number)?.toLong() ?: 0L,
+                    peakDateMillis = (value["peakDateMillis"] as? Number)?.toLong() ?: 0L
+                )
+            }.toMap()
+            trySend(reserves)
+        }
+        awaitClose { listener.remove() }
+    }
+
+    fun saveSeasonalReserve(userId: String, reserve: SeasonalReserve) {
+        val payload = mapOf(
+            FIELD_SEASONAL_RESERVES to mapOf(
+                reserve.peakKey to mapOf(
+                    "amountLkr" to reserve.amountLkr,
+                    "setAsideAt" to reserve.setAsideAt,
+                    "peakDateMillis" to reserve.peakDateMillis
+                )
+            )
+        )
+        userDoc(userId).set(payload, SetOptions.merge()).logFailure("saveSeasonalReserve")
+    }
+
+    fun deleteSeasonalReserve(userId: String, peakKey: String) {
+        userDoc(userId).update(FieldPath.of(FIELD_SEASONAL_RESERVES, peakKey), FieldValue.delete())
+            .logFailure("deleteSeasonalReserve")
+    }
+
+    // ---------------- First-run setup (FR-AUTH-4, FR-AUTH-5) ----------------
+    fun saveOnboardingProfile(userId: String, profile: OnboardingProfile) {
+        val payload = mapOf(
+            FIELD_ONBOARDING to mapOf(
+                "monthlySalaryLkr" to profile.monthlySalaryLkr,
+                "incomeSources" to profile.incomeSources.map { (source, variability) -> source.name to variability.name }.toMap(),
+                "fixedCommitments" to profile.fixedCommitments.map {
+                    mapOf("title" to it.title, "amountLkr" to it.amountLkr, "category" to it.category.name)
+                },
+                "completedAt" to profile.completedAt
+            )
+        )
+        userDoc(userId).set(payload, SetOptions.merge()).logFailure("saveOnboardingProfile")
+    }
+
     // ---------------- App configuration (read-only) ----------------
     /** Emits null when the document is missing or cannot be parsed. */
     fun observeApitConfig(): Flow<ApitConfigDto?> = callbackFlow {
@@ -204,5 +265,7 @@ class FirestoreDataSource @Inject constructor(
     private companion object {
         const val TAG = "FirestoreDataSource"
         const val FIELD_SUBSCRIPTION_REVIEWS = "subscriptionReviews"
+        const val FIELD_SEASONAL_RESERVES = "seasonalReserves"
+        const val FIELD_ONBOARDING = "onboarding"
     }
 }
