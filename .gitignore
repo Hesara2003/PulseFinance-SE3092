@@ -17,3 +17,7 @@ captures
 local.properties
 .kotlin
 *.apk
+
+# Local tooling config (kept on each machine, not in the repo)
+CLAUDE.md
+.claude/
