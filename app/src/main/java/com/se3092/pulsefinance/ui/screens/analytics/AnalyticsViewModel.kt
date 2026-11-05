@@ -243,7 +243,7 @@ class AnalyticsViewModel @Inject constructor(
             periodOffset = controls.periodOffset,
             periodLabel = label,
             bars = bars,
-            selectedBarIndex = (controls.selectedBarIndex ?: peakIndex.coerceAtLeast(0)).coerceIn(0, (bars.size - 1).coerceAtLeast(0)),
+            selectedBarIndex = (controls.selectedBarIndex ?: bars.indexOfFirst { it.isPeak }.coerceAtLeast(0)).coerceIn(0, (bars.size - 1).coerceAtLeast(0)),
             totalSpentLkr = total,
             committedLkr = periodExpenses.filter { it.isCommitted }.sumOf { it.amountLkr },
             discretionaryLkr = periodExpenses.filter { !it.isCommitted }.sumOf { it.amountLkr },
