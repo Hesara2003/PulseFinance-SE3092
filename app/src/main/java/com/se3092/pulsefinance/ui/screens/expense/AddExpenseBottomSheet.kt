@@ -1,9 +1,9 @@
 package com.se3092.pulsefinance.ui.screens.expense
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import com.se3092.pulsefinance.ui.common.presetIllustration
-import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,18 +55,7 @@ import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.ui.common.compactAmount
-import com.se3092.pulsefinance.ui.theme.OnAccent
-import com.se3092.pulsefinance.ui.theme.NeoContainer
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
-import com.se3092.pulsefinance.ui.theme.RentColor
+import com.se3092.pulsefinance.ui.common.categoryIllustration
 
 private val backdateOptions = listOf(0 to "Today", 1 to "Yesterday", 2 to "2 days ago", 7 to "Last week")
 
@@ -88,21 +77,21 @@ fun AddExpenseBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val fieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = NeoGreen,
-        unfocusedBorderColor = NeoBorder,
-        focusedTextColor = NeoTextPrimary,
-        unfocusedTextColor = NeoTextPrimary
+        focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
     )
     val chipColors = FilterChipDefaults.filterChipColors(
-        selectedContainerColor = NeoGreen,
-        selectedLabelColor = OnAccent,
-        labelColor = NeoTextSecondary
+        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     )
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = NeoCard
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -121,19 +110,19 @@ fun AddExpenseBottomSheet(
                     Text(
                         text = "Log an Expense",
                         style = MaterialTheme.typography.titleLarge,
-                        color = NeoTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
                     Text(
                         text = "Tap a habit or type the amount — done in seconds",
                         style = MaterialTheme.typography.bodySmall,
-                        color = NeoTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = NeoTextSecondary)
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
@@ -148,8 +137,8 @@ fun AddExpenseBottomSheet(
                 presets.forEach { preset ->
                     Surface(
                         shape = CircleShape,
-                        color = NeoCardLow,
-                        border = BorderStroke(1.dp, NeoBorder),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                         modifier = Modifier.clickable { onPresetSelect(preset) }
                     ) {
                         Row(
@@ -163,8 +152,8 @@ fun AddExpenseBottomSheet(
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
-                                text = "${preset.title} · ${compactAmount(preset.amountLkr)}",
-                                color = NeoTextPrimary,
+                                text = preset.amountLkr?.let { "${preset.title} · ${compactAmount(it)}" } ?: preset.title,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 12.5.sp,
                                 fontWeight = FontWeight.Medium
                             )
@@ -179,7 +168,7 @@ fun AddExpenseBottomSheet(
                 value = form.amountInput,
                 onValueChange = onAmountChange,
                 label = { Text("Amount") },
-                prefix = { Text("LKR ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
+                prefix = { Text("LKR ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 isError = form.errorMessage != null,
@@ -189,7 +178,7 @@ fun AddExpenseBottomSheet(
             )
 
             form.errorMessage?.let {
-                Text(text = it, color = NeoRose, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
+                Text(text = it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -218,10 +207,10 @@ fun AddExpenseBottomSheet(
                         onClick = { onCategoryChange(category) },
                         label = { Text(category.displayName, fontSize = 12.sp) },
                         leadingIcon = {
-                            Icon(
-                                imageVector = expenseCategoryVisual(category).icon,
+                            Image(
+                                painter = painterResource(categoryIllustration(category)),
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         },
                         colors = chipColors
@@ -236,7 +225,7 @@ fun AddExpenseBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(NeoCardLow)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -246,23 +235,23 @@ fun AddExpenseBottomSheet(
                         text = if (form.isCommitted) "Committed cost" else "Discretionary spend",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (form.isCommitted) RentColor else NeoGreenDark
+                        color = if (form.isCommitted) MaterialTheme.pulseColors.rent else MaterialTheme.colorScheme.primary
                     )
                     Text(
                         text = if (form.isCommitted) "Must pay: rent, bills, fixed debits" else "Your choice: dining, rides, treats",
                         style = MaterialTheme.typography.bodySmall,
-                        color = NeoTextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Switch(
                     checked = form.isCommitted,
                     onCheckedChange = onCommittedToggle,
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = OnAccent,
-                        checkedTrackColor = RentColor,
-                        uncheckedThumbColor = NeoTextSecondary,
-                        uncheckedTrackColor = NeoContainer,
-                        uncheckedBorderColor = NeoTextTertiary
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        checkedTrackColor = MaterialTheme.pulseColors.rent,
+                        uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainer,
+                        uncheckedBorderColor = MaterialTheme.pulseColors.textTertiary
                     )
                 )
             }
@@ -310,10 +299,10 @@ fun AddExpenseBottomSheet(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
             ) {
                 if (form.isSubmitting) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = OnAccent, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimaryContainer, strokeWidth = 2.dp)
                 } else {
                     Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.size(8.dp))
@@ -329,7 +318,7 @@ private fun SectionLabel(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelSmall,
-        color = NeoTextTertiary,
+        color = MaterialTheme.pulseColors.textTertiary,
         fontWeight = FontWeight.Bold,
         fontSize = 10.5.sp,
         letterSpacing = 0.6.sp

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +8,17 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
 }
+
+// Debug-only demo account (FR-AUTH-7). The credentials stay out of the repo: they come from
+// local.properties (pulsefinance.demoEmail / pulsefinance.demoPassword, gitignored) or from the
+// PULSEFINANCE_DEMO_EMAIL / PULSEFINANCE_DEMO_PASSWORD environment variables. Without them the
+// sign-in screen simply has no demo drawer.
+val localProperties = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+fun demoSetting(property: String, envVar: String): String =
+    (localProperties.getProperty(property) ?: System.getenv(envVar) ?: "")
+        .replace("\\", "\\\\").replace("\"", "\\\"")
 
 android {
     namespace = "com.se3092.pulsefinance"
@@ -41,8 +54,8 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "DEMO_EMAIL", "\"kavindu.silva@pulsemail.io\"")
-            buildConfigField("String", "DEMO_PASSWORD", "\"ColomboDev2026!\"")
+            buildConfigField("String", "DEMO_EMAIL", "\"${demoSetting("pulsefinance.demoEmail", "PULSEFINANCE_DEMO_EMAIL")}\"")
+            buildConfigField("String", "DEMO_PASSWORD", "\"${demoSetting("pulsefinance.demoPassword", "PULSEFINANCE_DEMO_PASSWORD")}\"")
         }
         release {
             buildConfigField("String", "DEMO_EMAIL", "\"\"")
@@ -120,6 +133,9 @@ dependencies {
 
     // Biometrics (Sensitive Account Number reveal)
     implementation(libs.androidx.biometric)
+
+    // Google profile photo in the avatar
+    implementation(libs.coil.compose)
 
     // Testing
     testImplementation(libs.junit)

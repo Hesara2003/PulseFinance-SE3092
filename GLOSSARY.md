@@ -76,6 +76,10 @@ _Avoid_: Card lock, card block, frozen card
 An expense logged against an account while its Spending Freeze is active.
 _Avoid_: Violation, failure
 
+**Emergency Runway Buffer**:
+The number of months of Kavindu's committed costs (1 to 6) he wants kept aside in case his income stops, and how much of it he has set aside. The amount is his own tally, not a transaction and not a bank balance, and it does not change the Safe-to-Spend Allowance.
+_Avoid_: Emergency fund balance, savings account
+
 **Logging Gap**:
 A stretch of days with no records; treated as missing data, never as zero spending or as failure.
 _Avoid_: Broken streak, missed day

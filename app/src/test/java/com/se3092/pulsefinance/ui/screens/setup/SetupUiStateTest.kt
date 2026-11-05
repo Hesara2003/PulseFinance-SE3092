@@ -70,4 +70,40 @@ class SetupUiStateTest {
         assertEquals("acc_primary_bank", rent.paymentAccountId)
         assertEquals(now, rent.timestamp)
     }
+
+    // ---- FR-AUTH-6: emergency buffer ----
+
+    private val rentAndBroadband = listOf(
+        CommitmentDraft(0, "Rent", "34,000", ExpenseCategory.RENT),
+        CommitmentDraft(1, "Fiber Broadband", "4800", ExpenseCategory.UTILITIES)
+    )
+
+    @Test
+    fun `the buffer starts at three months and is saved with the profile`() {
+        val state = SetupUiState(commitments = rentAndBroadband)
+
+        assertEquals(3, state.runwayMonths)
+        assertEquals(116_400.0, state.runwayTargetLkr, 0.01)
+        assertEquals(3, state.toProfile(now).runwayMonths)
+        assertEquals(0.0, state.toProfile(now).runwaySavedLkr, 0.0)
+    }
+
+    @Test
+    fun `a chosen number of months and an amount already set aside are captured`() {
+        val state = SetupUiState(commitments = rentAndBroadband, runwayMonths = 6, runwaySavedInput = "11,200")
+
+        val profile = state.toProfile(now)
+
+        assertEquals(6, profile.runwayMonths)
+        assertEquals(11_200.0, profile.runwaySavedLkr, 0.01)
+        assertEquals(232_800.0, state.runwayTargetLkr, 0.01)
+    }
+
+    @Test
+    fun `the amount set aside is optional but must be a number on the last step`() {
+        assertNull(SetupUiState(step = 2, runwaySavedInput = "").stepError)
+        assertNull(SetupUiState(step = 2, runwaySavedInput = "5,000").stepError)
+        assertNotNull(SetupUiState(step = 2, runwaySavedInput = "some").stepError)
+        assertNotNull(SetupUiState(step = 2, runwaySavedInput = "-100").stepError)
+    }
 }

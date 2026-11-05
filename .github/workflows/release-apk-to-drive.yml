@@ -178,9 +178,20 @@ jobs:
           GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
           GDRIVE_FOLDER_ID: "1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d"
         run: |
-          if [ -z "$GDRIVE_REFRESH_TOKEN" ] && [ -z "$GDRIVE_SA_KEY" ]; then
-            echo "::warning::Neither GDRIVE_REFRESH_TOKEN nor GDRIVE_SA_KEY secret is configured. Skipping Google Drive upload step."
-            echo "See docs/RELEASE_WORKFLOW_AND_GDRIVE.md for setup instructions."
+          # The point of this workflow is a build in Drive. If the upload cannot happen, the run
+          # must fail: a green run with no file looks like success and sends the team to a stale build.
+          # The OAuth path needs all three of token, client ID and client secret (scripts/upload_to_gdrive.py).
+          oauth_ready=false
+          if [ -n "$GDRIVE_REFRESH_TOKEN" ] && [ -n "$GDRIVE_CLIENT_ID" ] && [ -n "$GDRIVE_CLIENT_SECRET" ]; then
+            oauth_ready=true
+          fi
+          if [ "$oauth_ready" != "true" ] && [ -z "$GDRIVE_SA_KEY" ]; then
+            missing=""
+            [ -z "$GDRIVE_REFRESH_TOKEN" ] && missing="$missing GDRIVE_REFRESH_TOKEN"
+            [ -z "$GDRIVE_CLIENT_ID" ] && missing="$missing GDRIVE_CLIENT_ID"
+            [ -z "$GDRIVE_CLIENT_SECRET" ] && missing="$missing GDRIVE_CLIENT_SECRET"
+            echo "::error title=Google Drive upload is not configured::The APK was built but NOT uploaded. Add the repository secrets${missing} (OAuth), or GDRIVE_SA_KEY (Shared Drive). See docs/RELEASE_WORKFLOW_AND_GDRIVE.md section 3."
+            exit 1
           else
             echo "Uploading APK to Google Drive folder 1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d..."
             python scripts/upload_to_gdrive.py \

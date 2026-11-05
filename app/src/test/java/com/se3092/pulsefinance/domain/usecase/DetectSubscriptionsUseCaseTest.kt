@@ -117,4 +117,60 @@ class DetectSubscriptionsUseCaseTest {
         assertEquals(SubscriptionRisk.HIGH, sub.risk)
         assertTrue(sub.isFlagged)
     }
+
+    private fun netflixCharge(now: Long) = Expense(
+        id = "n1",
+        title = "Netflix Premium",
+        amountLkr = 2200.0,
+        category = ExpenseCategory.SUBSCRIPTION,
+        paymentAccountName = "HNB Primary",
+        timestamp = now - 10 * DAY_MILLIS
+    )
+
+    @Test
+    fun `without usage data risk comes only from review status and the sub is not app linked`() {
+        val now = 1700000000000L
+        val keep = mapOf(
+            "netflix_premium" to SubscriptionReview("netflix_premium", SubscriptionDecision.KEEP, now - 5 * DAY_MILLIS)
+        )
+
+        val sub = useCase(listOf(netflixCharge(now)), keep, now = now).single()
+
+        assertEquals(SubscriptionRisk.LOW, sub.risk)
+        assertEquals(null, sub.lastAppOpenedDaysAgo)
+        assertFalse(sub.isAppLinked)
+    }
+
+    @Test
+    fun `app unopened for 30 days raises a kept subscription to high risk`() {
+        val now = 1700000000000L
+        val keep = mapOf(
+            "netflix_premium" to SubscriptionReview("netflix_premium", SubscriptionDecision.KEEP, now - 5 * DAY_MILLIS)
+        )
+
+        val sub = useCase(
+            listOf(netflixCharge(now)), keep,
+            appUsageDaysProvider = { 35 },
+            now = now,
+            appLinkedProvider = { true }
+        ).single()
+
+        assertEquals(SubscriptionRisk.HIGH, sub.risk)
+        assertEquals(35, sub.lastAppOpenedDaysAgo)
+        assertTrue(sub.isAppLinked)
+    }
+
+    @Test
+    fun `app opened 14 to 29 days ago gives medium risk and recent use stays low`() {
+        val now = 1700000000000L
+        val keep = mapOf(
+            "netflix_premium" to SubscriptionReview("netflix_premium", SubscriptionDecision.KEEP, now - 5 * DAY_MILLIS)
+        )
+
+        val stale = useCase(listOf(netflixCharge(now)), keep, appUsageDaysProvider = { 20 }, now = now).single()
+        val recent = useCase(listOf(netflixCharge(now)), keep, appUsageDaysProvider = { 2 }, now = now).single()
+
+        assertEquals(SubscriptionRisk.MEDIUM, stale.risk)
+        assertEquals(SubscriptionRisk.LOW, recent.risk)
+    }
 }

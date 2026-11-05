@@ -2,40 +2,29 @@ package com.se3092.pulsefinance.ui.common
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CorporateFare
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LaptopMac
 import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material.icons.filled.Subscriptions
-import androidx.compose.material.icons.filled.Terminal
-import androidx.compose.material.icons.filled.Token
 import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.se3092.pulsefinance.R
+import com.se3092.pulsefinance.domain.model.AccountType
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.ui.theme.FoodColor
 import com.se3092.pulsefinance.ui.theme.NeoCardLow
 import com.se3092.pulsefinance.ui.theme.RentColor
-import com.se3092.pulsefinance.ui.theme.Teal
 import com.se3092.pulsefinance.ui.theme.TransportColor
 import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 
+/** Material icon and colours for a category. The icon art now comes from [categoryIllustration]; the donut chart still uses these colours. */
 data class TransactionVisual(val icon: ImageVector, val container: Color, val tint: Color)
-
-fun incomeSourceVisual(source: IncomeSource): TransactionVisual = when (source) {
-    IncomeSource.SALARY -> TransactionVisual(Icons.Default.CorporateFare, Teal.copy(alpha = 0.16f), Teal)
-    IncomeSource.FREELANCE -> TransactionVisual(Icons.Default.Terminal, Color(0xFFFFF4E0), Color(0xFFB45309))
-    IncomeSource.ADSENSE -> TransactionVisual(Icons.Default.SmartDisplay, TransportColor.copy(alpha = 0.12f), Color(0xFF1D4ED8))
-    IncomeSource.CRYPTO -> TransactionVisual(Icons.Default.Token, Color(0xFFEEF2FF), Color(0xFF4F46E5))
-}
 
 fun expenseCategoryVisual(category: ExpenseCategory): TransactionVisual = when (category) {
     ExpenseCategory.RENT -> TransactionVisual(Icons.Default.Home, NeoSecondaryContainer, NeoTextSecondary)
@@ -47,11 +36,6 @@ fun expenseCategoryVisual(category: ExpenseCategory): TransactionVisual = when (
     ExpenseCategory.ENTERTAINMENT -> TransactionVisual(Icons.Default.Movie, NeoCardLow, NeoTextSecondary)
     ExpenseCategory.OTHER -> TransactionVisual(Icons.Default.ShoppingBag, NeoCardLow, NeoTextSecondary)
 }
-
-fun transactionVisual(item: TransactionItem): TransactionVisual =
-    item.incomeSource?.let(::incomeSourceVisual)
-        ?: item.expenseCategory?.let(::expenseCategoryVisual)
-        ?: TransactionVisual(Icons.Default.Payments, NeoCardLow, NeoTextSecondary)
 
 /**
  * Illustrated icon for a one-tap preset, drawn in the style of the Storyset illustrations:
@@ -74,17 +58,47 @@ fun presetIllustration(title: String, category: ExpenseCategory): Int {
             R.drawable.ic_preset_tech
         has("netflix", "spotify", "youtube", "prime", "disney") -> R.drawable.ic_preset_subscription
         has("rent", "boarding", "annex") -> R.drawable.ic_preset_house
-        else -> when (category) {
-            ExpenseCategory.RENT -> R.drawable.ic_preset_house
-            ExpenseCategory.UTILITIES -> R.drawable.ic_preset_bills
-            ExpenseCategory.SUBSCRIPTION -> R.drawable.ic_preset_subscription
-            ExpenseCategory.FOOD_DINING -> R.drawable.ic_preset_food
-            ExpenseCategory.TRANSPORT -> R.drawable.ic_preset_ride
-            ExpenseCategory.TECH_HARDWARE -> R.drawable.ic_preset_tech
-            ExpenseCategory.ENTERTAINMENT -> R.drawable.ic_preset_fun
-            ExpenseCategory.OTHER -> R.drawable.ic_preset_shopping
-        }
+        else -> categoryIllustration(category)
     }
+}
+
+/** Illustrated icon for an expense category, for chips, the donut legend and breakdowns. */
+@DrawableRes
+fun categoryIllustration(category: ExpenseCategory): Int = when (category) {
+    ExpenseCategory.RENT -> R.drawable.ic_preset_house
+    ExpenseCategory.UTILITIES -> R.drawable.ic_preset_bills
+    ExpenseCategory.SUBSCRIPTION -> R.drawable.ic_preset_subscription
+    ExpenseCategory.FOOD_DINING -> R.drawable.ic_preset_food
+    ExpenseCategory.TRANSPORT -> R.drawable.ic_preset_ride
+    ExpenseCategory.TECH_HARDWARE -> R.drawable.ic_preset_tech
+    ExpenseCategory.ENTERTAINMENT -> R.drawable.ic_preset_fun
+    ExpenseCategory.OTHER -> R.drawable.ic_preset_shopping
+}
+
+/**
+ * Picture for a savings goal, guessed from its name like the presets: a laptop for a laptop or
+ * phone, a house for a home, a vehicle for a car or bike, otherwise the piggy bank. The goal can
+ * be anything, so nothing here assumes a MacBook.
+ */
+@DrawableRes
+fun goalIllustration(title: String): Int {
+    val t = title.lowercase()
+    // Match from the start of a word, so "car" finds "cars" but not "scar".
+    fun has(vararg words: String) = words.any { Regex("\\b${Regex.escape(it)}").containsMatchIn(t) }
+    return when {
+        has("macbook", "laptop", "computer", "pc", "iphone", "phone", "ipad", "tablet", "camera", "console", "ps5", "monitor") -> R.drawable.ic_preset_tech
+        has("house", "home", "flat", "apartment", "land", "rent", "deposit") -> R.drawable.ic_preset_house
+        has("car", "bike", "scooter", "motor", "vehicle", "tuk") -> R.drawable.ic_preset_ride
+        else -> R.drawable.illustration_piggy_bank
+    }
+}
+
+/** Illustrated icon for a payment account: a bank for both bank accounts, cash, or the exchange's coin. */
+@DrawableRes
+fun accountIllustration(type: AccountType): Int = when (type) {
+    AccountType.BANK_PRIMARY, AccountType.BANK_SECONDARY -> R.drawable.ic_preset_bank
+    AccountType.CASH -> R.drawable.ic_preset_cash
+    AccountType.CRYPTO_EXCHANGE -> R.drawable.ic_preset_crypto
 }
 
 /** Illustrated icon for an income source, in the same style as [presetIllustration]. */

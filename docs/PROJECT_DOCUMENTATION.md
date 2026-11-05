@@ -48,9 +48,9 @@ The SRS argues that the problem is not discipline. **None of these tools could r
 
 | Status | Count | Requirements |
 |---|---|---|
-| Done | 67 of 73 | |
-| Partial | 4 | FR-SUB-5 and NFR-12 (usage access not asked in context), FR-ANA-5 (no account/date filter), NFR-2 (gap tolerance verified for the savings rate only) |
-| Not started | 2 | FR-AUTH-6, NFR-8 |
+| Done | 69 of 73 | |
+| Partial | 3 | FR-SUB-5 and NFR-12 (usage access not asked in context), NFR-2 (gap tolerance verified for the savings rate only) |
+| Not started | 1 | NFR-8 |
 
 ---
 

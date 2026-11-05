@@ -23,7 +23,8 @@ class DetectSubscriptionsUseCase @Inject constructor() {
         reviews: Map<String, SubscriptionReview>,
         accounts: List<Account> = emptyList(),
         appUsageDaysProvider: ((key: String) -> Int?)? = null,
-        now: Long = System.currentTimeMillis()
+        now: Long = System.currentTimeMillis(),
+        appLinkedProvider: ((key: String) -> Boolean)? = null
     ): List<DetectedSubscription> {
         val lookbackStart = now - LOOKBACK_DAYS * DAY_MILLIS
         val activeCutoff = now - ACTIVE_DAYS * DAY_MILLIS
@@ -80,6 +81,7 @@ class DetectSubscriptionsUseCase @Inject constructor() {
                     risk = risk,
                     consecutiveUnusedMonths = consecutiveUnused,
                     lastAppOpenedDaysAgo = appDaysAgo,
+                    isAppLinked = appLinkedProvider?.invoke(key) ?: false,
                     isSecondaryAccount = isSecondary
                 )
             }
@@ -93,6 +95,15 @@ class DetectSubscriptionsUseCase @Inject constructor() {
     companion object {
         private const val LOOKBACK_DAYS = 120L
         private const val ACTIVE_DAYS = 45L
+
+        /**
+         * Subscriptions grouped by the account they're charged to (FR-SUB-6), keeping the order of
+         * [subscriptions] within and across groups. Charges with no account go under [UNASSIGNED].
+         */
+        fun groupByAccount(subscriptions: List<DetectedSubscription>): List<Pair<String, List<DetectedSubscription>>> =
+            subscriptions.groupBy { it.accountName.ifBlank { UNASSIGNED } }.toList()
+
+        const val UNASSIGNED = "Unassigned Account"
 
         /** Stable key for a merchant, e.g. "Netflix Premium " -> "netflix_premium". Safe as a Firestore map key. */
         fun keyFor(title: String): String =

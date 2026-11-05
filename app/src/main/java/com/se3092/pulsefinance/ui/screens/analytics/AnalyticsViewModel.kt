@@ -1,5 +1,9 @@
 package com.se3092.pulsefinance.ui.screens.analytics
 
+import kotlinx.coroutines.launch
+import com.se3092.pulsefinance.ui.common.transactionIllustration
+import com.se3092.pulsefinance.ui.components.UiNotice
+import com.se3092.pulsefinance.ui.components.NoticeTone
 import com.se3092.pulsefinance.ui.common.initialsFor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -72,6 +76,7 @@ data class CategoryTotal(
 
 data class AnalyticsUiState(
     val initials: String = "",
+    val notice: UiNotice? = null,
     val isLoading: Boolean = true,
     val interval: AnalyticsInterval = AnalyticsInterval.WEEKLY,
     /** 0 = current period, -1 = previous, ... */
@@ -124,13 +129,14 @@ private data class AnalyticsData(
 
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
-    authRepository: AuthRepository,
-    expenseRepository: ExpenseRepository,
+    private val authRepository: AuthRepository,
+    private val expenseRepository: ExpenseRepository,
     incomeRepository: IncomeRepository,
     accountRepository: AccountRepository
 ) : ViewModel() {
 
     private val controls = MutableStateFlow(AnalyticsControls())
+    private val notice = MutableStateFlow<UiNotice?>(null)
 
     private val data = authRepository.whenSignedIn<AnalyticsData?>(signedOut = null) { userId ->
         combine(
@@ -146,7 +152,7 @@ class AnalyticsViewModel @Inject constructor(
     val uiState: StateFlow<AnalyticsUiState> = combine(data, controls) { data, controls ->
         if (data == null) AnalyticsUiState(interval = controls.interval)
         else buildState(data.expenses, data.incomes, data.accounts, controls)
-    }.map { it.copy(initials = initials) }.stateIn(
+    }.combine(notice) { state, notice -> state.copy(initials = initials, notice = notice) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = AnalyticsUiState()
@@ -302,5 +308,22 @@ class AnalyticsViewModel @Inject constructor(
 
     fun clearFilters() {
         controls.update { it.copy(searchQuery = "", filterCategory = null, filterAccountId = null, filterDateRange = null) }
+    }
+
+    /** Deletes an expense from any period, not only the latest few shown on the Dashboard. */
+    fun deleteExpense(transaction: TransactionItem) {
+        val expenseId = transaction.expenseId ?: return
+        val userId = authRepository.currentUserId ?: return
+        viewModelScope.launch {
+            expenseRepository.deleteExpense(expenseId, userId)
+                .onSuccess {
+                    notice.value = UiNotice("Expense deleted", transaction.title, illustration = transactionIllustration(transaction))
+                }
+                .onFailure { notice.value = UiNotice("Couldn't delete the expense", it.localizedMessage, NoticeTone.ERROR) }
+        }
+    }
+
+    fun dismissNotice() {
+        notice.value = null
     }
 }
