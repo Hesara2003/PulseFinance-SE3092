@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.income
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
@@ -76,24 +77,6 @@ import com.se3092.pulsefinance.ui.common.incomeSourceIllustration
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.signedLkr
 import com.se3092.pulsefinance.ui.components.EmptyStateView
-import com.se3092.pulsefinance.ui.theme.OnAccent
-import com.se3092.pulsefinance.ui.theme.Teal
-import com.se3092.pulsefinance.ui.theme.VioletAccent
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoAmber
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoContainer
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
-import com.se3092.pulsefinance.ui.theme.NeoGreenLight
-import com.se3092.pulsefinance.ui.theme.NeoSecondaryContainer
-import com.se3092.pulsefinance.ui.theme.NeoSurface
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import com.se3092.pulsefinance.ui.components.PulseNoticeHost
 
 @Composable
@@ -105,7 +88,7 @@ fun IncomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(NeoSurface)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -137,7 +120,7 @@ fun IncomeScreen(
                         text = "PulseFinance",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = NeoTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 17.sp,
                         letterSpacing = (-0.2).sp
                     )
@@ -152,7 +135,7 @@ fun IncomeScreen(
                         text = "Multi Stream Income Hub",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = NeoTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -163,7 +146,7 @@ fun IncomeScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(NeoContainer),
+                            .background(MaterialTheme.colorScheme.surfaceContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         ProfileAvatar(initials = state.initials, size = 34.dp)
@@ -191,7 +174,7 @@ fun IncomeScreen(
                             Text(
                                 text = "Income Streams",
                                 style = MaterialTheme.typography.headlineLarge,
-                                color = NeoTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 26.sp,
                                 letterSpacing = (-0.5).sp
@@ -200,7 +183,7 @@ fun IncomeScreen(
                             Text(
                                 text = "Received cash vs. unpaid invoices",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = NeoTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 14.sp
                             )
                         }
@@ -214,14 +197,14 @@ fun IncomeScreen(
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .background(NeoCardLow)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                                     .clickable { viewModel.openPayslipSheet() },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Description,
                                     contentDescription = "Payslip & EPF Calculator",
-                                    tint = NeoGreenDark,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -231,14 +214,14 @@ fun IncomeScreen(
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .background(NeoGreen)
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
                                     .clickable { viewModel.showAddSheet() },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Add,
                                     contentDescription = "Record income",
-                                    tint = OnAccent,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -251,8 +234,8 @@ fun IncomeScreen(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        color = NeoGreen.copy(alpha = 0.08f),
-                        border = BorderStroke(1.dp, NeoGreen.copy(alpha = 0.35f))
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f))
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -263,16 +246,16 @@ fun IncomeScreen(
                                 modifier = Modifier
                                     .size(38.dp)
                                     .clip(CircleShape)
-                                    .background(NeoGreen),
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(imageVector = Icons.Default.Savings, contentDescription = null, tint = OnAccent, modifier = Modifier.size(20.dp))
+                                Icon(imageVector = Icons.Default.Savings, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Accumulated EPF Wealth",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = NeoTextTertiary,
+                                    color = MaterialTheme.pulseColors.textTertiary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 10.5.sp,
                                     letterSpacing = 0.5.sp
@@ -280,14 +263,14 @@ fun IncomeScreen(
                                 Text(
                                     text = lkr(state.totalEpfAccumulatedLkr),
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = NeoGreenDark,
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 18.sp
                                 )
                                 Text(
                                     text = "Employer 12% + Employee 8% social savings you already own",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = NeoTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.5.sp
                                 )
                             }
@@ -303,12 +286,12 @@ fun IncomeScreen(
                             .shadow(
                                 elevation = 8.dp,
                                 shape = RoundedCornerShape(28.dp),
-                                ambientColor = Color(0x0A0F172A),
-                                spotColor = Color(0x0A0F172A)
+                                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.04f),
+                                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.04f)
                             ),
                         shape = RoundedCornerShape(28.dp),
-                        color = NeoCard,
-                        border = BorderStroke(1.dp, NeoBorder)
+                        color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Box(modifier = Modifier.fillMaxWidth()) {
                             // Ambient Green Glow in top-right
@@ -319,7 +302,7 @@ fun IncomeScreen(
                                     .background(
                                         Brush.radialGradient(
                                             colors = listOf(
-                                                Teal.copy(alpha = 0.15f),
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                                                 Color.Transparent
                                             )
                                         )
@@ -340,7 +323,7 @@ fun IncomeScreen(
                                     Text(
                                         text = state.monthLabel.uppercase(),
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = NeoTextSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
                                         letterSpacing = 1.sp
@@ -350,7 +333,7 @@ fun IncomeScreen(
                                     Box(
                                         modifier = Modifier
                                             .clip(CircleShape)
-                                            .background(Teal.copy(alpha = 0.15f))
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
                                             .padding(horizontal = 10.dp, vertical = 4.dp)
                                     ) {
                                         Row(
@@ -360,14 +343,14 @@ fun IncomeScreen(
                                             Icon(
                                                 imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                                                 contentDescription = null,
-                                                tint = NeoGreenDark,
+                                                tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(14.dp)
                                             )
                                             Text(
                                                 text = "$realizedPct% collected",
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = NeoGreenDark
+                                                color = MaterialTheme.colorScheme.primary
                                             )
                                         }
                                     }
@@ -379,7 +362,7 @@ fun IncomeScreen(
                                 Text(
                                     text = lkr(state.realizedThisMonthLkr, 2),
                                     style = MaterialTheme.typography.headlineLarge,
-                                    color = NeoTextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 30.sp,
                                     letterSpacing = (-0.5).sp
@@ -388,7 +371,7 @@ fun IncomeScreen(
                                 Text(
                                     text = "Received this month across every source",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = NeoTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 12.sp
                                 )
 
@@ -409,12 +392,12 @@ fun IncomeScreen(
                                                 modifier = Modifier
                                                     .size(10.dp)
                                                     .clip(CircleShape)
-                                                    .background(Teal)
+                                                    .background(MaterialTheme.colorScheme.primary)
                                             )
                                             Text(
                                                 text = "Received",
                                                 fontSize = 12.sp,
-                                                color = NeoTextSecondary
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                         Spacer(modifier = Modifier.height(4.dp))
@@ -422,7 +405,7 @@ fun IncomeScreen(
                                             text = lkr(state.realizedThisMonthLkr, 2),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = NeoTextPrimary
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
 
@@ -436,12 +419,12 @@ fun IncomeScreen(
                                                 modifier = Modifier
                                                     .size(10.dp)
                                                     .clip(CircleShape)
-                                                    .background(NeoAmber)
+                                                    .background(MaterialTheme.pulseColors.warning)
                                             )
                                             Text(
                                                 text = if (state.overdueLkr > 0) "Unpaid (${lkr(state.overdueLkr)} late)" else "Unpaid invoices",
                                                 fontSize = 12.sp,
-                                                color = NeoTextSecondary
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                         Spacer(modifier = Modifier.height(4.dp))
@@ -449,7 +432,7 @@ fun IncomeScreen(
                                             text = lkr(state.pendingLkr, 2),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = NeoTextPrimary
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
                                 }
@@ -473,7 +456,7 @@ fun IncomeScreen(
                                         .fillMaxWidth()
                                         .height(12.dp)
                                         .clip(CircleShape)
-                                        .background(NeoContainer)
+                                        .background(MaterialTheme.colorScheme.surfaceContainer)
                                         .padding(2.dp)
                                 ) {
                                     Row(
@@ -486,7 +469,7 @@ fun IncomeScreen(
                                                     .weight(animatedRealizedWidth.coerceAtLeast(0.01f))
                                                     .fillMaxHeight()
                                                     .clip(CircleShape)
-                                                    .background(Teal)
+                                                    .background(MaterialTheme.colorScheme.primary)
                                             )
                                         }
                                         if (animatedPendingWidth > 0.01f) {
@@ -495,7 +478,7 @@ fun IncomeScreen(
                                                     .weight(animatedPendingWidth.coerceAtLeast(0.01f))
                                                     .fillMaxHeight()
                                                     .clip(CircleShape)
-                                                    .background(NeoAmber)
+                                                    .background(MaterialTheme.pulseColors.warning)
                                             )
                                         }
                                     }
@@ -510,13 +493,13 @@ fun IncomeScreen(
                                     Text(
                                         text = "${String.format("%.1f%%", state.realizedRatio * 100)} collected",
                                         fontSize = 11.sp,
-                                        color = NeoTextSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.Medium
                                     )
                                     Text(
                                         text = "${String.format("%.1f%%", state.pendingRatio * 100)} still owed",
                                         fontSize = 11.sp,
-                                        color = NeoTextSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
@@ -650,10 +633,10 @@ private fun CategoryPill(
             .then(
                 if (isSelected) {
                     Modifier
-                        .shadow(4.dp, CircleShape, spotColor = NeoGreenGlow)
-                        .background(NeoGreen)
+                        .shadow(4.dp, CircleShape, spotColor = MaterialTheme.pulseColors.primaryGlow)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
                 } else {
-                    Modifier.background(NeoCardLow)
+                    Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
                 }
             )
             .clickable(onClick = onClick)
@@ -664,7 +647,7 @@ private fun CategoryPill(
             text = label,
             fontSize = 13.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-            color = if (isSelected) OnAccent else NeoTextSecondary
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -682,8 +665,8 @@ private fun SourceBreakdownCard(breakdown: List<SourceTotal>, totalLkr: Double) 
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -692,7 +675,7 @@ private fun SourceBreakdownCard(breakdown: List<SourceTotal>, totalLkr: Double) 
             Text(
                 text = "THIS MONTH BY SOURCE",
                 style = MaterialTheme.typography.labelSmall,
-                color = NeoTextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.sp,
                 letterSpacing = 1.sp
@@ -714,13 +697,13 @@ private fun SourceBreakdownCard(breakdown: List<SourceTotal>, totalLkr: Double) 
                                 contentDescription = null,
                                 modifier = Modifier.size(28.dp)
                             )
-                            Text(text = item.source.displayName, fontSize = 13.sp, color = NeoTextPrimary, fontWeight = FontWeight.Medium)
+                            Text(text = item.source.displayName, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                         }
                         Text(
                             text = if (item.count == 0) "—" else lkr(item.amountLkr),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (item.amountLkr < 0) NeoRose else NeoTextPrimary
+                            color = if (item.amountLkr < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     Box(
@@ -728,7 +711,7 @@ private fun SourceBreakdownCard(breakdown: List<SourceTotal>, totalLkr: Double) 
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(CircleShape)
-                            .background(NeoContainer)
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
                     ) {
                         if (share > 0f) {
                             Box(
@@ -736,7 +719,7 @@ private fun SourceBreakdownCard(breakdown: List<SourceTotal>, totalLkr: Double) 
                                     .fillMaxWidth(share)
                                     .fillMaxHeight()
                                     .clip(CircleShape)
-                                    .background(Teal)
+                                    .background(MaterialTheme.colorScheme.primary)
                             )
                         }
                     }
@@ -752,8 +735,8 @@ private fun CryptoNetCard(netLkr: Double, entries: Int) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, VioletAccent.copy(alpha = 0.35f))
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.pulseColors.violet.copy(alpha = 0.35f))
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -766,18 +749,18 @@ private fun CryptoNetCard(netLkr: Double, entries: Int) {
                 modifier = Modifier.size(44.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Crypto net, year to date", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeoTextPrimary)
+                Text(text = "Crypto net, year to date", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     text = "$entries realised gain/loss entr${if (entries == 1) "y" else "ies"} this year",
                     fontSize = 11.sp,
-                    color = NeoTextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Text(
                 text = signedLkr(netLkr),
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 15.sp,
-                color = if (isUp) NeoGreenDark else NeoRose
+                color = if (isUp) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
             )
         }
     }
@@ -791,9 +774,9 @@ private fun IncomeRecordCard(
 ) {
     val status = income.effectiveStatus()
     val (statusLabel, statusBg, statusText) = when (status) {
-        InvoiceStatus.RECEIVED -> Triple(if (income.isLoss) "Loss" else "Received", if (income.isLoss) NeoRose.copy(alpha = 0.12f) else Teal.copy(alpha = 0.15f), if (income.isLoss) NeoRose else NeoGreenDark)
-        InvoiceStatus.PENDING_INVOICE -> Triple("Awaiting payment", NeoAmber.copy(alpha = 0.15f), NeoAmber)
-        InvoiceStatus.OVERDUE -> Triple("Overdue", NeoRose.copy(alpha = 0.12f), NeoRose)
+        InvoiceStatus.RECEIVED -> Triple(if (income.isLoss) "Loss" else "Received", if (income.isLoss) MaterialTheme.colorScheme.error.copy(alpha = 0.12f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), if (income.isLoss) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+        InvoiceStatus.PENDING_INVOICE -> Triple("Awaiting payment", MaterialTheme.pulseColors.warning.copy(alpha = 0.15f), MaterialTheme.pulseColors.warning)
+        InvoiceStatus.OVERDUE -> Triple("Overdue", MaterialTheme.colorScheme.error.copy(alpha = 0.12f), MaterialTheme.colorScheme.error)
     }
     val dateLine = when (status) {
         InvoiceStatus.RECEIVED -> "Received ${formatDate(income.dateReceivedOrExpected)}"
@@ -810,13 +793,13 @@ private fun IncomeRecordCard(
             .shadow(
                 elevation = 6.dp,
                 shape = RoundedCornerShape(24.dp),
-                ambientColor = Color(0x080F172A),
-                spotColor = Color(0x080F172A)
+                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.03f),
+                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.03f)
             )
             .animateContentSize(),
         shape = RoundedCornerShape(24.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier
@@ -843,7 +826,7 @@ private fun IncomeRecordCard(
                             text = income.title,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = NeoTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 16.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -852,7 +835,7 @@ private fun IncomeRecordCard(
                         Text(
                             text = "${income.clientOrPlatform} · ${income.source.displayName}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = NeoTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -866,7 +849,7 @@ private fun IncomeRecordCard(
                         else "${income.currency.name} ${"%,.2f".format(income.originalAmount)}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (income.isLoss) NeoRose else NeoTextPrimary,
+                        color = if (income.isLoss) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                         fontSize = 15.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -886,7 +869,7 @@ private fun IncomeRecordCard(
             // Meta pill: dates, and the exact FX rate captured at the time
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = NeoCardLow.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.7f),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -904,14 +887,14 @@ private fun IncomeRecordCard(
                         Icon(
                             imageVector = if (income.currency == Currency.LKR) Icons.Default.Schedule else Icons.Default.CurrencyExchange,
                             contentDescription = null,
-                            tint = NeoTextSecondary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = if (income.currency == Currency.LKR) dateLine
                             else "1 ${income.currency.name} = ${"%,.2f".format(income.exchangeRateToLkr)} LKR · $dateLine",
                             fontSize = 11.sp,
-                            color = NeoTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -921,7 +904,7 @@ private fun IncomeRecordCard(
                             text = "≈ ${lkr(income.amountInLkr)}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = NeoTextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -935,18 +918,18 @@ private fun IncomeRecordCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onDelete) {
-                    Text(text = "Delete", fontSize = 12.sp, color = NeoTextSecondary)
+                    Text(text = "Delete", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (status != InvoiceStatus.RECEIVED) {
                     Button(
                         onClick = onMarkReceived,
                         modifier = Modifier
                             .height(40.dp)
-                            .shadow(6.dp, CircleShape, spotColor = NeoGreenGlow),
+                            .shadow(6.dp, CircleShape, spotColor = MaterialTheme.pulseColors.primaryGlow),
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = NeoGreen,
-                            contentColor = OnAccent
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     ) {
                         Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -958,8 +941,8 @@ private fun IncomeRecordCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Icon(Icons.Default.Autorenew, contentDescription = null, tint = NeoGreenDark, modifier = Modifier.size(14.dp))
-                        Text(text = "Monthly", fontSize = 11.sp, color = NeoGreenDark, fontWeight = FontWeight.SemiBold)
+                        Icon(Icons.Default.Autorenew, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                        Text(text = "Monthly", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

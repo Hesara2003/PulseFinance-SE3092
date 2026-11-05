@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.auth
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -67,18 +68,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.se3092.pulsefinance.BuildConfig
-import com.se3092.pulsefinance.ui.theme.OnAccent
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoContainerHigh
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoSurface
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import kotlinx.coroutines.launch
 
 @Composable
@@ -115,7 +104,7 @@ fun AuthScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(NeoSurface)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
@@ -151,7 +140,7 @@ fun AuthScreen(
                             label = "segmentWidth"
                         )
                         val color by animateColorAsState(
-                            targetValue = if (isCurrent || isPassed) NeoGreen else NeoContainerHigh,
+                            targetValue = if (isCurrent || isPassed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
                             animationSpec = tween(300),
                             label = "segmentColor"
                         )
@@ -180,14 +169,14 @@ fun AuthScreen(
                         Text(
                             text = "Step 3 of 3",
                             fontSize = 11.5.sp,
-                            color = NeoTextTertiary,
+                            color = MaterialTheme.pulseColors.textTertiary,
                             fontWeight = FontWeight.Medium
                         )
                     }
 
                     Surface(
                         shape = CircleShape,
-                        color = if (pagerState.currentPage == 2) NeoCardLow else Color.Transparent,
+                        color = if (pagerState.currentPage == 2) MaterialTheme.colorScheme.surfaceContainerLow else Color.Transparent,
                         modifier = Modifier.clickable {
                             // Skip directly to last step or submit
                             if (pagerState.currentPage < 2) {
@@ -203,7 +192,7 @@ fun AuthScreen(
                             text = "Skip",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = NeoTextTertiary,
+                            color = MaterialTheme.pulseColors.textTertiary,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
                     }
@@ -234,15 +223,15 @@ fun AuthScreen(
             state.errorMessage?.let { error ->
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = NeoRose.copy(alpha = 0.08f),
-                    border = BorderStroke(1.dp, NeoRose.copy(alpha = 0.25f)),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f)),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 12.dp)
                 ) {
                     Text(
                         text = error,
-                        color = NeoRose,
+                        color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
@@ -266,12 +255,12 @@ fun AuthScreen(
                         .shadow(
                             elevation = 12.dp,
                             shape = RoundedCornerShape(24.dp),
-                            ambientColor = Color(0x1F0F172A),
-                            spotColor = Color(0x1F0F172A)
+                            ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.12f),
+                            spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.12f)
                         ),
                     shape = RoundedCornerShape(24.dp),
-                    color = NeoCard,
-                    border = BorderStroke(1.dp, NeoBorder)
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Column(
                         modifier = Modifier
@@ -282,7 +271,7 @@ fun AuthScreen(
                         Text(
                             text = if (state.isLoginMode) "Sign In with Account" else "Create New Account",
                             style = MaterialTheme.typography.titleMedium,
-                            color = NeoTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         )
@@ -298,10 +287,10 @@ fun AuthScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                             shape = RoundedCornerShape(14.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = NeoGreen,
-                                unfocusedBorderColor = NeoBorder,
-                                focusedTextColor = NeoTextPrimary,
-                                unfocusedTextColor = NeoTextPrimary
+                                focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             )
                         )
 
@@ -317,10 +306,10 @@ fun AuthScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             shape = RoundedCornerShape(14.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = NeoGreen,
-                                unfocusedBorderColor = NeoBorder,
-                                focusedTextColor = NeoTextPrimary,
-                                unfocusedTextColor = NeoTextPrimary
+                                focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             )
                         )
 
@@ -332,7 +321,7 @@ fun AuthScreen(
                                     "Need a new account? Switch to Register"
                                 else
                                     "Already registered? Switch to Login",
-                                color = NeoGreenDark,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -344,8 +333,8 @@ fun AuthScreen(
             if (BuildConfig.DEBUG && BuildConfig.DEMO_EMAIL.isNotBlank()) {
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = NeoCardLow,
-                    border = BorderStroke(1.dp, NeoGreen.copy(alpha = 0.5f)),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 12.dp)
@@ -364,19 +353,19 @@ fun AuthScreen(
                                 text = "🧪 Demo Drawer (Debug Only)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = NeoGreenDark
+                                color = MaterialTheme.colorScheme.primary
                             )
                             Text(
                                 text = "Kavindu (Sri Lanka) • ${BuildConfig.DEMO_EMAIL}",
                                 fontSize = 11.sp,
-                                color = NeoTextTertiary
+                                color = MaterialTheme.pulseColors.textTertiary
                             )
                         }
                         Text(
                             text = "Auto Fill",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = NeoGreenDark
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -403,17 +392,17 @@ fun AuthScreen(
                     .shadow(
                         elevation = 16.dp,
                         shape = CircleShape,
-                        spotColor = NeoGreenGlow
+                        spotColor = MaterialTheme.pulseColors.primaryGlow
                     ),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = NeoGreen,
-                    contentColor = OnAccent
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(22.dp),
-                        color = OnAccent,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         strokeWidth = 2.5.dp
                     )
                 } else {
@@ -448,11 +437,11 @@ fun AuthScreen(
                 onClick = { startGoogleSignIn() },
                 enabled = !state.isLoading,
                 shape = CircleShape,
-                border = BorderStroke(1.dp, NeoBorder),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = NeoTextPrimary,
-                    disabledContainerColor = Color.White.copy(alpha = 0.6f)
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 0.dp),
                 modifier = Modifier
@@ -470,7 +459,7 @@ fun AuthScreen(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
-                    color = NeoTextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -484,13 +473,13 @@ fun AuthScreen(
                 Text(
                     text = "Already have an account?",
                     fontSize = 13.5.sp,
-                    color = NeoTextTertiary
+                    color = MaterialTheme.pulseColors.textTertiary
                 )
                 Text(
                     text = if (showCustomCredentials) "Hide form" else "Sign in",
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = NeoGreenDark,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .clip(CircleShape)
                         .clickable {

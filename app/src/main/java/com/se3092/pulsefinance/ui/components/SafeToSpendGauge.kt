@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.components
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,14 +30,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 
 @Composable
 fun SafeToSpendGauge(
@@ -50,12 +43,12 @@ fun SafeToSpendGauge(
             .shadow(
                 elevation = 6.dp,
                 shape = RoundedCornerShape(24.dp),
-                ambientColor = Color(0x0C0F172A),
-                spotColor = Color(0x0C0F172A)
+                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.05f),
+                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.05f)
             ),
         shape = RoundedCornerShape(24.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier
@@ -72,13 +65,13 @@ fun SafeToSpendGauge(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(NeoGreen.copy(alpha = 0.12f)),
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.VerifiedUser,
                             contentDescription = "Safe to spend",
-                            tint = NeoGreenDark,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -87,14 +80,14 @@ fun SafeToSpendGauge(
                         Text(
                             text = "SAFE-TO-SPEND DAILY PACE",
                             style = MaterialTheme.typography.labelSmall,
-                            color = NeoTextTertiary,
+                            color = MaterialTheme.pulseColors.textTertiary,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp
                         )
                         Text(
                             text = "$daysRemainingInMonth days left in cycle",
                             style = MaterialTheme.typography.bodySmall,
-                            color = NeoTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
                     }
@@ -103,14 +96,14 @@ fun SafeToSpendGauge(
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(NeoGreen.copy(alpha = 0.12f))
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f))
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "Active Guard",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = NeoGreenDark
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -126,14 +119,14 @@ fun SafeToSpendGauge(
                     Text(
                         text = "LKR ${String.format("%,.0f", dailyAllowanceLkr)}",
                         style = MaterialTheme.typography.headlineMedium,
-                        color = NeoTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 28.sp
                     )
                     Text(
                         text = "Available for today's discretionary lifestyle",
                         style = MaterialTheme.typography.bodySmall,
-                        color = NeoTextTertiary,
+                        color = MaterialTheme.pulseColors.textTertiary,
                         fontSize = 12.sp
                     )
                 }

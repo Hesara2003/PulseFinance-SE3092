@@ -1,5 +1,7 @@
 package com.se3092.pulsefinance.ui.components
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,11 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.se3092.pulsefinance.ui.theme.Display
-import com.se3092.pulsefinance.ui.theme.Ink
-import com.se3092.pulsefinance.ui.theme.OnAccent
-import com.se3092.pulsefinance.ui.theme.Saffron
-import com.se3092.pulsefinance.ui.theme.SaffronSoft
-import com.se3092.pulsefinance.ui.theme.Teal
 
 /**
  * The signed-in user's profile photo URL (from Google sign-in), provided once at the root so
@@ -49,6 +46,9 @@ fun ProfileAvatar(
 ) {
     val seed = initials.fold(7) { acc, c -> acc * 31 + c.code }
     val rotation = (seed % 360).toFloat()
+    // Read here: Canvas drawing is not @Composable.
+    val scheme = MaterialTheme.colorScheme
+    val petalLight = MaterialTheme.pulseColors.primaryLight
     Box(
         modifier = modifier
             .size(size)
@@ -56,7 +56,7 @@ fun ProfileAvatar(
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            drawCircle(Brush.linearGradient(listOf(SaffronSoft, Saffron)))
+            drawCircle(Brush.linearGradient(listOf(petalLight, scheme.primaryContainer)))
             val r = this.size.minDimension / 2
             // Six petal arcs around the centre
             for (i in 0 until 6) {
@@ -65,15 +65,15 @@ fun ProfileAvatar(
                     center.x + (r * 0.62f * kotlin.math.cos(angle)).toFloat(),
                     center.y + (r * 0.62f * kotlin.math.sin(angle)).toFloat()
                 )
-                drawCircle(color = Ink.copy(alpha = 0.10f), radius = r * 0.42f, center = c)
+                drawCircle(color = scheme.onSurface.copy(alpha = 0.10f), radius = r * 0.42f, center = c)
             }
-            drawCircle(color = Teal.copy(alpha = 0.9f), radius = r * 0.96f, style = Stroke(width = r * 0.08f))
+            drawCircle(color = scheme.primary.copy(alpha = 0.9f), radius = r * 0.96f, style = Stroke(width = r * 0.08f))
         }
         if (initials.isNotBlank()) Text(
             text = initials.take(2),
             fontFamily = Display,
             fontWeight = FontWeight.ExtraBold,
-            color = OnAccent,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             fontSize = (size.value * 0.36f).sp
         )
         if (!photoUrl.isNullOrBlank()) {

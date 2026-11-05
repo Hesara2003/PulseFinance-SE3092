@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.income
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,20 +52,6 @@ import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.Currency
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
-import com.se3092.pulsefinance.ui.theme.Dusk
-import com.se3092.pulsefinance.ui.theme.InkHigher
-import com.se3092.pulsefinance.ui.theme.Mist
-import com.se3092.pulsefinance.ui.theme.OnAccent
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 
 private val receivedDateOptions = listOf(0 to "Today", -1 to "Yesterday", -7 to "Last week", -30 to "Last month")
 private val dueDateOptions = listOf(7 to "In 1 week", 14 to "In 2 weeks", 30 to "In 30 days", -1 to "Already due")
@@ -95,29 +82,29 @@ fun AddIncomeBottomSheet(
     val convertedLkr = amount * rate
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = NeoGreen,
-        unfocusedBorderColor = NeoBorder,
-        focusedTextColor = NeoTextPrimary,
-        unfocusedTextColor = NeoTextPrimary
+        focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
     )
     val chipColors = FilterChipDefaults.filterChipColors(
-        selectedContainerColor = NeoGreen,
-        selectedLabelColor = OnAccent,
-        containerColor = NeoCardLow,
-        labelColor = NeoTextSecondary
+        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     )
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = NeoCard,
+        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = {
             Box(
                 modifier = Modifier
                     .padding(vertical = 10.dp)
                     .size(width = 36.dp, height = 4.dp)
                     .clip(CircleShape)
-                    .background(NeoBorder)
+                    .background(MaterialTheme.colorScheme.outlineVariant)
             )
         }
     ) {
@@ -138,19 +125,19 @@ fun AddIncomeBottomSheet(
                     Text(
                         text = "Record Income",
                         style = MaterialTheme.typography.titleLarge,
-                        color = NeoTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
                     Text(
                         text = "Money received, or an invoice you're waiting on",
                         style = MaterialTheme.typography.bodySmall,
-                        color = NeoTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = NeoTextSecondary)
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
@@ -182,7 +169,7 @@ fun AddIncomeBottomSheet(
                     subtitle = "Losses reduce your crypto net and this month's income",
                     checked = form.isCryptoLoss,
                     onCheckedChange = onCryptoLossToggle,
-                    accent = NeoRose
+                    accent = MaterialTheme.colorScheme.error
                 )
             }
 
@@ -281,14 +268,14 @@ fun AddIncomeBottomSheet(
                     Text(
                         text = if (form.rateSourceInfo.isNotBlank()) "Suggested: ${form.rateSourceInfo}" else "Suggested: 305 LKR/USD",
                         style = MaterialTheme.typography.bodySmall,
-                        color = NeoTextTertiary,
+                        color = MaterialTheme.pulseColors.textTertiary,
                         fontSize = 11.5.sp
                     )
                     Text(
                         text = if (form.isCreditedLkrMode) "Switch to Rate" else "Type Bank LKR",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
-                        color = NeoGreenDark,
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 11.5.sp,
                         modifier = Modifier
                             .clip(CircleShape)
@@ -299,7 +286,7 @@ fun AddIncomeBottomSheet(
             }
 
             form.errorMessage?.let {
-                Text(text = it, color = NeoRose, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
+                Text(text = it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
             }
 
             // The rate actually received is stored with the entry, so history never shifts with the market (ADR-0001).
@@ -309,13 +296,13 @@ fun AddIncomeBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(NeoCardLow)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
                         .padding(10.dp)
                 ) {
                     Text(
                         text = "Effective rate: ${String.format("%.2f", rate)} LKR/${form.selectedCurrency.name} → Recorded as ≈ LKR ${String.format("%,.0f", convertedLkr)}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = NeoGreenDark,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.5.sp
                     )
@@ -361,7 +348,7 @@ fun AddIncomeBottomSheet(
                     subtitle = "Marks this as recurring income",
                     checked = form.isRecurringMonthly,
                     onCheckedChange = onRecurringToggle,
-                    accent = NeoGreen
+                    accent = MaterialTheme.colorScheme.primaryContainer
                 )
             }
 
@@ -373,15 +360,15 @@ fun AddIncomeBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
-                    .shadow(10.dp, CircleShape, spotColor = NeoGreenGlow),
+                    .shadow(10.dp, CircleShape, spotColor = MaterialTheme.pulseColors.primaryGlow),
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = NeoGreen,
-                    contentColor = OnAccent
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             ) {
                 if (form.isSubmitting) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = OnAccent, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimaryContainer, strokeWidth = 2.dp)
                 } else {
                     Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.size(8.dp))
@@ -397,7 +384,7 @@ private fun SectionLabel(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelSmall,
-        color = NeoTextTertiary,
+        color = MaterialTheme.pulseColors.textTertiary,
         fontWeight = FontWeight.Bold,
         fontSize = 11.sp
     )
@@ -415,19 +402,19 @@ private fun ToggleRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(NeoCardLow)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeoTextPrimary)
-            Text(text = subtitle, fontSize = 11.5.sp, color = NeoTextSecondary)
+            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(text = subtitle, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(checkedThumbColor = OnAccent, checkedTrackColor = accent, uncheckedThumbColor = Mist, uncheckedTrackColor = InkHigher, uncheckedBorderColor = Dusk)
+            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimaryContainer, checkedTrackColor = accent, uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant, uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHigh, uncheckedBorderColor = MaterialTheme.pulseColors.textQuiet)
         )
     }
 }

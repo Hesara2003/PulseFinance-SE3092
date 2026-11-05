@@ -1,5 +1,7 @@
 package com.se3092.pulsefinance.ui.components
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
+import androidx.compose.material3.MaterialTheme
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -46,15 +48,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoErrorContainer
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import kotlinx.coroutines.delay
 
 enum class NoticeTone { SUCCESS, ERROR }
@@ -109,12 +102,12 @@ private fun NoticeCard(notice: UiNotice, onDismiss: () -> Unit) {
     val isError = notice.tone == NoticeTone.ERROR
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, if (isError) NeoRose.copy(alpha = 0.35f) else NeoBorder),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, if (isError) MaterialTheme.colorScheme.error.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
             .widthIn(max = 480.dp)
             .fillMaxWidth()
-            .shadow(16.dp, RoundedCornerShape(20.dp), ambientColor = Color(0x290F172A), spotColor = Color(0x290F172A))
+            .shadow(16.dp, RoundedCornerShape(20.dp), ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.16f), spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.16f))
             .clickable(onClick = onDismiss)
             .semantics { liveRegion = LiveRegionMode.Polite }
     ) {
@@ -129,9 +122,9 @@ private fun NoticeCard(notice: UiNotice, onDismiss: () -> Unit) {
                     .clip(RoundedCornerShape(14.dp))
                     .background(
                         when {
-                            notice.illustration != null -> NeoCardLow
-                            isError -> NeoErrorContainer
-                            else -> NeoGreen.copy(alpha = 0.16f)
+                            notice.illustration != null -> MaterialTheme.colorScheme.surfaceContainerLow
+                            isError -> MaterialTheme.colorScheme.errorContainer
+                            else -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.16f)
                         }
                     ),
                 contentAlignment = Alignment.Center
@@ -146,7 +139,7 @@ private fun NoticeCard(notice: UiNotice, onDismiss: () -> Unit) {
                     Icon(
                         imageVector = if (isError) Icons.Rounded.ErrorOutline else Icons.Rounded.CheckCircle,
                         contentDescription = null,
-                        tint = if (isError) NeoRose else NeoGreenDark,
+                        tint = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -156,7 +149,7 @@ private fun NoticeCard(notice: UiNotice, onDismiss: () -> Unit) {
                     text = notice.title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isError) NeoRose else NeoTextPrimary,
+                    color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -164,7 +157,7 @@ private fun NoticeCard(notice: UiNotice, onDismiss: () -> Unit) {
                     Text(
                         text = it,
                         fontSize = 12.sp,
-                        color = NeoTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
