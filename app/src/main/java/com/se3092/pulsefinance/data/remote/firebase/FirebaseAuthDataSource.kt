@@ -25,6 +25,9 @@ class FirebaseAuthDataSource @Inject constructor(
     val userDisplayName: String?
         get() = auth.currentUser?.displayName
 
+    val userPhotoUrl: String?
+        get() = auth.currentUser?.photoUrl?.toString()
+
     fun observeAuthState(): Flow<String?> = callbackFlow {
         val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             trySend(firebaseAuth.currentUser?.uid)

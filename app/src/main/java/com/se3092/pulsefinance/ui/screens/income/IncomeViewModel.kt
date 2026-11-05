@@ -29,6 +29,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
+import com.se3092.pulsefinance.ui.common.incomeSourceIllustration
+import com.se3092.pulsefinance.ui.components.NoticeTone
+import com.se3092.pulsefinance.ui.components.UiNotice
 
 data class SourceTotal(val source: IncomeSource, val amountLkr: Double, val count: Int)
 
@@ -72,7 +75,7 @@ data class IncomeScreenUiState(
     val isPayslipSheetVisible: Boolean = false,
     val totalEpfAccumulatedLkr: Double = 0.0,
     val form: IncomeFormState = IncomeFormState(),
-    val toastNotification: Pair<String, String>? = null
+    val notice: UiNotice? = null
 ) {
     val totalProjectedLkr: Double get() = realizedThisMonthLkr.coerceAtLeast(0.0) + pendingLkr
     val realizedRatio: Float get() = if (totalProjectedLkr > 0) (realizedThisMonthLkr.coerceAtLeast(0.0) / totalProjectedLkr).toFloat().coerceIn(0f, 1f) else 0f
@@ -103,7 +106,7 @@ class IncomeViewModel @Inject constructor(
     private val filter = MutableStateFlow(IncomeFilter())
     private val form = MutableStateFlow(IncomeFormState())
     private val isPayslipVisible = MutableStateFlow(false)
-    private val toast = MutableStateFlow<Pair<String, String>?>(null)
+    private val toast = MutableStateFlow<UiNotice?>(null)
 
     private val incomes = authRepository.whenSignedIn<List<IncomeStream>?>(signedOut = null) { userId ->
         incomeRepository.getIncomeStreams(userId)
@@ -124,7 +127,7 @@ class IncomeViewModel @Inject constructor(
         filter: IncomeFilter,
         form: IncomeFormState,
         isPayslip: Boolean,
-        toast: Pair<String, String>?
+        toast: UiNotice?
     ): IncomeScreenUiState {
         val now = System.currentTimeMillis()
         val base = IncomeScreenUiState(
@@ -134,7 +137,7 @@ class IncomeViewModel @Inject constructor(
             foreignCurrencyOnly = filter.foreignCurrencyOnly,
             isPayslipSheetVisible = isPayslip,
             form = form,
-            toastNotification = toast
+            notice = toast
         )
         if (incomes == null) return base
 
@@ -205,10 +208,10 @@ class IncomeViewModel @Inject constructor(
             ).fold(
                 onSuccess = {
                     isPayslipVisible.value = false
-                    toast.value = "Salary recorded" to "+${lkr(takeHome)} Take-home · ${lkr(employeeEpf + employerEpf)} EPF saved"
+                    toast.value = UiNotice("Salary recorded", "+${lkr(takeHome)} take-home · ${lkr(employeeEpf + employerEpf)} EPF saved", illustration = incomeSourceIllustration(IncomeSource.SALARY))
                 },
                 onFailure = { e ->
-                    toast.value = "Couldn't save salary" to (e.localizedMessage ?: "Try again")
+                    toast.value = UiNotice("Couldn't save salary", e.localizedMessage ?: "Try again", NoticeTone.ERROR)
                 }
             )
         }
@@ -226,8 +229,8 @@ class IncomeViewModel @Inject constructor(
         val userId = authRepository.currentUserId ?: return
         viewModelScope.launch {
             incomeRepository.updateInvoiceStatus(income.id, userId, InvoiceStatus.RECEIVED, System.currentTimeMillis())
-                .onSuccess { toast.value = "Marked as received" to "+${lkr(income.amountInLkr)} · ${income.title}" }
-                .onFailure { toast.value = "Couldn't update" to (it.localizedMessage ?: "Try again") }
+                .onSuccess { toast.value = UiNotice("Marked as received", "+${lkr(income.amountInLkr)} · ${income.title}", illustration = incomeSourceIllustration(income.source)) }
+                .onFailure { toast.value = UiNotice("Couldn't update", it.localizedMessage ?: "Try again", NoticeTone.ERROR) }
         }
     }
 
@@ -235,12 +238,12 @@ class IncomeViewModel @Inject constructor(
         val userId = authRepository.currentUserId ?: return
         viewModelScope.launch {
             incomeRepository.deleteIncomeStream(income.id, userId)
-                .onSuccess { toast.value = "Income removed" to income.title }
-                .onFailure { toast.value = "Couldn't delete" to (it.localizedMessage ?: "Try again") }
+                .onSuccess { toast.value = UiNotice("Income removed", income.title) }
+                .onFailure { toast.value = UiNotice("Couldn't delete", it.localizedMessage ?: "Try again", NoticeTone.ERROR) }
         }
     }
 
-    fun dismissToast() {
+    fun dismissNotice() {
         toast.value = null
     }
 
@@ -361,8 +364,11 @@ class IncomeViewModel @Inject constructor(
             ).fold(
                 onSuccess = {
                     form.value = IncomeFormState()
-                    toast.value = (if (current.selectedStatus == InvoiceStatus.RECEIVED) "Income recorded" else "Invoice tracked") to
-                        "${signedLkr(amountInLkr)} · $title"
+                    toast.value = UiNotice(
+                        if (current.selectedStatus == InvoiceStatus.RECEIVED) "Income recorded" else "Invoice tracked",
+                        "${signedLkr(amountInLkr)} · $title",
+                        illustration = incomeSourceIllustration(current.selectedSource)
+                    )
                 },
                 onFailure = { e ->
                     form.update { it.copy(isSubmitting = false, errorMessage = e.localizedMessage ?: "Couldn't save") }

@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.auth
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.R
 import com.se3092.pulsefinance.ui.components.FloatingIllustration
 import androidx.compose.foundation.BorderStroke
@@ -47,16 +48,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoContainer
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenLight
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 
 @Composable
 fun OnboardingStep2(modifier: Modifier = Modifier) {
@@ -76,7 +67,7 @@ fun OnboardingStep2(modifier: Modifier = Modifier) {
         Text(
             text = "Track Every Income Stream in Real Time",
             style = MaterialTheme.typography.headlineLarge,
-            color = NeoTextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 23.sp,
             textAlign = TextAlign.Center,
@@ -88,7 +79,7 @@ fun OnboardingStep2(modifier: Modifier = Modifier) {
         Text(
             text = "Salary, freelance invoices, USD AdSense and crypto gains or losses, all in one monthly picture.",
             style = MaterialTheme.typography.bodyMedium,
-            color = NeoTextTertiary,
+            color = MaterialTheme.pulseColors.textTertiary,
             fontSize = 13.5.sp,
             textAlign = TextAlign.Center,
             lineHeight = 19.sp,
@@ -104,8 +95,8 @@ fun OnboardingStep2(modifier: Modifier = Modifier) {
         ) {
             Surface(
                 shape = CircleShape,
-                color = NeoContainer,
-                border = BorderStroke(1.dp, NeoBorder.copy(alpha = 0.6f))
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -115,22 +106,22 @@ fun OnboardingStep2(modifier: Modifier = Modifier) {
                     Icon(
                         imageVector = Icons.Default.VerifiedUser,
                         contentDescription = null,
-                        tint = NeoGreenDark,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
                         text = "Multi-Currency Auto-FX",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = NeoTextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
 
             Surface(
                 shape = CircleShape,
-                color = NeoContainer,
-                border = BorderStroke(1.dp, NeoBorder.copy(alpha = 0.6f))
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -140,14 +131,14 @@ fun OnboardingStep2(modifier: Modifier = Modifier) {
                     Icon(
                         imageVector = Icons.Default.Bolt,
                         contentDescription = null,
-                        tint = NeoGreenDark,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(15.dp)
                     )
                     Text(
                         text = "Invoice Tracking",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = NeoTextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }

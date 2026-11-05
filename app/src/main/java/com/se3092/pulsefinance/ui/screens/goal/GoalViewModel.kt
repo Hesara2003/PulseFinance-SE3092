@@ -31,6 +31,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.roundToInt
+import com.se3092.pulsefinance.R
+import com.se3092.pulsefinance.ui.components.NoticeTone
+import com.se3092.pulsefinance.ui.components.UiNotice
 
 /** "Cut this habit by a quarter" suggestion, priced in days of goal progress. */
 data class OpportunityCost(
@@ -62,7 +65,7 @@ data class GoalScreenUiState(
     val isUpdating: Boolean = false,
     val showAllocateSheet: Boolean = false,
     val editor: GoalEditorState = GoalEditorState(),
-    val toastMessage: String? = null,
+    val notice: UiNotice? = null,
     val celebration: Celebration? = null
 ) {
     /** The goal as a level-by-level journey, derived from [goal]. */
@@ -77,7 +80,7 @@ private data class GoalLocalState(
     val isUpdating: Boolean = false,
     val showAllocateSheet: Boolean = false,
     val editor: GoalEditorState = GoalEditorState(),
-    val toastMessage: String? = null,
+    val notice: UiNotice? = null,
     val celebration: Celebration? = null
 )
 
@@ -124,7 +127,7 @@ class GoalViewModel @Inject constructor(
             isUpdating = local.isUpdating,
             showAllocateSheet = local.showAllocateSheet,
             editor = local.editor,
-            toastMessage = local.toastMessage,
+            notice = local.notice,
             celebration = local.celebration
         )
     }.map { it.copy(initials = initials) }.stateIn(
@@ -165,7 +168,7 @@ class GoalViewModel @Inject constructor(
         val goal = uiState.value.goal
         val userId = authRepository.currentUserId
         if (deposit == null || deposit <= 0 || goal == null || userId == null) {
-            local.update { it.copy(toastMessage = "Enter an amount greater than zero") }
+            local.update { it.copy(notice = UiNotice("Enter an amount greater than zero", tone = NoticeTone.ERROR)) }
             return
         }
         viewModelScope.launch {
@@ -193,7 +196,7 @@ class GoalViewModel @Inject constructor(
                     }
                 },
                 onFailure = { e ->
-                    local.update { it.copy(isUpdating = false, toastMessage = e.localizedMessage ?: "Couldn't update the goal") }
+                    local.update { it.copy(isUpdating = false, notice = UiNotice("Couldn't update the goal", e.localizedMessage, NoticeTone.ERROR)) }
                 }
             )
         }
@@ -205,7 +208,7 @@ class GoalViewModel @Inject constructor(
         val goal = uiState.value.goal
         local.update {
             it.copy(
-                editor = if (goal == null) GoalEditorState(isVisible = true, usdPriceInput = "1599")
+                editor = if (goal == null) GoalEditorState(isVisible = true)
                 else GoalEditorState(
                     isVisible = true,
                     isNew = false,
@@ -270,7 +273,7 @@ class GoalViewModel @Inject constructor(
             goalRepository.saveGoal(goal).fold(
                 onSuccess = {
                     local.update {
-                        it.copy(editor = GoalEditorState(), toastMessage = if (existing == null) "Goal created" else "Goal updated")
+                        it.copy(editor = GoalEditorState(), notice = UiNotice(if (existing == null) "Goal created" else "Goal updated", illustration = R.drawable.illustration_piggy_bank))
                     }
                 },
                 onFailure = { e ->
@@ -280,7 +283,7 @@ class GoalViewModel @Inject constructor(
         }
     }
 
-    fun dismissToast() = local.update { it.copy(toastMessage = null) }
+    fun dismissNotice() = local.update { it.copy(notice = null) }
 
     fun dismissCelebration() = local.update { it.copy(celebration = null) }
 }

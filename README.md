@@ -25,7 +25,7 @@ PulseFinance is built around that one person. The full problem analysis and requ
 | Two subscriptions he meant to cancel are still charging (P6) | They were on the secondary account, which he never checked | Detects recurring merchants over 120 days and records his Keep/Cancel decision. It flags "still charging" after a cancel and raises the risk after two "didn't use it" answers (FR-SUB-1–6). |
 | No idea what's committed vs discretionary (P7) | Bank categories put PickMe under "retail" | Proposes committed or discretionary per category (rent → committed, dining → discretionary), and shows the split bar and a category donut. This is where the "LKR 24,000 on coffee" moment shows up (FR-EXP-2, FR-DASH-4, FR-ANA-1). |
 | Doesn't know the saving needed for the MacBook (P8) | The goal was a wish, not a number | Calculates the required pace (about LKR 1,330/day, LKR 39,900/month) against his actual savings rate, and prices each habit in "days of MacBook". If a USD price is set, the LKR target follows the exchange rate (FR-GOAL-1–6). |
-| Gaps in logging made earlier tools feel like failure (P9) | Missing days showed as zeros and broken streaks | One-tap Sri Lankan presets (Coffee LKR 850, PickMe LKR 1,450, Dialog/Mobitel reloads). Works offline. Savings rate is averaged only over days that have data (NFR-1, 2, 3). |
+| Gaps in logging made earlier tools feel like failure (P9) | Missing days showed as zeros and broken streaks | One-tap presets: his own repeated spends with their last amount, plus Sri Lankan starter shortcuts (Coffee, PickMe, Dialog/Mobitel reloads) that fill in everything but the amount. Works offline. Savings rate is averaged only over days that have data (NFR-1, 2, 3). |
 | He never reads his payslip (P10) | No tool handled EPF or APIT | Takes gross salary and shows employee EPF 8%, APIT from bands stored in Firestore, take-home pay and his growing EPF balance (FR-LK-1, 2, 3). |
 | Impulsive spending, no friction (P11) | Nothing stood between him and a purchase | Spending Freeze on an account, with an opportunity-cost reminder priced in goal days. 30-day warnings before Avurudu, Vesak, Poson, December and his own peak months (FR-ACC-3–5, FR-LK-4, 5). |
 
@@ -86,7 +86,7 @@ The app is configured for the Firebase project `finance-app-se3092` (see `.fireb
 
 **Signing in:**
 - **New accounts:** register with email or Google. A new account starts with four empty accounts: primary bank, secondary auto-debit, cash and crypto exchange. Nothing else is pre-filled; he records his own data.
-- **Demo account (debug builds only):** the sign-in screen has a demo drawer that fills in a pre-seeded demo account. The credentials are injected through `BuildConfig` in debug builds and are empty in release builds (FR-AUTH-7), so they are not repeated here.
+- **Demo account (debug builds only):** the sign-in screen has a demo drawer that fills in a pre-seeded demo account. The credentials are read from your `local.properties` (`pulsefinance.demoEmail`, `pulsefinance.demoPassword`) into `BuildConfig` in debug builds only, and are empty in release builds (FR-AUTH-7), so they are not repeated here. See the setup guide.
 
 **Tests:**
 

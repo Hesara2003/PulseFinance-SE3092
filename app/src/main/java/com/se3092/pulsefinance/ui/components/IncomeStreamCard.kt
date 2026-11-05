@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.components
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -36,16 +37,6 @@ import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.Currency
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
-import com.se3092.pulsefinance.ui.theme.NeoAmber
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -60,9 +51,9 @@ fun IncomeStreamCard(
     val formattedDate = dateFormat.format(Date(income.dateReceivedOrExpected))
 
     val statusColor = when (income.status) {
-        InvoiceStatus.RECEIVED -> NeoGreen
-        InvoiceStatus.PENDING_INVOICE -> NeoAmber
-        InvoiceStatus.OVERDUE -> NeoRose
+        InvoiceStatus.RECEIVED -> MaterialTheme.colorScheme.primaryContainer
+        InvoiceStatus.PENDING_INVOICE -> MaterialTheme.pulseColors.warning
+        InvoiceStatus.OVERDUE -> MaterialTheme.colorScheme.error
     }
 
     Surface(
@@ -71,12 +62,12 @@ fun IncomeStreamCard(
             .shadow(
                 elevation = 4.dp,
                 shape = RoundedCornerShape(20.dp),
-                ambientColor = Color(0x080F172A),
-                spotColor = Color(0x080F172A)
+                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.03f),
+                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.03f)
             ),
         shape = RoundedCornerShape(20.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier
@@ -92,7 +83,7 @@ fun IncomeStreamCard(
                     Text(
                         text = income.title,
                         style = MaterialTheme.typography.titleMedium,
-                        color = NeoTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp
                     )
@@ -102,7 +93,7 @@ fun IncomeStreamCard(
                     Text(
                         text = "Due / Received: $formattedDate",
                         style = MaterialTheme.typography.bodySmall,
-                        color = NeoTextTertiary,
+                        color = MaterialTheme.pulseColors.textTertiary,
                         fontSize = 12.sp
                     )
                 }
@@ -148,7 +139,7 @@ fun IncomeStreamCard(
                     Text(
                         text = "+ LKR ${String.format("%,.0f", income.amountInLkr)}",
                         style = MaterialTheme.typography.headlineSmall,
-                        color = NeoGreenDark,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 17.sp
                     )
@@ -157,7 +148,7 @@ fun IncomeStreamCard(
                         Text(
                             text = "Original: ${income.currency.symbol} ${String.format("%,.2f", income.originalAmount)}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = NeoTextTertiary,
+                            color = MaterialTheme.pulseColors.textTertiary,
                             fontSize = 11.sp
                         )
                     }
@@ -167,8 +158,8 @@ fun IncomeStreamCard(
                     OutlinedButton(
                         onClick = onMarkReceived,
                         shape = CircleShape,
-                        border = BorderStroke(1.dp, NeoGreen),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = NeoGreenDark),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                     ) {
                         Text(

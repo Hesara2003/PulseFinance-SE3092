@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.components
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -41,15 +42,6 @@ import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.ui.common.expenseCategoryVisual
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.screens.analytics.CategoryTotal
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
-import com.se3092.pulsefinance.ui.theme.NeoTrack
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -69,8 +61,8 @@ fun CategoryDonutChart(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -84,7 +76,7 @@ fun CategoryDonutChart(
                 Text(
                     text = "CATEGORY DISTRIBUTION",
                     style = MaterialTheme.typography.labelSmall,
-                    color = NeoTextTertiary,
+                    color = MaterialTheme.pulseColors.textTertiary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.sp,
                     letterSpacing = 1.sp
@@ -92,7 +84,7 @@ fun CategoryDonutChart(
                 Text(
                     text = "Donut breakdown",
                     style = MaterialTheme.typography.bodySmall,
-                    color = NeoGreenDark,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 12.sp
                 )
@@ -105,6 +97,7 @@ fun CategoryDonutChart(
                 modifier = Modifier.size(190.dp),
                 contentAlignment = Alignment.Center
             ) {
+                val trackColor = MaterialTheme.pulseColors.track // read here: Canvas drawing is not @Composable
                 Canvas(modifier = Modifier.size(180.dp)) {
                     val strokeWidth = 26.dp.toPx()
                     val arcSize = Size(size.width - strokeWidth, size.height - strokeWidth)
@@ -112,7 +105,7 @@ fun CategoryDonutChart(
 
                     // Background track ring
                     drawArc(
-                        color = NeoTrack,
+                        color = trackColor,
                         startAngle = 0f,
                         sweepAngle = 360f,
                         useCenter = false,
@@ -149,14 +142,14 @@ fun CategoryDonutChart(
                     Text(
                         text = "Total Spent",
                         style = MaterialTheme.typography.bodySmall,
-                        color = NeoTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )
                     Text(
                         text = lkr(totalSpentLkr),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold,
-                        color = NeoTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 17.sp,
                         textAlign = TextAlign.Center
                     )
@@ -175,8 +168,8 @@ fun CategoryDonutChart(
                     val visual = expenseCategoryVisual(total.category)
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = NeoCardLow,
-                        border = BorderStroke(0.5.dp, NeoBorder)
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -192,14 +185,14 @@ fun CategoryDonutChart(
                             Text(
                                 text = total.category.displayName,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = NeoTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 12.sp
                             )
                             Text(
                                 text = "${(total.share * 100).toInt()}%",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = NeoTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 11.5.sp
                             )
@@ -207,14 +200,14 @@ fun CategoryDonutChart(
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(NeoGreen.copy(alpha = 0.15f))
+                                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f))
                                         .padding(horizontal = 4.dp, vertical = 1.dp)
                                 ) {
                                     Text(
                                         text = "Fixed",
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = NeoGreenDark
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }

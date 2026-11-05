@@ -62,10 +62,26 @@ class CalculateSavingsRateUseCaseTest {
             Expense(id = "e3", title = "Rent 3", amountLkr = 100_000.0, category = ExpenseCategory.RENT, timestamp = now - 15 * DAY_MILLIS)
         )
 
-        // Net savings over 90 days = 540,000 - 300,000 = 240,000
-        // Window = 75 days (~2.5 months) -> 240,000 / 2.5 = 96,000 / mo
+        // Each 30-day block: 180,000 in − 100,000 out = 80,000 saved, so the rate is 80,000 / month.
+        // (The old span-based average divided 240,000 by 2.5 "months" and overstated it as 96,000.)
         val rate = useCase(incomes, expenses, now)
-        assertEquals(96_000.0, rate, 100.0)
+        assertEquals(80_000.0, rate, 0.01)
+    }
+
+    @Test
+    fun `a month with nothing logged is a gap, not a month of zero saving (NFR-2)`() {
+        val now = 1700000000000L
+        fun salary(daysAgo: Int) = IncomeStream(
+            source = IncomeSource.SALARY, title = "Salary", clientOrPlatform = "Employer",
+            originalAmount = 180_000.0, currency = Currency.LKR, amountInLkr = 180_000.0,
+            status = InvoiceStatus.RECEIVED, dateReceivedOrExpected = now - daysAgo * DAY_MILLIS
+        )
+        fun rent(daysAgo: Int) = Expense(
+            title = "Rent", amountLkr = 100_000.0, category = ExpenseCategory.RENT, timestamp = now - daysAgo * DAY_MILLIS
+        )
+        // Logged 75 and 15 days ago; nothing at all in the middle block (a three-week gap).
+        val rate = useCase(listOf(salary(75), salary(15)), listOf(rent(75), rent(15)), now)
+        assertEquals(80_000.0, rate, 0.01)
     }
 
     @Test

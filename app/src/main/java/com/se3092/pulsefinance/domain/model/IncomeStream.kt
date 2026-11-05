@@ -26,4 +26,9 @@ data class IncomeStream(
         status == InvoiceStatus.PENDING_INVOICE && dateReceivedOrExpected < Periods.startOfDay(now) -> InvoiceStatus.OVERDUE
         else -> status
     }
+
+    /** Whole days past the due date for an overdue invoice (at least 1), or 0 if it isn't overdue. */
+    fun daysOverdue(now: Long = System.currentTimeMillis()): Int =
+        if (effectiveStatus(now) != InvoiceStatus.OVERDUE) 0
+        else ((now - dateReceivedOrExpected) / DAY_MILLIS).toInt().coerceAtLeast(1)
 }

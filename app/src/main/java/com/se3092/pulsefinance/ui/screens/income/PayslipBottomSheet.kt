@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.income
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -51,16 +52,6 @@ import androidx.compose.ui.unit.sp
 import com.se3092.pulsefinance.domain.model.ApitTaxBand
 import com.se3092.pulsefinance.domain.usecase.CalculatePayslipUseCase
 import com.se3092.pulsefinance.ui.common.lkr
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
-import com.se3092.pulsefinance.ui.theme.OnAccent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,16 +84,16 @@ fun PayslipBottomSheet(
     }
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = NeoGreen,
-        unfocusedBorderColor = NeoBorder,
-        focusedTextColor = NeoTextPrimary,
-        unfocusedTextColor = NeoTextPrimary
+        focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
     )
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = NeoCard
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -121,19 +112,19 @@ fun PayslipBottomSheet(
                     Text(
                         text = "Sri Lankan Payslip & EPF",
                         style = MaterialTheme.typography.titleLarge,
-                        color = NeoTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
                     Text(
                         text = "Gross salary, APIT tax bands, and EPF accumulation",
                         style = MaterialTheme.typography.bodySmall,
-                        color = NeoTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = NeoTextSecondary)
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
@@ -144,7 +135,7 @@ fun PayslipBottomSheet(
                 value = grossInput,
                 onValueChange = { grossInput = it },
                 label = { Text("Gross Monthly Salary (LKR)", fontSize = 13.sp) },
-                prefix = { Text("LKR ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
+                prefix = { Text("LKR ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
@@ -186,15 +177,15 @@ fun PayslipBottomSheet(
             // Take Home Net Pay Callout
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                color = NeoCardLow,
-                border = BorderStroke(1.dp, NeoBorder),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "ESTIMATED TAKE-HOME PAY",
                         style = MaterialTheme.typography.labelSmall,
-                        color = NeoTextTertiary,
+                        color = MaterialTheme.pulseColors.textTertiary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.5.sp,
                         letterSpacing = 1.sp
@@ -203,14 +194,14 @@ fun PayslipBottomSheet(
                     Text(
                         text = lkr(payslip.takeHomeSalaryLkr),
                         style = MaterialTheme.typography.headlineMedium,
-                        color = NeoGreenDark,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 26.sp
                     )
                     Text(
                         text = "Credited to bank checking account on the 25th",
                         style = MaterialTheme.typography.bodySmall,
-                        color = NeoTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }
@@ -221,8 +212,8 @@ fun PayslipBottomSheet(
             // EPF Accumulation Wealth Card (FR-LK-3)
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                color = NeoGreen.copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, NeoGreen.copy(alpha = 0.3f)),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.08f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -234,23 +225,23 @@ fun PayslipBottomSheet(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(NeoGreen),
+                            .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(imageVector = Icons.Default.Savings, contentDescription = null, tint = OnAccent, modifier = Modifier.size(22.dp))
+                        Icon(imageVector = Icons.Default.Savings, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "EPF Wealth Building (+20%)",
                             style = MaterialTheme.typography.titleSmall,
-                            color = NeoTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
                         Text(
                             text = "+${lkr(payslip.monthlyTotalEpfLkr)} / mo (${lkr(payslip.employeeEpfLkr)} employee + ${lkr(payslip.employerEpfLkr)} employer 12%) accumulates in your government EPF account.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = NeoTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             lineHeight = 16.sp
                         )
@@ -276,9 +267,9 @@ fun PayslipBottomSheet(
                     .heightIn(min = 52.dp),
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = NeoGreen,
-                    contentColor = OnAccent,
-                    disabledContainerColor = NeoBorder
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant
                 )
             ) {
                 Row(
