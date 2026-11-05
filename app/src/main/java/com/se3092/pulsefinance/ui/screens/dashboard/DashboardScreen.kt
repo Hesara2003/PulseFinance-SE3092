@@ -535,7 +535,7 @@ fun DashboardScreen(
                             QuickPresetBadge(
                                 illustration = presetIllustration(preset.title, preset.category),
                                 label = preset.title,
-                                amount = compactAmount(preset.amountLkr)
+                                amount = preset.amountLkr?.let(::compactAmount)
                             ) {
                                 viewModel.openAddExpense(preset)
                             }
@@ -918,7 +918,8 @@ private fun SetGoalPromptCard(onClick: () -> Unit) {
 fun QuickPresetBadge(
     @DrawableRes illustration: Int,
     label: String,
-    amount: String,
+    /** Null for a starter shortcut: the user enters the amount. */
+    amount: String?,
     onClick: () -> Unit
 ) {
     Column(
@@ -949,7 +950,7 @@ fun QuickPresetBadge(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        Text(
+        if (amount != null) Text(
             text = amount,
             fontFamily = Numeric,
             fontSize = 11.sp,

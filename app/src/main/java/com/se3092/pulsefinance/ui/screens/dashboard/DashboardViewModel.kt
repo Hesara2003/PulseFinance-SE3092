@@ -253,7 +253,8 @@ class DashboardViewModel @Inject constructor(
     fun onPresetSelected(preset: ExpensePreset) = form.update {
         it.copy(
             titleInput = preset.title,
-            amountInput = "%.0f".format(preset.amountLkr),
+            // A starter shortcut has no amount, so keep whatever the user has already typed.
+            amountInput = preset.amountLkr?.let { amount -> "%.0f".format(amount) } ?: it.amountInput,
             category = preset.category,
             isCommitted = preset.isCommitted,
             errorMessage = null

@@ -4,10 +4,14 @@ import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 
-/** A one-tap template that pre-fills the expense form. */
+/**
+ * A one-tap template that pre-fills the expense form. [amountLkr] is the user's own last
+ * amount for a repeated spend, and null for a starter shortcut, which fills in only the title,
+ * icon and category so the user types what they actually paid.
+ */
 data class ExpensePreset(
     val title: String,
-    val amountLkr: Double,
+    val amountLkr: Double?,
     val category: ExpenseCategory,
     val isCommitted: Boolean
 )
@@ -25,20 +29,24 @@ data class AddExpenseFormState(
     val errorMessage: String? = null
 )
 
-/** Starter templates drawn from the scenario's recurring spends; replaced by real habits as they appear (FR-EXP-4). */
+/**
+ * Starter shortcuts for common Sri Lankan spends (FR-EXP-3, FR-EXP-4), shown until the user's
+ * own habits appear. No amounts: a price we guessed would be wrong for most people.
+ */
 private val starterPresets = listOf(
-    ExpensePreset("Coffee", 850.0, ExpenseCategory.FOOD_DINING, false),
-    ExpensePreset("PickMe ride", 1450.0, ExpenseCategory.TRANSPORT, false),
-    ExpensePreset("UberEats", 2400.0, ExpenseCategory.FOOD_DINING, false),
-    ExpensePreset("Dialog Reload", 1000.0, ExpenseCategory.UTILITIES, false),
-    ExpensePreset("Mobitel Data Package", 950.0, ExpenseCategory.UTILITIES, false),
-    ExpensePreset("Fiber Broadband", 4800.0, ExpenseCategory.UTILITIES, true),
-    ExpensePreset("Rent", 34000.0, ExpenseCategory.RENT, true)
+    ExpensePreset("Coffee", null, ExpenseCategory.FOOD_DINING, false),
+    ExpensePreset("PickMe ride", null, ExpenseCategory.TRANSPORT, false),
+    ExpensePreset("UberEats", null, ExpenseCategory.FOOD_DINING, false),
+    ExpensePreset("Dialog Reload", null, ExpenseCategory.UTILITIES, false),
+    ExpensePreset("Mobitel Data Package", null, ExpenseCategory.UTILITIES, false),
+    ExpensePreset("Fiber Broadband", null, ExpenseCategory.UTILITIES, true),
+    ExpensePreset("Rent", null, ExpenseCategory.RENT, true)
 )
 
 /**
  * The user's own most repeated expenses in the last 60 days (latest amount wins), topped up
- * with starter templates. Logging a habitual spend becomes a single tap plus confirm.
+ * with starter shortcuts that carry no amount. Logging a habitual spend becomes a single tap
+ * plus confirm.
  */
 fun deriveExpensePresets(expenses: List<Expense>, now: Long = System.currentTimeMillis(), limit: Int = 6): List<ExpensePreset> {
     val frequent = expenses

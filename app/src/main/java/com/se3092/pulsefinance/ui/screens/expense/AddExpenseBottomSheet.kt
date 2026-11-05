@@ -163,7 +163,7 @@ fun AddExpenseBottomSheet(
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
-                                text = "${preset.title} · ${compactAmount(preset.amountLkr)}",
+                                text = preset.amountLkr?.let { "${preset.title} · ${compactAmount(it)}" } ?: preset.title,
                                 color = NeoTextPrimary,
                                 fontSize = 12.5.sp,
                                 fontWeight = FontWeight.Medium
