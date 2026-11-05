@@ -463,7 +463,7 @@ Status as of 05/11/2026, checked against the code on `main`.
 | Priority | Done | Partial | Planned |
 |---|---|---|---|
 | **Must** | FR-AUTH-1, 3, 4, 7 · FR-INC-1–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1–6 · FR-ANA-1, 2 · FR-ACC-1 · FR-LK-1, 2, 6 · NFR-1, 3–7, 9, 12 | NFR-2 (savings rate only) | — |
-| **Should** | FR-AUTH-2 · FR-EXP-4, 7 · FR-SUB-4, 5, 6 · FR-GOAL-5, 6 · FR-ANA-3 · FR-ACC-2–7 · FR-LK-3–5 · FR-DATA-1 · NFR-10, 11 | — | NFR-8 (not yet verified) |
+| **Should** | FR-AUTH-2 · FR-EXP-4, 7 · FR-SUB-4, 5, 6 · FR-GOAL-5, 6 · FR-ANA-3 · FR-ACC-2–7 · FR-LK-3–5 · FR-DATA-1 · NFR-10, 11 | NFR-8 (code fixes done; device check pending) | — |
 | **Could** | FR-AUTH-5, 6 · FR-GOAL-7 · FR-ANA-4, 5 | — | — |
 
 ### 10.1 Open gaps
