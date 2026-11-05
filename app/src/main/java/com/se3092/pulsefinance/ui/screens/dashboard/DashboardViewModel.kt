@@ -42,6 +42,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.roundToInt
+import com.se3092.pulsefinance.R
+import com.se3092.pulsefinance.ui.common.presetIllustration
+import com.se3092.pulsefinance.ui.components.NoticeTone
+import com.se3092.pulsefinance.ui.components.UiNotice
 
 private data class DashboardData(
     val expenses: List<Expense>,
@@ -66,7 +70,7 @@ class DashboardViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val form = MutableStateFlow(AddExpenseFormState())
-    private val message = MutableStateFlow<String?>(null)
+    private val notice = MutableStateFlow<UiNotice?>(null)
     private val frozenWarning = MutableStateFlow<FrozenExpenseWarning?>(null)
     private val revealedAccountIds = MutableStateFlow<Set<String>>(emptySet())
     private var lastData: DashboardData? = null
@@ -86,7 +90,7 @@ class DashboardViewModel @Inject constructor(
     val uiState: StateFlow<DashboardUiState> = combine(
         data,
         form,
-        message,
+        notice,
         frozenWarning,
         revealedAccountIds
     ) { data, form, msg, warning, revealed ->
@@ -100,7 +104,7 @@ class DashboardViewModel @Inject constructor(
     private fun buildState(
         data: DashboardData?,
         form: AddExpenseFormState,
-        message: String?,
+        notice: UiNotice?,
         warning: FrozenExpenseWarning?,
         revealed: Set<String>
     ): DashboardUiState {
@@ -114,7 +118,7 @@ class DashboardViewModel @Inject constructor(
             greeting = greetingFor(now),
             monthLabel = formatDate(now, "MMMM yyyy"),
             addExpense = form,
-            message = message,
+            notice = notice,
             frozenWarning = warning,
             revealedAccountIds = revealed
         )
@@ -178,8 +182,8 @@ class DashboardViewModel @Inject constructor(
         val untilMillis = System.currentTimeMillis() + days * DAY_MILLIS
         viewModelScope.launch {
             accountRepository.freezeAccount(account, untilMillis).fold(
-                onSuccess = { message.value = "${account.name} frozen until ${formatDate(untilMillis, "dd MMM")} 🔒" },
-                onFailure = { message.value = "Failed to freeze account: ${it.localizedMessage}" }
+                onSuccess = { notice.value = UiNotice("${account.name} frozen", "No spending from it until ${formatDate(untilMillis, "dd MMM")}", illustration = R.drawable.ic_preset_bank) },
+                onFailure = { notice.value = UiNotice("Couldn't freeze ${account.name}", it.localizedMessage, NoticeTone.ERROR) }
             )
         }
     }
@@ -187,8 +191,8 @@ class DashboardViewModel @Inject constructor(
     fun unfreezeAccount(account: Account) {
         viewModelScope.launch {
             accountRepository.unfreezeAccount(account).fold(
-                onSuccess = { message.value = "${account.name} spending freeze lifted 🔓" },
-                onFailure = { message.value = "Failed to unlock: ${it.localizedMessage}" }
+                onSuccess = { notice.value = UiNotice("Spending freeze lifted", account.name, illustration = R.drawable.ic_preset_bank) },
+                onFailure = { notice.value = UiNotice("Couldn't lift the freeze", it.localizedMessage, NoticeTone.ERROR) }
             )
         }
     }
@@ -208,14 +212,14 @@ class DashboardViewModel @Inject constructor(
                 peakDateMillis = alert.peakDateMillis
             )
         )
-        message.value = "${lkr(alert.suggestedSetAsideLkr)} set aside for ${alert.festivalName} · Safe-to-Spend updated"
+        notice.value = UiNotice("${lkr(alert.suggestedSetAsideLkr)} set aside", "For ${alert.festivalName} · Safe-to-Spend updated")
     }
 
     fun undoSeasonalSetAside() {
         val userId = authRepository.currentUserId ?: return
         val reserve = uiState.value.seasonalReserve ?: return
         seasonalReserveRepository.release(userId, reserve.peakKey)
-        message.value = "Set-aside released · ${lkr(reserve.amountLkr)} back in Safe-to-Spend"
+        notice.value = UiNotice("Set-aside released", "${lkr(reserve.amountLkr)} back in Safe-to-Spend")
     }
 
     fun setAccountRevealed(accountId: String, revealed: Boolean) {
@@ -278,7 +282,7 @@ class DashboardViewModel @Inject constructor(
                 errorMessage = null
             )
         }
-        message.value = "Draft expense parsed from bank alert: ${parsed.merchant}"
+        notice.value = UiNotice("Draft expense from your bank alert", "${parsed.merchant} · check it and save")
     }
 
     fun submitExpense() {
@@ -356,7 +360,7 @@ class DashboardViewModel @Inject constructor(
             result.fold(
                 onSuccess = {
                     form.update { AddExpenseFormState(accountId = it.accountId) }
-                    message.value = "Logged ${lkr(amount)} · $title"
+                    notice.value = UiNotice("Expense logged", "${lkr(amount)} · $title", illustration = presetIllustration(title, category))
                 },
                 onFailure = { e ->
                     form.update { it.copy(isSubmitting = false, errorMessage = e.localizedMessage ?: "Couldn't save this expense") }
@@ -378,7 +382,7 @@ class DashboardViewModel @Inject constructor(
             goals = goals
         )
         exportDataToCsvUseCase.shareCsv(context, csv)
-        message.value = "CSV ready for export via Share Sheet"
+        notice.value = UiNotice("CSV export ready", "Choose where to send it")
     }
 
     // ---------------- Other actions ----------------
@@ -387,13 +391,13 @@ class DashboardViewModel @Inject constructor(
         val userId = authRepository.currentUserId ?: return
         viewModelScope.launch {
             expenseRepository.deleteExpense(expenseId, userId)
-                .onSuccess { message.value = "Expense deleted" }
-                .onFailure { message.value = "Couldn't delete: ${it.localizedMessage}" }
+                .onSuccess { notice.value = UiNotice("Expense deleted") }
+                .onFailure { notice.value = UiNotice("Couldn't delete the expense", it.localizedMessage, NoticeTone.ERROR) }
         }
     }
 
-    fun dismissMessage() {
-        message.value = null
+    fun dismissNotice() {
+        notice.value = null
     }
 
     fun signOut() {

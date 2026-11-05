@@ -52,8 +52,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,7 +62,6 @@ import androidx.fragment.app.FragmentActivity
 import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.AccountType
 import com.se3092.pulsefinance.ui.common.BiometricHelper
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -121,6 +118,7 @@ import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import com.se3092.pulsefinance.ui.theme.NeoTrack
+import com.se3092.pulsefinance.ui.components.PulseNoticeHost
 
 @Composable
 fun DashboardScreen(
@@ -132,20 +130,11 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var isBalanceMasked by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(state.message) {
-        state.message?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.dismissMessage()
-        }
-    }
-
     Scaffold(
         containerColor = NeoSurface,
-        snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.padding(bottom = 76.dp)) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { viewModel.openAddExpense() },
@@ -745,6 +734,9 @@ fun DashboardScreen(
                 Spacer(modifier = Modifier.height(90.dp)) // Clearance for bottom navigation dock
             }
         }
+
+        // Scaffold stacks its content from the top, so this floats over the list.
+        PulseNoticeHost(notice = state.notice, onDismiss = viewModel::dismissNotice)
 
         if (state.addExpense.isVisible) {
             AddExpenseBottomSheet(

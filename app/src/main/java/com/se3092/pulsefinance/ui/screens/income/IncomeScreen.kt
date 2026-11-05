@@ -4,14 +4,9 @@ import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import com.se3092.pulsefinance.R
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,7 +35,6 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CorporateFare
 import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.Description
@@ -50,16 +44,13 @@ import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.TipsAndUpdates
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -104,21 +95,13 @@ import com.se3092.pulsefinance.ui.theme.NeoSurface
 import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
 import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
-import kotlinx.coroutines.delay
+import com.se3092.pulsefinance.ui.components.PulseNoticeHost
 
 @Composable
 fun IncomeScreen(
     viewModel: IncomeViewModel
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-
-    // Auto-dismiss toast
-    LaunchedEffect(state.toastNotification) {
-        if (state.toastNotification != null) {
-            delay(3500)
-            viewModel.dismissToast()
-        }
-    }
 
     Box(
         modifier = Modifier
@@ -612,80 +595,11 @@ fun IncomeScreen(
             }
         }
 
-        // =============================================================================
-        // Top Floating Toast Notification (Exact HTML replica)
-        // =============================================================================
-        AnimatedVisibility(
-            visible = state.toastNotification != null,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
-            exit = fadeOut() + slideOutVertically(targetOffsetY = { -it }),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 70.dp, start = 16.dp, end = 16.dp)
-        ) {
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = NeoCard,
-                shadowElevation = 14.dp,
-                border = BorderStroke(1.dp, NeoBorder),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .background(NeoGreen.copy(alpha = 0.18f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Verified,
-                                contentDescription = null,
-                                tint = NeoGreenDark,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-
-                        Column {
-                            Text(
-                                text = state.toastNotification?.first ?: "",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeoTextPrimary
-                            )
-                            Text(
-                                text = state.toastNotification?.second ?: "",
-                                fontSize = 11.sp,
-                                color = NeoTextSecondary
-                            )
-                        }
-                    }
-
-                    IconButton(
-                        onClick = { viewModel.dismissToast() },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Dismiss",
-                            tint = NeoTextSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-            }
-        }
+        PulseNoticeHost(
+            notice = state.notice,
+            onDismiss = viewModel::dismissNotice,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
 
         // =============================================================================
         // Add Income Stream Bottom Sheet

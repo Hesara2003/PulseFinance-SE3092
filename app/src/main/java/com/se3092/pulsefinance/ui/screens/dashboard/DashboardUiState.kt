@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import com.se3092.pulsefinance.ui.components.UiNotice
 import com.se3092.pulsefinance.domain.model.Account
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.FinancialSummary
@@ -47,7 +48,7 @@ data class DashboardUiState(
     val unpaidInvoices: List<IncomeStream> = emptyList(),
     val overdueInvoiceCount: Int = 0,
     val addExpense: AddExpenseFormState = AddExpenseFormState(),
-    val message: String? = null,
+    val notice: UiNotice? = null,
     val seasonalAlert: SeasonalAlert? = null,
     /** What he already set aside for [seasonalAlert]'s peak, if anything. */
     val seasonalReserve: SeasonalReserve? = null,
