@@ -368,7 +368,7 @@ flowchart LR
 | ID | Quality | Requirement | Measurable target | Source | Prevents | Pri | Status |
 |---|---|---|---|---|---|---|---|
 | NFR-1 | Usability: capture speed | Logging a preset expense from the dashboard shall be fast enough to do at the point of purchase. | ≤ 3 taps and ≤ 5 seconds | §3.5 ("low tolerance for friction in daily data entry") | F1, F3 | M | Done |
-| NFR-2 | Usability: gap tolerance | Logging Gaps shall never be shown as zero spending, broken streaks or failure; averages shall be computed only over the period that has data. | No view shows a penalty, streak reset or "0 spent" for unrecorded days | §3.4 ("incomplete entries felt more discouraging than helpful") | F1 | M | Done (savings rate) / Planned (all views) |
+| NFR-2 | Usability: gap tolerance | Logging Gaps shall never be shown as zero spending, broken streaks or failure; averages shall be computed only over the period that has data. | No view shows a penalty, streak reset or "0 spent" for unrecorded days | §3.4 ("incomplete entries felt more discouraging than helpful") | F1 | M | Done |
 | NFR-3 | Availability: offline | All screens shall work fully offline using cached data; writes made offline shall sync on reconnection. | Sync ≤ 10 s after reconnection; no screen blank or blocked by the network | §4.3, §5 | F2 | M | Done |
 | NFR-4 | Responsiveness: real-time | Changes made on another device shall appear on the dashboard without a refresh. | ≤ 2 s when online | §5 | F2 | M | Done |
 | NFR-5 | Security: data isolation | A user shall be able to read and write only documents under `users/{their uid}`, enforced server-side by Firestore Security Rules. | Rules deny all cross-user access in the Rules Playground | §4.3, §5 | — | M | Done |
@@ -462,7 +462,7 @@ Status as of 05/11/2026, checked against the code on `main`.
 
 | Priority | Done | Partial | Planned |
 |---|---|---|---|
-| **Must** | FR-AUTH-1, 3, 4, 7 · FR-INC-1–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1–6 · FR-ANA-1, 2 · FR-ACC-1 · FR-LK-1, 2, 6 · NFR-1, 3–7, 9, 12 | NFR-2 (savings rate only) | — |
+| **Must** | FR-AUTH-1, 3, 4, 7 · FR-INC-1–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1–6 · FR-ANA-1, 2 · FR-ACC-1 · FR-LK-1, 2, 6 · NFR-1, 2, 3–7, 9, 12 | — | — |
 | **Should** | FR-AUTH-2 · FR-EXP-4, 7 · FR-SUB-4, 5, 6 · FR-GOAL-5, 6 · FR-ANA-3 · FR-ACC-2–7 · FR-LK-3–5 · FR-DATA-1 · NFR-10, 11 | NFR-8 (code fixes done; device check pending) | — |
 | **Could** | FR-AUTH-5, 6 · FR-GOAL-7 · FR-ANA-4, 5 | — | — |
 
