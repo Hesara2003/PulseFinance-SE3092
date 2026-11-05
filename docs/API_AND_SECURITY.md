@@ -62,7 +62,7 @@ Deploy with `firebase deploy --only firestore` (rules and indexes).
 | Google | Android Credential Manager (`GetSignInWithGoogleOption`) with the project's web client ID, exchanged for a Firebase credential | FR-AUTH-2 |
 | Demo account | Debug builds only. The demo drawer fills credentials from `BuildConfig.DEMO_EMAIL`/`DEMO_PASSWORD`; release builds set both to empty strings. The credentials are never written in documentation | FR-AUTH-7 |
 
-Every screen gets its data through `whenSignedIn`. When he signs out, each flow switches to its signed-out value, so no screen keeps showing the previous user's records.
+Every screen gets its data through `whenSignedIn`. When he signs out, each flow switches to its signed-out value, so no screen keeps showing the previous user's records. Signing out also empties the Room cache (`AuthRepositoryImpl.signOut`), so his records don't stay on the device at rest; they sync back from Firestore when he signs in again.
 
 ---
 
@@ -116,7 +116,6 @@ These are honest limitations of the current build, not features:
 |---|---|---|
 | `android:allowBackup="true"` | Android backup can include the Room cache and rate preferences | Set `allowBackup="false"`, or exclude `databases/` with backup rules |
 | No `FLAG_SECURE` | Balances and revealed account numbers can appear in screenshots and the recent-apps preview | Set `FLAG_SECURE` on `MainActivity` |
-| Sign-out does not delete the Room cache | The previous user's cached rows stay on the device. Queries filter by `userId`, so another user never sees them | Clear the user's tables on sign-out |
 | Debug demo credentials are in `app/build.gradle.kts` | Anyone with repo access can read them; the repo is private | Read them from `local.properties` instead |
 | Usage access is not requested in context | FR-SUB-5 only works if he finds the setting himself | Explain and request from the subscription audit (NFR-12) |
 | Room is not encrypted | The cache is protected only by the app sandbox | SQLCipher, if the threat model requires it |
