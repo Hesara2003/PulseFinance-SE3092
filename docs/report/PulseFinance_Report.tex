@@ -17,6 +17,7 @@
 \usepackage{textcomp}
 \usepackage[a4paper,margin=2.3cm,headheight=14pt]{geometry}
 \usepackage[table]{xcolor}
+\usepackage{graphicx}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,backgrounds}
 \usepackage{booktabs,longtable,tabularx,array,multirow}
@@ -330,7 +331,7 @@ FR-SUB-6 & Results are grouped by account, with the secondary account highlighte
 \multicolumn{4}{@{}l}{\textbf{\textsf{Savings goal}}}\\
 FR-GOAL-1 & Set a goal with title, LKR target and date (for Kavindu: MacBook Pro M4, \lkr{490,000}, 12 months). & M & Done\\
 FR-GOAL-2 & The required monthly and daily saving is calculated. & M & Done\\
-FR-GOAL-3 & The actual savings rate is calculated (realised income minus spending, over 90 days or since the first record). & M & Done\\
+FR-GOAL-3 & The actual savings rate is calculated: realised income minus spending for each 30-day block of the last 90 days, averaged over the blocks that have records, so a logging gap is never counted as zero saving. & M & Done\\
 FR-GOAL-4 & The arrival date is projected at the actual rate, stating whether he is on pace or behind, and by how much. & M & Done\\
 FR-GOAL-5 & Any amount can be translated into ``days of goal funded'' (opportunity cost). & S & Done\\
 FR-GOAL-6 & An optional USD reference price makes the LKR target follow the daily rate; the change is shown. & S & Done\\
@@ -476,88 +477,14 @@ PulseFinance is a single-activity Compose app following MVVM with a domain layer
 \end{figure}
 
 \subsection{MVVM diagram}
-Figure~\ref{fig:mvvm} is drawn from the constructors of the ViewModels on \code{main}. Every ViewModel also injects \code{AuthRepository} to obtain the signed-in user's ID; that link is omitted for readability.
+Figure~\ref{fig:mvvm} is drawn from the constructors of the ViewModels on \code{main}. Each row reads left to right: a Compose screen, its ViewModel, the use cases and repository interfaces that ViewModel depends on, then the nine repository implementations that every row converges on, and finally the data sources only the data layer touches. Screens never reach a repository or data source directly, and only the repository implementations know about Room and Firestore. Every ViewModel also injects \code{AuthRepository} to obtain the signed-in user's ID; that link is omitted for readability. Dotted arrows are platform helpers rather than repositories.
 
-\begin{landscape}
 \begin{figure}[p]
 \centering
-\begin{tikzpicture}[x=1cm,y=1cm]
-% column titles
-\foreach \x/\t in {0/Screens (Compose),4.3/ViewModels,8.6/Use cases,12.9/Repositories,17.4/Data sources}
-  \node[font=\sffamily\bfseries\small,text=pfgreendark] at (\x,9.4) {\t};
-% screens
-\node[box=pfgreendark] (sSet)  at (0,8.4) {SetupScreen\\(first run, 3 steps)};
-\node[box=pfgreendark] (sAuth) at (0,7.2) {AuthScreen};
-\node[box=pfgreendark] (sDash) at (0,5.8) {DashboardScreen\\``Today''};
-\node[box=pfgreendark] (sInc)  at (0,4.2) {IncomeScreen\\+ Payslip sheet};
-\node[box=pfgreendark] (sExp)  at (0,2.8) {ExpenseScreen\\``Audit''};
-\node[box=pfgreendark] (sGoal) at (0,1.4) {GoalScreen\\``Quest''};
-\node[box=pfgreendark] (sAna)  at (0,0.0) {AnalyticsScreen};
-% viewmodels
-\node[box=pfblue] (vSet)  at (4.3,8.4) {SetupViewModel};
-\node[box=pfblue] (vAuth) at (4.3,7.2) {AuthViewModel};
-\node[box=pfblue] (vDash) at (4.3,5.8) {DashboardViewModel};
-\node[box=pfblue] (vInc)  at (4.3,4.2) {IncomeViewModel};
-\node[box=pfblue] (vExp)  at (4.3,2.8) {ExpenseViewModel};
-\node[box=pfblue] (vGoal) at (4.3,1.4) {GoalViewModel};
-\node[box=pfblue] (vAna)  at (4.3,0.0) {AnalyticsViewModel};
-% use cases
-\node[box=pfamber] (uSum)  at (8.6,8.6) {CalculateFinancialSummary};
-\node[box=pfamber] (uSea)  at (8.6,7.7) {SeasonalPeakChecker};
-\node[box=pfamber] (uSms)  at (8.6,6.8) {BankSmsParser};
-\node[box=pfamber] (uCsv)  at (8.6,5.9) {ExportDataToCsv};
-\node[box=pfamber] (uPay)  at (8.6,4.6) {CalculatePayslip};
-\node[box=pfamber] (uFx)   at (8.6,3.7) {ConvertCurrency};
-\node[box=pfamber] (uSub)  at (8.6,2.6) {DetectSubscriptions};
-\node[box=pfamber] (uVel)  at (8.6,1.5) {CalculateGoalVelocity};
-\node[box=pfamber] (uRate) at (8.6,0.6) {CalculateSavingsRate};
-% repositories
-\node[box=pfviolet] (rOnb)  at (12.9,8.6) {OnboardingRepository};
-\node[box=pfviolet] (rAcc)  at (12.9,7.7) {AccountRepository};
-\node[box=pfviolet] (rRes)  at (12.9,6.8) {SeasonalReserveRepository};
-\node[box=pfviolet] (rExp)  at (12.9,5.9) {ExpenseRepository};
-\node[box=pfviolet] (rInc)  at (12.9,5.0) {IncomeRepository};
-\node[box=pfviolet] (rGoal) at (12.9,4.1) {GoalRepository};
-\node[box=pfviolet] (rTax)  at (12.9,3.2) {TaxConfigRepository};
-\node[box=pfviolet] (rSubR) at (12.9,2.3) {SubscriptionReviewRepository};
-\node[box=pfviolet] (rAuth) at (12.9,1.4) {AuthRepository};
-% data sources
-\node[box=pfmuted,minimum height=1.5cm] (dRoom) at (17.4,7.6) {Room cache\\\code{AppDatabase} v3\\4 DAOs};
-\node[box=pfmuted,minimum height=1.5cm] (dFs)   at (17.4,5.2) {\code{FirestoreDataSource}\\snapshot listeners\\persistent cache};
-\node[box=pfmuted] (dRate) at (17.4,3.3) {\code{ExchangeRateService}\\open.er-api / CoinGecko};
-\node[box=pfmuted] (dFa)   at (17.4,1.4) {\code{FirebaseAuthDataSource}\\email + Google};
-\node[box=pfmuted] (dUse)  at (17.4,0.2) {\code{UsageStatsHelper}\\Android usage stats};
-\begin{pgfonlayer}{background}
-% screen -> vm
-\foreach \s/\v in {sSet/vSet,sAuth/vAuth,sDash/vDash,sInc/vInc,sExp/vExp,sGoal/vGoal,sAna/vAna}
-  \draw[arr] (\s) -- (\v);
-% vm -> use cases
-\foreach \u in {uSum,uSea,uSms,uCsv} \draw[arr] (vDash.east) -- (\u.west);
-\foreach \u in {uPay,uFx} \draw[arr] (vInc.east) -- (\u.west);
-\draw[arr] (vExp.east) -- (uSub.west);
-\foreach \u in {uVel,uRate,uFx} \draw[arr] (vGoal.east) -- (\u.west);
-% vm -> repositories (curved to keep them distinguishable)
-\draw[arr,pfblue!70] (vSet.north east) to[out=20,in=165] (rOnb.west);
-\draw[arr,pfblue!70] (vSet.north east) to[out=10,in=170] (rExp.north west);
-\draw[arr,pfblue!70] (vAuth.east) to[out=15,in=180] (rAcc.west);
-\foreach \r in {rAcc,rRes,rExp,rInc,rGoal} \draw[arr,pfblue!45] (vDash.east) to[out=0,in=180] (\r.west);
-\foreach \r in {rInc,rTax} \draw[arr,pfblue!45] (vInc.east) to[out=0,in=180] (\r.west);
-\foreach \r in {rExp,rGoal,rAcc,rSubR} \draw[arr,pfblue!45] (vExp.east) to[out=0,in=180] (\r.west);
-\foreach \r in {rGoal,rInc,rExp} \draw[arr,pfblue!45] (vGoal.east) to[out=0,in=180] (\r.west);
-\foreach \r in {rInc,rExp,rAcc} \draw[arr,pfblue!45] (vAna.east) to[out=0,in=180] (\r.west);
-\draw[arr,pfblue!45,dashed] (vExp.south east) to[out=-30,in=180] (dUse.west);
-% repositories -> sources
-\foreach \r in {rAcc,rExp,rInc,rGoal} {\draw[arr] (\r.east) -- (dRoom.west); \draw[arr] (\r.east) -- (dFs.west);}
-\foreach \r in {rOnb,rRes,rTax,rSubR} \draw[arr] (\r.east) -- (dFs.west);
-\draw[arr] (rGoal.east) -- (dRate.west);
-\draw[arr] (rAuth.east) -- (dFa.west);
-\draw[arr] (uFx.east) to[out=-10,in=200] (dRate.west);
-\end{pgfonlayer}
-\end{tikzpicture}
-\caption{MVVM diagram. Green: Compose screens; blue: ViewModels exposing \code{StateFlow}; amber: domain use cases; violet: repository interfaces (bound to implementations with Hilt \code{@Binds}); grey: data sources. The dashed arrow is a platform helper rather than a repository.}
+\includegraphics[width=\textwidth,height=0.88\textheight,keepaspectratio]{figures/mvvm-architecture.png}
+\caption{MVVM diagram. Screens (Jetpack Compose) $\rightarrow$ ViewModels exposing \code{StateFlow<UiState>} $\rightarrow$ domain use cases and repository interfaces $\rightarrow$ the nine \code{RepositoryImpl} classes, bound with Hilt \code{@Binds}, which read Room and sync Firestore through \code{cacheBackedFlow} $\rightarrow$ data sources. Dotted arrows lead to platform helpers.}
 \label{fig:mvvm}
 \end{figure}
-\end{landscape}
 
 \subsection{How data flows}
 \paragraph{Reads.} The account, expense, income and goal repositories return a \code{cacheBackedFlow}. The UI collects a Room \code{Flow}, so a screen shows cached data immediately with or without signal. While someone is collecting, a Firestore snapshot listener runs alongside it and writes every snapshot into Room with \code{replaceAll} in a transaction; Room then re-emits. When the screen goes away for more than five seconds (\code{WhileSubscribed(5000)}), the listener is removed. The goal repository also combines the goal with the day's USD rate, so a USD-linked target re-prices when a new rate arrives (\req{FR-GOAL-6}). Small per-user settings -- subscription decisions, seasonal reserves, the onboarding profile, and the tax bands -- rely on Firestore's own offline cache instead of Room.
@@ -585,7 +512,9 @@ Figure~\ref{fig:mvvm} is drawn from the constructors of the ViewModels on \code{
 \end{figure}
 
 \subsection{Dependency injection and platform integrations}
-Hilt provides the Room database and DAOs (\code{DatabaseModule}), Firebase Auth and Firestore with persistent cache settings (\code{FirebaseModule}), and binds every repository interface to its implementation (\code{RepositoryModule}). ViewModels are obtained with \code{hiltViewModel()} inside \code{AppNavGraph}; no ViewModel is created manually (C-7).
+Hilt provides the Room database and DAOs (\code{DatabaseModule}), Firebase Auth and Firestore with persistent cache settings (\code{FirebaseModule}), and binds all nine repository interfaces to their implementations (\code{RepositoryModule}). ViewModels are obtained with \code{hiltViewModel()} inside \code{AppNavGraph}; no ViewModel is created manually (C-7).
+
+\paragraph{No business logic in Composables.} Screens collect \code{uiState}, call ViewModel functions and lay things out; nothing else. Rules live in the domain and are unit-tested: for example, how many days an invoice is overdue is \code{IncomeStream.daysOverdue()}, and grouping subscriptions by account (\req{FR-SUB-6}) is \code{DetectSubscriptionsUseCase.groupByAccount()}. The domain layer has no Android imports. Large screens are split into section composables (\code{DashboardSections.kt}; \code{AuditSections.kt} and \code{SubscriptionCard.kt}), and every colour comes from \code{MaterialTheme.colorScheme} (Section~\ref{sec:wireframes}).
 
 \begin{tabularx}{\textwidth}{@{}p{4.1cm}p{4cm}L@{}}
 \toprule
@@ -595,7 +524,7 @@ Share a bank SMS (\req{FR-EXP-7}) & \code{MainActivity}, \code{BankSmsParser} & 
 Reveal and copy account number (\req{FR-ACC-6}, \req{FR-ACC-7}) & \code{BiometricHelper} & \code{BiometricPrompt} (strong biometric or device credential); clipboard cleared after 60 s\\
 Screens hidden from screenshots & \code{MainActivity} & \code{FLAG_SECURE}\\
 App last opened (\req{FR-SUB-5}) & \code{UsageStatsHelper} & \code{UsageStatsManager} (special access)\\
-CSV export (\req{FR-DATA-1}) & \code{ExportDataToCsvUseCase} & Share sheet (\code{ACTION_SEND}, text/csv)\\
+CSV export (\req{FR-DATA-1}) & \code{ExportDataToCsvUseCase}, \code{CsvShare.kt} & The use case only builds the CSV text (plain Kotlin); the screen opens the share sheet (\code{ACTION_SEND}, text/csv)\\
 Daily exchange rates (\req{FR-INC-5}) & \code{ExchangeRateService} & HTTPS on \code{Dispatchers.IO}, at most once a day (C-17)\\
 \bottomrule
 \end{tabularx}
@@ -769,27 +698,8 @@ Room (\code{AppDatabase}, version 3) mirrors the four collections in the tables 
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[font=\sffamily\scriptsize,
-  ent/.style={draw=pfgreendark,fill=white,rounded corners=2pt,align=left,inner sep=4pt,text width=4.3cm,minimum height=2.3cm,anchor=north},
-  head/.style={fill=pfgreendark,text=white,font=\sffamily\bfseries\scriptsize,minimum width=4.3cm+8pt,inner sep=2pt,anchor=south},
-  lab/.style={fill=white,inner sep=1.5pt,font=\sffamily\scriptsize}]
-\node[ent] (user) at (0,0) {\code{uid} (Firebase)\\subscriptionReviews\\seasonalReserves\\onboarding};
-\node[head] (userH) at (user.north) {USER};
-\node[ent] (acc) at (-5.7,-4.6) {\code{id}, name, type\\balanceLkr\\isAutoDebitSource\\accountNumber, isFrozen\\frozenUntilMillis\\freezeBreakCount};
-\node[head] (accH) at (acc.north) {ACCOUNT};
-\node[ent] (exp) at (0,-4.6) {\code{id}, title, amountLkr\\category, isCommitted\\paymentAccountId (FK)\\timestamp, notes};
-\node[head] (expH) at (exp.north) {EXPENSE};
-\node[ent] (inc) at (5.7,-4.6) {\code{id}, source, title\\clientOrPlatform\\originalAmount, currency\\exchangeRateToLkr\\amountInLkr, status, date};
-\node[head] (incH) at (inc.north) {INCOME\_STREAM};
-\node[ent] (goal) at (5.7,0) {\code{id}, title, targetAmountLkr\\currentSavedLkr\\targetDateMillis\\usdReferencePrice\\usdRateAtSetLkr};
-\node[head] (goalH) at (goal.north) {SAVINGS\_GOAL};
-\draw[arr] (user.south west) -- node[lab,pos=0.5]{1 : n} (accH.north);
-\draw[arr] (user.south) -- node[lab,pos=0.5]{1 : n} (expH.north);
-\draw[arr] (user.south east) -- node[lab,pos=0.5]{1 : n} (incH.north);
-\draw[arr] (user.east) -- node[lab,above=2pt]{1 : 0..1} (goal.west);
-\draw[arr] (acc.east) -- node[lab,above=2pt]{pays} node[lab,below=2pt]{1 : n} (exp.west);
-\end{tikzpicture}
-\caption{Entity-relationship model. The three maps are fields of the user document; the app reads one goal per user (the earliest created).}
+\includegraphics[width=\textwidth,keepaspectratio]{figures/firestore-class-diagram.png}
+\caption{Firestore data model in UML notation. Multiplicities: \code{1..1} exactly one, \code{0..1} none or one, \code{0..*} none or many. Each user has none or many accounts, expenses, income entries and subscription reviews, and at most one savings goal (the app reads the earliest created). An expense is paid from none or one account, because \code{paymentAccountId} may be empty. The three maps are fields of the user document.}
 \end{figure}
 
 % ============================================================================
@@ -1219,9 +1129,6 @@ Domain logic is covered by JVM unit tests in \code{app/src/test}, run with \code
 
 \subsection{Known limitations}
 \begin{itemize}
-  \item Android backup is allowed (\code{allowBackup="true"}), so the local cache can be included in device backups.
-  \item Signing out does not delete the previous user's cached rows; queries filter by user ID, so another user never sees them.
-  \item Debug demo credentials are defined in \code{app/build.gradle.kts}; they should move to \code{local.properties}.
   \item The Room cache is protected by the app sandbox but not encrypted.
 \end{itemize}
 
