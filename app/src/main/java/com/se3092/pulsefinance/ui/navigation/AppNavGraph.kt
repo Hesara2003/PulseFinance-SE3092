@@ -1,5 +1,16 @@
 package com.se3092.pulsefinance.ui.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.navigation.NavBackStackEntry
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.runtime.LaunchedEffect
@@ -72,6 +83,41 @@ data class NavItem(
     val icon: ImageVector,
     val label: String
 )
+
+/** Dock order, left to right, so a tab change slides the way the user's finger moved. */
+private val tabOrder = listOf(
+    Screen.Dashboard.route,
+    Screen.Analytics.route,
+    Screen.Income.route,
+    Screen.Goal.route,
+    Screen.Expenses.route
+)
+
+private const val PAGE_MS = 300
+
+/**
+ * Material "shared axis" page change: between tabs the new page slides in a fifth of the way
+ * from the side of the tab that was tapped while it fades in; anything else (sign-in, setup)
+ * fades in with a slight zoom. Short and eased, instead of the default 700 ms crossfade.
+ */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.pageEnter(from: String?, to: String?): EnterTransition {
+    val direction = tabDirection(from, to) ?: return fadeIn(tween(PAGE_MS)) + scaleIn(tween(PAGE_MS, easing = FastOutSlowInEasing), initialScale = 0.96f)
+    return slideIntoContainer(direction, tween(PAGE_MS, easing = FastOutSlowInEasing)) { it / 5 } +
+        fadeIn(tween(PAGE_MS - 90, delayMillis = 90, easing = LinearOutSlowInEasing))
+}
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.pageExit(from: String?, to: String?): ExitTransition {
+    val direction = tabDirection(from, to) ?: return fadeOut(tween(PAGE_MS / 2))
+    return slideOutOfContainer(direction, tween(PAGE_MS, easing = FastOutSlowInEasing)) { it / 5 } +
+        fadeOut(tween(90, easing = FastOutLinearInEasing))
+}
+
+private fun tabDirection(from: String?, to: String?): AnimatedContentTransitionScope.SlideDirection? {
+    val a = tabOrder.indexOf(from)
+    val b = tabOrder.indexOf(to)
+    if (a < 0 || b < 0 || a == b) return null
+    return if (b > a) AnimatedContentTransitionScope.SlideDirection.Start else AnimatedContentTransitionScope.SlideDirection.End
+}
 
 @Composable
 fun AppNavGraph(
@@ -273,7 +319,11 @@ fun AppNavGraph(
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            enterTransition = { pageEnter(initialState.destination.route, targetState.destination.route) },
+            exitTransition = { pageExit(initialState.destination.route, targetState.destination.route) },
+            popEnterTransition = { pageEnter(initialState.destination.route, targetState.destination.route) },
+            popExitTransition = { pageExit(initialState.destination.route, targetState.destination.route) }
         ) {
             composable(Screen.Auth.route) {
                 val authViewModel: AuthViewModel = hiltViewModel()
