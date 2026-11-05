@@ -1,5 +1,11 @@
 package com.se3092.pulsefinance.ui.screens.income
 
+import com.se3092.pulsefinance.notifications.ReminderViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.os.Build
+import android.Manifest
 import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
@@ -82,9 +88,16 @@ import com.se3092.pulsefinance.ui.components.PulseNoticeHost
 
 @Composable
 fun IncomeScreen(
-    viewModel: IncomeViewModel
+    viewModel: IncomeViewModel,
+    reminders: ReminderViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val remindersOn by reminders.enabled.collectAsStateWithLifecycle()
+    val remindersDeclined by reminders.declined.collectAsStateWithLifecycle()
+    // Asked in context, only once there is an overdue invoice to be reminded about, never at launch.
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) reminders.enable() else reminders.decline()
+    }
 
     Box(
         modifier = Modifier
@@ -550,6 +563,19 @@ fun IncomeScreen(
                     CryptoNetCard(state.cryptoNetYtdLkr, state.cryptoEntriesYtd)
                 }
 
+                // Offer overdue-invoice reminders when one is actually overdue (FR-NTF-1)
+                if (state.overdueLkr > 0 && !remindersOn && !remindersDeclined) item {
+                    ReminderOptInCard(
+                        onTurnOn = {
+                            if (reminders.isPermissionGranted()) reminders.enable()
+                            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        },
+                        onNoThanks = reminders::decline
+                    )
+                }
+
                 // Monthly income that hasn't landed this month yet — one tap to add it (FR-INC-11)
                 items(state.recurringDue, key = { "recurring_${it.id}" }) { income ->
                     RecurringIncomeCard(
@@ -773,6 +799,48 @@ private fun CryptoNetCard(netLkr: Double, entries: Int) {
                 fontSize = 15.sp,
                 color = if (isUp) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
             )
+        }
+    }
+}
+
+/** Asks whether he wants a daily nudge when an invoice goes overdue. Nothing is sent unless he says yes. */
+@Composable
+private fun ReminderOptInCard(
+    onTurnOn: () -> Unit,
+    onNoThanks: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.pulseColors.warning.copy(alpha = 0.5f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Chase it before it slips?",
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "An invoice is overdue. PulseFinance can send you one notification a day while any are, and nothing otherwise.",
+                fontSize = 12.5.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    onClick = onTurnOn,
+                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) { Text("Remind me", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                TextButton(onClick = onNoThanks) {
+                    Text("No thanks", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                }
+            }
         }
     }
 }
