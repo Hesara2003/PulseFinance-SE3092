@@ -55,6 +55,14 @@
 \setlength{\parskip}{0.55em}
 \setlength{\parindent}{0pt}
 \renewcommand{\arraystretch}{1.25}
+\arrayrulecolor{pfmuted!55}
+% A thin border around every page, 1 cm in from the edges
+\AddToHook{shipout/background}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \draw[pfmuted!70,line width=0.6pt]
+      ([xshift=1cm,yshift=1cm]current page.south west) rectangle
+      ([xshift=-1cm,yshift=-1cm]current page.north east);
+  \end{tikzpicture}}
 \setlist{itemsep=0.15em,topsep=0.3em}
 \captionsetup{font=small,labelfont={bf,color=pfgreendark}}
 
@@ -166,14 +174,14 @@
 {\fontsize{30}{36}\selectfont\bfseries PulseFinance\par}
 \vspace{1.6cm}
 {\large
-\begin{tabular}{ll}
-\toprule
+\begin{tabular}{|l|l|}
+\hline
 \textbf{Name} & \textbf{Registration number}\\
-\midrule
+\hline
 \NameHesara & \IDHesara\\
 \NameSandali & \IDSandali\\
 \NameShazaan & \IDShazaan\\
-\bottomrule
+\hline
 \end{tabular}\par}
 \vfill
 {\large \SubmissionDate\par}
@@ -198,17 +206,17 @@ PulseFinance is a native Android application that gives one person an honest mon
 \end{itemize}
 
 \subsection{How this report is organised}
-\begin{tabularx}{\textwidth}{@{}lL@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|l|L|}
+\hline
 \textbf{Section} & \textbf{Content}\\
-\midrule
+\hline
 \ref{sec:requirements} Requirements analysis & Scenario analysis, failed-tool analysis, problem statements, 73 requirements with status, constraints, traceability\\
 \ref{sec:architecture} Architecture & Layers, the MVVM diagram, offline-first data flow, dependency injection\\
 \ref{sec:schema} Firestore schema & Collections, fields with Kavindu's data as examples, rules, local cache, ER model\\
 \ref{sec:wireframes} Annotated wireframes & Four screens designed in Figma, each element annotated with the problem it answers\\
 \ref{sec:decisions} Design decisions & Sixteen decisions with context, alternatives and consequences\\
 \ref{sec:status} Implementation status & Testing, delivery, open gaps, team contributions\\
-\bottomrule
+\hline
 \end{tabularx}
 
 Requirement identifiers (\req{FR-INC-6}, \req{NFR-2}, \ldots) and problem identifiers (\prob{P1}--\prob{P11}) are used throughout so that any claim can be traced to the requirements in Section~\ref{sec:requirements} and to the source code. The full Software Requirements Specification is in the repository at \code{docs/SRS.md}.
@@ -218,39 +226,39 @@ Requirement identifiers (\req{FR-INC-6}, \req{NFR-2}, \ldots) and problem identi
 \label{sec:requirements}
 
 \subsection{Kavindu's situation}
-\begin{tabularx}{\textwidth}{@{}p{3.4cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.4cm}|L|}
+\hline
 \textbf{Aspect} & \textbf{What the scenario tells us}\\
-\midrule
+\hline
 Who & 25, junior software engineer in Colombo; comfortable with technology, low tolerance for friction in daily data entry.\\
 Income & Salary (credited on the 25th); freelance web projects paid in milestones; Google AdSense in USD, credited in LKR at the bank's rate; crypto trading with a significant Q1 gain and a material Q3 loss. His own estimate of monthly income, ``LKR 160,000--210,000'', has never been validated.\\
 Spending & Card, cash, PickMe, UberEats; rent \lkr{34,000}; a gym membership and two subscriptions auto-debited from a secondary account he rarely checks. Discovering ``LKR 24,000 on coffee'' was ``genuinely shocking''.\\
 Savings & More than \lkr{1.6 million} earned in twelve months; \lkr{11,200} saved.\\
 Goal & MacBook Pro M4 from an authorised reseller, about \lkr{490,000}, within 12 months. ``Emotionally present and financially invisible.''\\
 Behaviour & Optimistic about income, impulsive with discretionary spending, avoids looking at money when worried, and abandons tools once their numbers stop matching reality.\\
-\bottomrule
+\hline
 \end{tabularx}
 
 \subsection{Why four tools failed}
 
-\begin{tabularx}{\textwidth}{@{}p{0.6cm}p{2.5cm}LL@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{0.6cm}|>{\raggedright\arraybackslash}p{2.5cm}|L|L|}
+\hline
 \textbf{ID} & \textbf{Tool} & \textbf{Why it failed} & \textbf{What PulseFinance does instead}\\
-\midrule
+\hline
 F1 & Google Sheet ``MacBook Fund'' & Formulas broke when rows were inserted; entry was slow; after a three-week gap the incomplete rows felt discouraging. & All calculation lives in tested domain use cases, not editable formulas. Days without records are missing data, never zero or failure (\req{NFR-2}).\\
 F2 & Play Store budget app & USD only; no cloud sync; assumed one income source and a fixed monthly budget. & Income Source is a first-class concept; each entry keeps its original currency and the rate actually received; the allowance is recalculated daily (\req{FR-INC-1}, \req{FR-DASH-1}, \req{FR-AUTH-3}).\\
 F3 & Notes app & Pasted figures became an unreadable block after four days. & Every record is captured with structure -- category, committed or discretionary, account -- at entry time, through one-tap presets (\req{FR-EXP-1}, \req{FR-EXP-3}).\\
 F4 & Bank's spending summary & Card only; missed cash and the secondary account; filed a PickMe fare as ``online retail''. & Accounts include cash, the secondary account and the crypto exchange; the category only \emph{suggests} committed or discretionary and Kavindu decides (\req{FR-ACC-1}, \req{FR-EXP-2}).\\
-\bottomrule
+\hline
 \end{tabularx}
 
 The common root cause is that each tool was \textbf{too fragile, too manual, too narrow or too unpleasant to open}. Each of those maps to a non-functional requirement: fragile to \req{NFR-6}, manual to \req{NFR-1}, narrow to the \req{FR-INC} group, unpleasant to \req{NFR-2} and \req{NFR-8}.
 
 \subsection{Problem statements}
-\begin{tabularx}{\textwidth}{@{}p{0.7cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{0.7cm}|L|}
+\hline
 \textbf{ID} & \textbf{Problem}\\
-\midrule
+\hline
 \prob{P1} & He cannot state his real monthly income; the estimate ``LKR 160,000--210,000'' was never validated.\\
 \prob{P2} & Freelance invoices are forgotten and payments cannot be matched to projects.\\
 \prob{P3} & AdSense income in USD is never recorded at the amount actually received.\\
@@ -262,7 +270,7 @@ The common root cause is that each tool was \textbf{too fragile, too manual, too
 \prob{P9} & Gaps in tracking made his previous tool feel discouraging and led to abandonment.\\
 \prob{P10} & He does not examine his payslip and cannot recall the amount deposited.\\
 \prob{P11} & He is impulsive with discretionary spending and has no friction at the point of purchase.\\
-\bottomrule
+\hline
 \end{tabularx}
 
 \subsection{Analytical lenses}
@@ -275,14 +283,14 @@ The common root cause is that each tool was \textbf{too fragile, too manual, too
 \subsection{Functional requirements}
 Priorities use MoSCoW (M, S, C). Status reflects the code on \code{main} at the time of writing.
 
-\begin{longtable}{@{}p{2.2cm}p{9.5cm}C{0.7cm}p{1.6cm}@{}}
-\toprule
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.2cm}|>{\raggedright\arraybackslash}p{9.5cm}|C{0.7cm}|>{\raggedright\arraybackslash}p{1.6cm}|}
+\hline
 \textbf{ID} & \textbf{Requirement} & \textbf{Pri} & \textbf{Status}\\
-\midrule
+\hline
 \endfirsthead
-\toprule
+\hline
 \textbf{ID} & \textbf{Requirement} & \textbf{Pri} & \textbf{Status}\\
-\midrule
+\hline
 \endhead
 \multicolumn{4}{@{}l}{\textbf{\textsf{Identity and onboarding}}}\\
 FR-AUTH-1 & Register and sign in with email and password (Firebase Authentication). & M & Done\\
@@ -354,18 +362,18 @@ FR-LK-3 & Accumulating EPF balance (employee 8\% + employer 12\%) shown as savin
 FR-LK-4 & Seasonal Peaks (Avurudu, Vesak, Poson, December) plus, after 12 months, his own months $\geq$20\% above average. & S & Done\\
 FR-LK-5 & 30 days before a peak: a warning with last year's excess and a one-tap ``set aside''. & S & Done\\
 FR-LK-6 & Amounts in LKR with separators; foreign amounts show the original currency beside the LKR value. & M & Done\\
-\bottomrule
+\hline
 \end{longtable}
 
 \subsection{Non-functional requirements}
-\begin{longtable}{@{}p{1.5cm}p{2.5cm}p{5.0cm}p{2.9cm}p{1.5cm}@{}}
-\toprule
+\begin{longtable}{|>{\raggedright\arraybackslash}p{1.5cm}|>{\raggedright\arraybackslash}p{2.5cm}|>{\raggedright\arraybackslash}p{5.0cm}|>{\raggedright\arraybackslash}p{2.9cm}|>{\raggedright\arraybackslash}p{1.5cm}|}
+\hline
 \textbf{ID} & \textbf{Quality} & \textbf{Requirement} & \textbf{Measurable target} & \textbf{Status}\\
-\midrule
+\hline
 \endfirsthead
-\toprule
+\hline
 \textbf{ID} & \textbf{Quality} & \textbf{Requirement} & \textbf{Measurable target} & \textbf{Status}\\
-\midrule
+\hline
 \endhead
 NFR-1 & Capture speed & Logging a preset expense is fast enough to do at the point of purchase. & $\leq$3 taps, $\leq$5 s & Done\\
 NFR-2 & Gap tolerance & Logging gaps are never shown as zero spending, broken streaks or failure; averages only over periods with data. & No penalty, streak reset or ``0 spent'' for unrecorded days & Partial\\
@@ -379,14 +387,14 @@ NFR-9 & Robustness & No screen crashes or appears blank with no data, partial da
 NFR-10 & Sensitive display & Account numbers masked by default, revealed only after a biometric check. & Clipboard cleared $\leq$60 s & Done\\
 NFR-11 & Portability & Data exportable in an open format. & CSV opens in Sheets/Excel & Done\\
 NFR-12 & Privacy & Minimum permissions; optional ones requested in context with an explanation. & No READ\_SMS; usage access in context & Partial\\
-\bottomrule
+\hline
 \end{longtable}
 
 \subsection{Constraints}
-\begin{tabularx}{\textwidth}{@{}p{1cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{1cm}|L|}
+\hline
 \textbf{ID} & \textbf{Constraint}\\
-\midrule
+\hline
 C-1--C-7 & 100\% Kotlin; Jetpack Compose with Material 3; MVVM with no business logic in Composables; single activity with Navigation Compose; state as \code{StateFlow}; coroutines in \code{viewModelScope}; Hilt for dependency injection.\\
 C-8, C-9 & Firebase Authentication for identity; Cloud Firestore as the primary persistence layer, with \code{firestore.rules} submitted.\\
 C-10, C-11 & minSdk 26, targetSdk $\geq$34; the submitted APK connects to a live Firebase project.\\
@@ -396,28 +404,28 @@ C-15 & READ\_SMS is not used; bank SMS enter only through the share sheet.\\
 C-16 & Tax rules (APIT bands, EPF rates) are data, not code.\\
 C-17 & Exchange-rate services are free third parties: called at most once a day, and the app keeps working without them.\\
 C-18 & Demo credentials only in debug builds, through build configuration.\\
-\bottomrule
+\hline
 \end{tabularx}
 
 \subsection{Out of scope}
-\begin{tabularx}{\textwidth}{@{}p{4.6cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.6cm}|L|}
+\hline
 \textbf{Item} & \textbf{Reason}\\
-\midrule
+\hline
 Bank-feed import / open banking & Excluded by the brief (C-12); no Sri Lankan open-banking API available.\\
 Real card blocking, CVV display & No bank integration (C-13); CVV storage forbidden (C-14).\\
 Live crypto portfolio valuation & His question is realised year-to-date earnings (\prob{P4}); live prices add noise, not clarity.\\
 Several goals competing for money & One quantified goal is the scenario's focus; the model allows more goals but no allocation logic between them.\\
 Geofenced gym-usage detection & Battery and privacy cost far outweigh the benefit; the charge-day question (\req{FR-SUB-4}) covers the need.\\
 Sinhala/Tamil UI, ``lakhs'' formatting & Kavindu works in English and reads LKR in thousands; deferred.\\
-\bottomrule
+\hline
 \end{tabularx}
 
 \subsection{Traceability: problems to requirements}
-\begin{tabularx}{\textwidth}{@{}p{5.2cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{5.2cm}|L|}
+\hline
 \textbf{Problem} & \textbf{Requirements that address it}\\
-\midrule
+\hline
 \prob{P1} Unknown real income & FR-INC-1, FR-INC-9, FR-DASH-1, FR-LK-1, FR-AUTH-4\\
 \prob{P2} Forgotten invoices & FR-INC-3, FR-INC-4, FR-DASH-5, FR-ANA-5, FR-ACC-7\\
 \prob{P3} AdSense not recorded as received & FR-INC-2, FR-INC-5, FR-INC-6, NFR-6\\
@@ -429,7 +437,7 @@ Sinhala/Tamil UI, ``lakhs'' formatting & Kavindu works in English and reads LKR 
 \prob{P9} Gaps cause abandonment & NFR-1, NFR-2, NFR-9, FR-DATA-1\\
 \prob{P10} Payslip not understood & FR-LK-1, FR-LK-2, FR-LK-3\\
 \prob{P11} Impulsive spending & FR-ACC-3 to FR-ACC-5, FR-GOAL-5, FR-LK-4, FR-LK-5\\
-\bottomrule
+\hline
 \end{tabularx}
 
 % ============================================================================
@@ -476,17 +484,17 @@ Hilt provides the Room database and DAOs (\code{DatabaseModule}), Firebase Auth 
 
 \paragraph{No business logic in Composables.} Screens collect \code{uiState}, call ViewModel functions and lay things out; nothing else. Rules live in the domain and are unit-tested: for example, how many days an invoice is overdue is \code{IncomeStream.daysOverdue()}, and grouping subscriptions by account (\req{FR-SUB-6}) is \code{DetectSubscriptionsUseCase.groupByAccount()}. The domain layer has no Android imports. Large screens are split into section composables (\code{DashboardSections.kt}; \code{AuditSections.kt} and \code{SubscriptionCard.kt}), and every colour comes from \code{MaterialTheme.colorScheme} (Section~\ref{sec:wireframes}).
 
-\begin{tabularx}{\textwidth}{@{}p{4.1cm}p{4cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.1cm}|>{\raggedright\arraybackslash}p{4cm}|L|}
+\hline
 \textbf{Feature} & \textbf{Where} & \textbf{Android mechanism}\\
-\midrule
+\hline
 Share a bank SMS (\req{FR-EXP-7}) & \code{MainActivity}, \code{BankSmsParser} & Share sheet (\code{ACTION_SEND}, text/plain); no READ\_SMS\\
 Reveal and copy account number (\req{FR-ACC-6}, \req{FR-ACC-7}) & \code{BiometricHelper} & \code{BiometricPrompt} (strong biometric or device credential); clipboard cleared after 60 s\\
 Screens hidden from screenshots & \code{MainActivity} & \code{FLAG_SECURE}\\
 App last opened (\req{FR-SUB-5}) & \code{UsageStatsHelper} & \code{UsageStatsManager} (special access)\\
 CSV export (\req{FR-DATA-1}) & \code{ExportDataToCsvUseCase}, \code{CsvShare.kt} & The use case only builds the CSV text (plain Kotlin); the screen opens the share sheet (\code{ACTION_SEND}, text/csv)\\
 Daily exchange rates (\req{FR-INC-5}) & \code{ExchangeRateService} & HTTPS on \code{Dispatchers.IO}, at most once a day (C-17)\\
-\bottomrule
+\hline
 \end{tabularx}
 
 % ============================================================================
@@ -515,10 +523,10 @@ config/                                  read-only for signed-in users
 The three maps on the user document are small, are always read together with the user, and are written with \code{SetOptions.merge()} so that they never overwrite one another. Keeping them as maps rather than subcollections avoids three extra listeners per screen.
 
 \subsection{Why this structure}
-\begin{tabularx}{\textwidth}{@{}p{4.6cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.6cm}|L|}
+\hline
 \textbf{Decision} & \textbf{Why, for Kavindu's data}\\
-\midrule
+\hline
 Everything he records lives under \code{users/{uid}} & Ownership is the path itself, so the security rule is one comparison and no query needs a \code{where userId == ...} filter. His records cannot mix with another user's, and deleting his account is deleting one subtree (\req{NFR-5}).\\
 One collection per kind of record, not one mixed ``transactions'' collection & Income carries a currency, rate and invoice status (\prob{P1}--\prob{P4}); an expense carries a category and committed flag (\prob{P7}). Separate collections let the rules validate each shape, and let each screen listen only to what it shows: the Income hub never downloads his expenses.\\
 A document per record, not an array in one document & He logs a coffee or a PickMe most days, so a year is hundreds of expenses. One large document would approach Firestore's 1\,MiB limit and every new expense would rewrite the whole list; a document per record keeps writes small and lets each offline write queue on its own (\req{FR-EXP-6}).\\
@@ -527,7 +535,7 @@ Small settings as map fields on the user document & Reviews, reserves and onboar
 \code{userId} also stored in every record & Redundant with the path, but the rules check that the two match, so a record can never claim another user.\\
 \code{paymentAccountName} copied onto each expense & Firestore has no joins; the ledger and the subscription audit (\req{FR-SUB-6}) show where money went without loading accounts. Accepted cost: renaming an account does not rename its old expenses.\\
 Money stored in LKR, with income also keeping its original amount, currency and rate & Every total is a plain sum, and a later rate change never moves last month's numbers (\req{NFR-6}, ADR-0001).\\
-\bottomrule
+\hline
 \end{tabularx}
 
 \subsection{Accounts}
@@ -535,10 +543,10 @@ Path: \code{users/{uid}/accounts/{accountId}}.
 
 On first sign-in, \code{ensureDefaultAccounts} creates one zero-balance account per place Kavindu's money leaves from, so every expense can be attributed from the first entry. Nothing else is invented: account numbers start empty. It checks the server first, so an empty offline cache is never mistaken for a new user.
 
-\begin{tabularx}{\textwidth}{@{}p{4.1cm}p{1.7cm}p{3.2cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.1cm}|>{\raggedright\arraybackslash}p{1.7cm}|>{\raggedright\arraybackslash}p{3.2cm}|L|}
+\hline
 \textbf{Field} & \textbf{Type} & \textbf{Kavindu example} & \textbf{Why it exists}\\
-\midrule
+\hline
 \code{id} & string & \code{acc_secondary_bank} & Fixed IDs for the four defaults\\
 \code{name} & string & Secondary Account (Auto-Debits) & \\
 \code{type} & string & \code{BANK_SECONDARY} & Primary, secondary, cash or crypto exchange (\req{FR-ACC-1})\\
@@ -547,32 +555,32 @@ On first sign-in, \code{ensureDefaultAccounts} creates one zero-balance account 
 \code{accountNumber} & string & empty & When set, shown masked until biometric reveal (\req{FR-ACC-6})\\
 \code{isFrozen}, \code{frozenUntilMillis} & boolean, number & false, null & Spending Freeze (\req{FR-ACC-3})\\
 \code{freezeBreakCount} & number & 0 & Times he spent from a frozen account (\req{FR-ACC-5})\\
-\bottomrule
+\hline
 \end{tabularx}
 
 \subsection{Expenses}
 Path: \code{users/{uid}/expenses/{expenseId}}.
 
-\begin{tabularx}{\textwidth}{@{}p{4.1cm}p{1.7cm}p{3.2cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.1cm}|>{\raggedright\arraybackslash}p{1.7cm}|>{\raggedright\arraybackslash}p{3.2cm}|L|}
+\hline
 \textbf{Field} & \textbf{Type} & \textbf{Kavindu example} & \textbf{Why it exists}\\
-\midrule
+\hline
 \code{title} & string & PickMe to office & Also the merchant key for subscription detection\\
 \code{amountLkr} & number & 1450 & Always LKR\\
 \code{category} & string & \code{TRANSPORT} & One of eight categories\\
 \code{isCommitted} & boolean & false & Proposed from the category, flipped by him (\req{FR-EXP-2}, \prob{P7})\\
 \code{paymentAccountId}, \code{paymentAccountName} & string & \code{acc_cash}, Cash in Hand & Covers cash and the secondary account (\req{FR-EXP-5}); name copied so lists render without a join\\
 \code{timestamp}, \code{notes} & number, string & & \\
-\bottomrule
+\hline
 \end{tabularx}
 
 \subsection{Income}
 Path: \code{users/{uid}/income_streams/{incomeId}}.
 
-\begin{tabularx}{\textwidth}{@{}p{4.2cm}p{1.5cm}p{3.2cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.2cm}|>{\raggedright\arraybackslash}p{1.5cm}|>{\raggedright\arraybackslash}p{3.2cm}|L|}
+\hline
 \textbf{Field} & \textbf{Type} & \textbf{Kavindu example (AdSense)} & \textbf{Why it exists}\\
-\midrule
+\hline
 \code{source} & string & \code{ADSENSE} & Salary, freelance, AdSense or crypto (\prob{P1})\\
 \code{title}, \code{clientOrPlatform} & string & AdSense -- October; Google AdSense & For freelance, the client he invoices (\prob{P2})\\
 \code{originalAmount} & number & 45 & In the original currency; negative for a crypto loss (\req{FR-INC-7})\\
@@ -582,23 +590,23 @@ Path: \code{users/{uid}/income_streams/{incomeId}}.
 \code{status} & string & \code{RECEIVED} & \code{RECEIVED} or \code{PENDING_INVOICE}; overdue is derived, never stored (\req{FR-INC-4})\\
 \code{dateReceivedOrExpected} & number & & The due date while pending\\
 \code{isRecurringMonthly} & boolean & false & True for his salary\\
-\bottomrule
+\hline
 \end{tabularx}
 
 \subsection{Savings goal}
 Path: \code{users/{uid}/goals/{goalId}}.
 
-\begin{tabularx}{\textwidth}{@{}p{4.2cm}p{1.5cm}p{3.2cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.2cm}|>{\raggedright\arraybackslash}p{1.5cm}|>{\raggedright\arraybackslash}p{3.2cm}|L|}
+\hline
 \textbf{Field} & \textbf{Type} & \textbf{Kavindu example} & \textbf{Why it exists}\\
-\midrule
+\hline
 \code{title} & string & MacBook Pro M4 & \\
 \code{targetAmountLkr} & number & 490000 & The target \emph{as he entered it}; never overwritten with the rate-adjusted value, so it cannot be scaled twice\\
 \code{currentSavedLkr} & number & 11200 & Never changed by exchange-rate movements\\
 \code{targetDateMillis}, \code{createdDateMillis} & number & 12 months out & Drives the required pace (\req{FR-GOAL-2})\\
 \code{usdReferencePrice} & number or null & 1599 & Apple's USD price (\req{FR-GOAL-6})\\
 \code{usdRateAtSetLkr}, \code{usdRateSetAtMillis} & number or null & 300.0 & Rate and time when the target was set\\
-\bottomrule
+\hline
 \end{tabularx}
 
 With a USD price, the app shows \(\text{target} \times \text{today's rate} \div \text{rate at set}\). If the rupee weakens from 300 to 306, his target becomes \lkr{499,800} and the goal card says ``Target + \lkr{9,800} since \ldots''.
@@ -664,30 +672,30 @@ match /users/{userId} {
 match /config/{docId} { allow read: if request.auth != null; allow write: if false; }
 \end{lstlisting}
 
-\begin{tabularx}{\textwidth}{@{}p{2.2cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.2cm}|L|}
+\hline
 \textbf{Record} & \textbf{Checked on every create and update}\\
-\midrule
+\hline
 Expense & \code{userId} equals the path; title text up to 200 characters; \code{amountLkr} a number $\geq 0$; \code{category} one of the eight categories; \code{timestamp} a number\\
 Income & \code{userId}; \code{source} one of Salary, Freelance, AdSense, Crypto; \code{currency} one of LKR, USD, USDT, ETH; \code{status} one of three; amounts are numbers (negative allowed for a crypto loss); \code{exchangeRateToLkr} a number $> 0$\\
 Goal & \code{userId}; title; target and saved amounts numbers $\geq 0$; USD fields a number or null\\
 Account & \code{userId}; name; \code{type} one of the four; \code{balanceLkr} a number; \code{freezeBreakCount} a whole number $\geq 0$; account number at most 34 characters (IBAN length)\\
-\bottomrule
+\hline
 \end{tabularx}
 
 The rules check the document as it will be after the write, so partial updates (marking an invoice received, adding to the goal) are validated whole. Unknown extra fields are allowed, so an older app version keeps working. Unauthenticated requests are refused, another signed-in user can never read or write Kavindu's documents, a record cannot claim another user's \code{userId}, configuration is read-only from the app, and every other path is denied by default. The rules were tested against the Firestore emulator with 21 cases: 10 app-shaped writes, reads and deletes allowed, and 11 invalid or foreign writes denied.
 
 \subsection{Indexing strategy}
-\begin{tabularx}{\textwidth}{@{}p{5.6cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{5.6cm}|L|}
+\hline
 \textbf{Query} & \textbf{Index that serves it}\\
-\midrule
+\hline
 \code{expenses} ordered by \code{timestamp}, newest first (live) & Automatic single-field index on \code{timestamp}\\
 \code{income_streams} ordered by \code{dateReceivedOrExpected} (live) & Automatic single-field index\\
 \code{goals}, \code{accounts}: whole collection (live) & None needed: no filter or sort\\
 \code{accounts} \code{limit(1)} from the server (is this a new user?) & None needed\\
 \code{users/{uid}}, \code{config/apitBands} by ID & Document lookup, no index\\
-\bottomrule
+\hline
 \end{tabularx}
 
 \textbf{No composite index is needed, so \code{firestore.indexes.json} declares none.} This is deliberate. Filtering happens on the device: the Analytics periods and the category, account and date filters (\req{FR-ANA-5}), Safe-to-Spend and the subscription scan all run over records already in the Room cache, which must be there anyway for offline use (\req{NFR-3}). One person's records -- hundreds a year -- filter instantly; a server query per filter would cost reads, fail offline, and need a composite index for each filter-and-sort pair. If a history ever grew to tens of thousands of records, the expense listener would load only a recent window (\code{where timestamp >= start}, ordered by \code{timestamp}), which is still a single field. A composite index would only be needed for a server query that filters on one field and sorts on another, such as subscriptions ordered by date.
@@ -766,7 +774,7 @@ Each decision is stated with the part of Kavindu's scenario that forced it, the 
 \newcommand{\decision}[5]{%
 \subsection*{DD-#1\quad #2}
 \addcontentsline{toc}{subsection}{DD-#1\enspace #2}
-\begin{tabularx}{\textwidth}{@{}p{2.6cm}L@{}}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.6cm}|L|}
 \textbf{Context} & #3\\
 \textbf{Alternatives} & #4\\
 \textbf{Consequences} & #5\\
@@ -857,14 +865,14 @@ Each decision is stated with the part of Kavindu's scenario that forced it, the 
 \label{sec:status}
 
 \subsection{Requirement status}
-\begin{tabularx}{\textwidth}{@{}lrL@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|l|r|L|}
+\hline
 \textbf{Status} & \textbf{Count} & \textbf{Requirements}\\
-\midrule
+\hline
 Done & 68 & All requirements not listed below\\
 Partial & 3 & FR-SUB-5 and NFR-12 (usage access is not yet requested in context; app-usage risk works once access is granted in Settings); NFR-2 (gap tolerance verified for the savings rate and seasonal averages, not yet for every view)\\
 Planned & 2 & FR-AUTH-6 (emergency-runway buffer); NFR-8 (accessibility at 200\% font scale and colour-independent status not yet verified)\\
-\bottomrule
+\hline
 \end{tabularx}
 
 \subsection{Testing}
@@ -883,16 +891,16 @@ The project was run on GitHub from the requirements onwards, so every requiremen
   \item \textbf{Checks on every pull request.} Three GitHub Actions workflows run: an Android quality gate (unit tests, lint and a debug build), the Firestore rules tests, and the release build.
 \end{itemize}
 
-\begin{tabularx}{\textwidth}{@{}LrrL@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|L|r|r|L|}
+\hline
 \textbf{Item} & \textbf{Total} & \textbf{Done} & \textbf{Notes}\\
-\midrule
+\hline
 Epics & 11 & -- & One per feature area; parents of the issues below\\
 User stories & 82 & 78 & One per requirement, with acceptance criteria and priority\\
 Bugs & 9 & 8 & Found in reviews and audits\\
 Tasks & 15 & 10 & Engineering, delivery and documentation work\\
 Pull requests & 38 & 32 merged & 23 close issues with \texttt{Closes \#N}; Hesara 18, Sandali 15, Shazaan 5\\
-\bottomrule
+\hline
 \end{tabularx}
 
 \begin{figure}[H]
@@ -929,14 +937,14 @@ Pull requests & 38 & 32 merged & 23 close issues with \texttt{Closes \#N}; Hesar
 \subsection{Team contributions}
 The following summary is taken from the Git history of the repository.
 
-\begin{tabularx}{\textwidth}{@{}p{2.2cm}L@{}}
-\toprule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.2cm}|L|}
+\hline
 \textbf{Member} & \textbf{Main contributions}\\
-\midrule
+\hline
 Hesara & Initial architecture, Room and repository layer, core financial use cases, CI/CD and release pipeline; payslip and APIT, bank SMS parsing, CSV export, Seasonal Peaks, biometric reveal, Spending Freeze, analytics periods and donut (24/10); APIT bands from Firestore, personal Seasonal Peaks and the USD-linked goal (04/11); repository sync and documentation; this technical report.\\
 Sandali & Google sign-in, cache-backed Firestore sync, subscription detection and review, savings rate, formatters and transaction visuals (13/10); SRS, ADR-0001 and glossary, light-green redesign and the goal quest (16/10); first-run setup, analytics account and date filters, Seasonal Peak ``set aside'', \code{FLAG_SECURE}, illustrated icons, release signing fix and UI polish (05/11); validated Firestore rules and the indexes file, sign-out cache clearing, backup exclusion, demo credentials out of the repo, the gap-aware savings rate and Income Basis fixes, Material 3 theming, splitting the Today and Audit screens, and documentation updates (05/11).\\
 Shazaan & QA unit tests for goal pacing, opportunity cost and currency conversion (17/10, being ported to the current API); assigned gap tolerance (NFR-2), accessibility (NFR-8), app-usage risk and in-context permissions (FR-SUB-5, NFR-12).\\
-\bottomrule
+\hline
 \end{tabularx}
 
 % ============================================================================
