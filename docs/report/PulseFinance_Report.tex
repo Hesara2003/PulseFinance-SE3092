@@ -730,49 +730,7 @@ Room (\code{AppDatabase}, version 3) mirrors the four collections in the tables 
 % ============================================================================
 \section{Annotated Wireframes}
 \label{sec:wireframes}
-The wireframes below show each main screen. Today, Log an Expense, Income and Quest are annotated designs made in Figma; Setup, Audit and Analytics are drawn from the Compose code. Each numbered callout is explained in the table beside it: what the element does for Kavindu and which problem and requirement it serves. The bottom dock (Today, Analytics, Income, Quest, Audit) is the same on every screen after setup. Amounts and names in the wireframes are illustrative values drawn from Kavindu's scenario, not data from a real account.
-
-% ---- Setup ----------------------------------------------------------------
-\subsection{First-run setup}
-\begin{minipage}[t]{0.42\textwidth}\vspace{0pt}
-\centering
-\begin{tikzpicture}[scale=0.8,every node/.style={scale=0.8}]
-\phoneframe{STEP 1 OF 3}
-\node[wftext,font=\sffamily\scriptsize\bfseries] at (0.4,10.4) {What's your monthly salary?};
-\draw[card] (0.4,9.1) rectangle (5.6,9.9); \node[wfmuted] at (0.6,9.5) {Monthly take-home \quad LKR 126,400};
-\node[num] at (5.75,9.5) {1};
-\draw[pfborder] (0.3,8.6) -- (5.7,8.6);
-\node[wfmuted] at (0.4,8.25) {Step 2: Where does your money come from?};
-\foreach \y/\s/\v in {7.6/Salary/Steady,6.95/Freelance/Varies,6.3/AdSense/Varies,5.65/Crypto/Highly volatile}{
-  \draw[card] (0.4,\y-0.27) rectangle (5.6,\y+0.27);
-  \node[wftext] at (0.55,\y) {\s};
-  \node[chipon,anchor=east] at (5.5,\y) {\v};
-}
-\node[num] at (5.75,6.65) {2};
-\draw[pfborder] (0.3,5.1) -- (5.7,5.1);
-\node[wfmuted] at (0.4,4.75) {Step 3: What do you pay every month?};
-\draw[card] (0.4,3.85) rectangle (5.6,4.45); \node[wftext] at (0.55,4.15) {Rent \hfill LKR 34,000};
-\draw[card] (0.4,3.1) rectangle (5.6,3.7);  \node[wftext] at (0.55,3.4) {Fiber Broadband \quad LKR 4,800};
-\node[wfmuted] at (0.55,2.65) {Committed every month: LKR 38,800};
-\node[num] at (5.75,3.8) {3};
-\fill[pfgreen,rounded corners=6pt] (0.4,1.3) rectangle (5.6,1.95);
-\node[text=white,font=\sffamily\scriptsize\bfseries] at (3,1.62) {Finish setup};
-\node[num] at (5.75,1.62) {4};
-\end{tikzpicture}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.55\textwidth}\vspace{0pt}
-\small
-\begin{tabularx}{\linewidth}{@{}p{0.45cm}L@{}}
-\toprule
-\# & \textbf{Element and justification}\\
-\midrule
-\callout{1} & \textbf{Monthly take-home.} Optional, because not every user has a salary. Gives the dashboard an Income Basis before his first payslip is logged. \prob{P1}, \req{FR-AUTH-4}\\
-\callout{2} & \textbf{Sources with variability.} Each active source is ticked and given steady / varies / highly volatile, pre-filled sensibly (crypto starts as volatile). Volatile sources are treated more cautiously. \prob{P1}, \prob{P4}, \req{FR-AUTH-5}\\
-\callout{3} & \textbf{Fixed commitments.} Rent \lkr{34,000} is suggested because it is in his scenario; the running total shows what is committed before he spends anything. \prob{P7}, \req{FR-AUTH-4}\\
-\callout{4} & \textbf{Three short steps, one screen each.} His Google Sheet died of entry overhead (F1), so setup asks only what the dashboard needs on day one. Written once to \code{users/{uid}.onboarding}.\\
-\bottomrule
-\end{tabularx}
-\end{minipage}
+The wireframes below show each main screen. Today, Log an Expense, Income and Quest are annotated designs made in Figma; Audit and Analytics are drawn from the Compose code. Each numbered callout is explained in the table beside it: what the element does for Kavindu and which problem and requirement it serves. The bottom dock (Today, Analytics, Income, Quest, Audit) is the same on every screen after setup. Amounts and names in the wireframes are illustrative values drawn from Kavindu's scenario, not data from a real account.
 
 % ---- Dashboard -----------------------------------------------------------------
 \subsection{Today (dashboard)}
