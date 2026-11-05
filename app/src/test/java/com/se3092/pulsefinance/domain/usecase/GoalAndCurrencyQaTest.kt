@@ -1,11 +1,16 @@
 package com.se3092.pulsefinance.domain.usecase
 
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.SharedPreferences
+import com.se3092.pulsefinance.data.remote.rates.ExchangeRateService
 import com.se3092.pulsefinance.domain.model.Currency
 import com.se3092.pulsefinance.domain.model.SavingsGoal
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.lang.reflect.Proxy
 
 /** QA scenarios for Kavindu Silva's MacBook Pro M4 goal and multi-currency income. */
 class GoalAndCurrencyQaTest {
@@ -20,7 +25,7 @@ class GoalAndCurrencyQaTest {
     )
 
     private val velocity = CalculateGoalVelocityUseCase()
-    private val converter = ConvertCurrencyUseCase()
+    private val converter = ConvertCurrencyUseCase(ExchangeRateService(offlineContext()))
 
     @Test
     fun `required pacing matches the persona scenario`() {
@@ -36,7 +41,7 @@ class GoalAndCurrencyQaTest {
 
         assertFalse(report.isPacingOnTrack)
         assertEquals(478800.0, report.projectedShortfallLkr, 1.0)
-        assertTrue(report.behavioralInsight.startsWith("Currently saving 0/month"))
+        assertTrue(report.behavioralInsight.startsWith("You're currently spending everything you earn"))
     }
 
     @Test
@@ -45,7 +50,7 @@ class GoalAndCurrencyQaTest {
 
         assertTrue(report.isPacingOnTrack)
         assertEquals(0.0, report.projectedShortfallLkr, 0.0)
-        assertTrue(report.behavioralInsight.startsWith("You are on track"))
+        assertTrue(report.behavioralInsight.startsWith("On track"))
     }
 
     @Test
@@ -54,7 +59,7 @@ class GoalAndCurrencyQaTest {
 
         assertFalse(report.isPacingOnTrack)
         assertTrue(report.projectedShortfallLkr > 0)
-        assertTrue(report.behavioralInsight.startsWith("Pacing warning"))
+        assertTrue(report.behavioralInsight.startsWith("Behind pace by"))
     }
 
     @Test
@@ -93,9 +98,9 @@ class GoalAndCurrencyQaTest {
     }
 
     @Test
-    fun `usdt uses its own benchmark rate`() {
-        assertEquals(306.5 * 100, converter.toLkr(100.0, Currency.USDT), 0.001)
-        assertEquals(306.5, converter.getBenchmarkRate(Currency.USDT), 0.0)
+    fun `usdt converts through the usd rate and its own dollar price`() {
+        assertEquals(305.0 * 100, converter.toLkr(100.0, Currency.USDT), 0.001)
+        assertEquals(305.0, converter.getBenchmarkRate(Currency.USDT), 0.0)
     }
 
     @Test
@@ -108,5 +113,25 @@ class GoalAndCurrencyQaTest {
         Currency.values().forEach {
             assertEquals(0.0, converter.toLkr(0.0, it), 0.0)
         }
+    }
+}
+
+/**
+ * A Context whose preferences hold no cached rates, so [ExchangeRateService] answers with its
+ * offline benchmarks (USD 305.00) exactly as it does on a fresh install.
+ */
+private fun offlineContext(): Context {
+    val emptyPrefs = Proxy.newProxyInstance(
+        SharedPreferences::class.java.classLoader,
+        arrayOf(SharedPreferences::class.java)
+    ) { _, method, args ->
+        when (method.name) {
+            "getLong", "getFloat" -> args[1] // the default value: nothing is stored
+            "contains" -> false
+            else -> throw UnsupportedOperationException(method.name)
+        }
+    } as SharedPreferences
+    return object : ContextWrapper(null) {
+        override fun getSharedPreferences(name: String?, mode: Int): SharedPreferences = emptyPrefs
     }
 }

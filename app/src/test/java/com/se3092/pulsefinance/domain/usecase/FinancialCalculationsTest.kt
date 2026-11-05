@@ -6,7 +6,10 @@ import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.InvoiceStatus
+import com.se3092.pulsefinance.domain.model.SavingsGoal
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Calendar
 
@@ -31,15 +34,23 @@ class FinancialCalculationsTest {
         timestamp = now - daysAgo * day
     )
 
-    private val salary = IncomeStream(
+    private fun salary(daysAgo: Long) = IncomeStream(
         id = "salary", source = IncomeSource.SALARY, title = "Salary", clientOrPlatform = "Startup",
         originalAmount = 130000.0, currency = Currency.LKR, status = InvoiceStatus.RECEIVED,
-        isRecurringMonthly = true, dateReceivedOrExpected = now - 40 * day
+        isRecurringMonthly = true, dateReceivedOrExpected = now - daysAgo * day
     )
+
     private val overdueMilestone = IncomeStream(
         id = "m2", source = IncomeSource.FREELANCE, title = "Milestone 2", clientOrPlatform = "SME",
         originalAmount = 45000.0, currency = Currency.LKR, status = InvoiceStatus.OVERDUE,
         dateReceivedOrExpected = now - 4 * day
+    )
+
+    /** 90 days left (on the real clock, which SavingsGoal reads) and LKR 119,700 to go => LKR 39,900 a month. */
+    private val goal = SavingsGoal(
+        targetAmountLkr = 119700.0,
+        currentSavedLkr = 0.0,
+        targetDateMillis = System.currentTimeMillis() + 90 * day + day / 2
     )
 
     @Test
@@ -51,43 +62,62 @@ class FinancialCalculationsTest {
         )
 
         val summary = CalculateFinancialSummaryUseCase()(
-            incomes = listOf(salary, overdueMilestone),
+            incomes = listOf(salary(daysAgo = 3), overdueMilestone),
             expenses = expenses,
-            accounts = emptyList(),
-            monthlyGoalAllocationLkr = 39900.0,
-            nowMillis = now
+            goal = goal,
+            now = now
         )
 
         assertEquals(58000.0, summary.totalExpensesLkr, 0.01)
         assertEquals(34000.0, summary.committedExpensesLkr, 0.01)
-        // Recurring salary counts even though it was first logged last month
         assertEquals(130000.0, summary.totalRealizedIncomeLkr, 0.01)
+        // An overdue invoice is tracked, never spendable
         assertEquals(45000.0, summary.overdueIncomeLkr, 0.01)
+        assertFalse(summary.incomeBasisIsAverage)
         // 130,000 - 34,000 - 39,900 - 24,000 = 32,100 over 17 remaining October days
-        assertEquals(32100.0, summary.discretionaryPoolRemainingLkr, 0.01)
+        assertEquals(39900.0, summary.goalAllocationLkr, 0.01)
         assertEquals(17, summary.daysRemainingInMonth)
         assertEquals(32100.0 / 17, summary.safeToSpendDailyLkr, 0.01)
     }
 
     @Test
-    fun `savings rate reflects this month's net cash`() {
-        val report = CalculateSavingsRateUseCase()(
-            incomes = listOf(salary, overdueMilestone),
-            expenses = listOf(expense(34000.0, true, 5), expense(24000.0, false, 2)),
-            nowMillis = now
+    fun `allowance falls back to the recent average before this month's salary lands`() {
+        // Salary was last received 40 days ago (September), nothing yet in October
+        val summary = CalculateFinancialSummaryUseCase()(
+            incomes = listOf(salary(daysAgo = 40)),
+            expenses = listOf(expense(34000.0, committed = true, daysAgo = 5)),
+            goal = null,
+            now = now
         )
 
-        assertEquals(130000.0, report.monthlyIncomeLkr, 0.01)
-        assertEquals(72000.0, report.monthlyNetSavingsLkr, 0.01)
-        assertEquals(55, report.savingsRatePercent)
+        assertEquals(0.0, summary.totalRealizedIncomeLkr, 0.01)
+        assertTrue(summary.incomeBasisIsAverage)
+        assertEquals(130000.0, summary.incomeBasisLkr, 0.01)
+        assertEquals((130000.0 - 34000.0) / 17, summary.safeToSpendDailyLkr, 0.01)
     }
 
     @Test
-    fun `savings rate is zero without income`() {
-        val report = CalculateSavingsRateUseCase()(emptyList(), listOf(expense(850.0, false, 1)), now)
+    fun `savings rate reflects this month's net cash and skips Logging Gap blocks`() {
+        // Only the latest 30-day block has records; the two earlier blocks are gaps, not zero saving
+        val monthlyNet = CalculateSavingsRateUseCase()(
+            incomes = listOf(salary(daysAgo = 3), overdueMilestone),
+            expenses = listOf(expense(34000.0, true, 5), expense(24000.0, false, 2)),
+            now = now
+        )
 
-        assertEquals(0f, report.savingsRate, 0f)
-        assertEquals(-850.0, report.monthlyNetSavingsLkr, 0.01)
+        assertEquals(72000.0, monthlyNet, 0.01)
+    }
+
+    @Test
+    fun `savings rate is negative without income`() {
+        val monthlyNet = CalculateSavingsRateUseCase()(emptyList(), listOf(expense(850.0, false, 1)), now)
+
+        assertEquals(-850.0, monthlyNet, 0.01)
+    }
+
+    @Test
+    fun `savings rate is zero with nothing logged`() {
+        assertEquals(0.0, CalculateSavingsRateUseCase()(emptyList(), emptyList(), now), 0.0)
     }
 
     @Test
