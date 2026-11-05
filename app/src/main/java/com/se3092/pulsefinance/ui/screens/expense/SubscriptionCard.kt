@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -411,7 +412,7 @@ private fun DrainRateAndActions(sub: DetectedSubscription, onKeep: () -> Unit, o
                         contentColor = MaterialTheme.pulseColors.onDanger
                     ),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
-                    modifier = Modifier.height(38.dp)
+                    modifier = Modifier.heightIn(min = 38.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

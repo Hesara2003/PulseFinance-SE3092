@@ -129,4 +129,4 @@ Safe-to-Spend per day = (Income Basis − committed spent − goal saving this m
 | LKR formatting | `LKR 34,000`; foreign amounts show the original currency next to the LKR value | FR-LK-6 |
 | Confirmations and errors | One on-theme pop-up on every screen: what was saved, with its illustration ("Expense logged · LKR 850 · Coffee"); errors in amber, shown a little longer | NFR-9 |
 | Page changes | Tabs slide in from the side of the tab tapped while fading in (300 ms); sign-in and setup fade in with a slight zoom | — |
-| Accessibility | **Not yet checked:** colour-only status and 200% font scale | NFR-8 |
+| Accessibility | Status is never colour-only (an icon or text label with every green, amber or red state); fixed-height controls use minimum heights so text is not clipped at large font sizes. Checked on a device at maximum font and display size with Accessibility Scanner on 05/11/2026, with no findings | NFR-8 |
