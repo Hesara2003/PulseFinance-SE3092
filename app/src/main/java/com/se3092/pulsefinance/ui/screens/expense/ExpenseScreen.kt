@@ -876,9 +876,9 @@ private fun ZombieCardItem(
                             )
                             Text(
                                 text = if (unusedLong) {
-                                    "App unused for ${sub.lastAppOpenedDaysAgo} days (Usage stats)"
+                                    "Last opened ${lastOpenedLabel(sub.lastAppOpenedDaysAgo)} · unused for ${sub.lastAppOpenedDaysAgo} days"
                                 } else {
-                                    "Linked app active ${sub.lastAppOpenedDaysAgo} days ago"
+                                    "Last opened ${lastOpenedLabel(sub.lastAppOpenedDaysAgo)}"
                                 },
                                 fontSize = 12.sp,
                                 fontWeight = if (unusedLong) FontWeight.SemiBold else FontWeight.Normal,
@@ -1114,4 +1114,12 @@ private fun UsageAccessCard(onAllow: () -> Unit, onDecline: () -> Unit) {
             }
         }
     }
+}
+
+/** "today", "yesterday" or a date such as "12 Oct", from days since the app was last opened. */
+private fun lastOpenedLabel(daysAgo: Int): String = when (daysAgo) {
+    0 -> "today"
+    1 -> "yesterday"
+    else -> java.time.LocalDate.now().minusDays(daysAgo.toLong())
+        .format(java.time.format.DateTimeFormatter.ofPattern("d MMM"))
 }
