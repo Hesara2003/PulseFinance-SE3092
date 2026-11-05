@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.income
 
+import java.util.Locale
 import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -301,7 +302,7 @@ fun AddIncomeBottomSheet(
                         .padding(10.dp)
                 ) {
                     Text(
-                        text = "Effective rate: ${String.format("%.2f", rate)} LKR/${form.selectedCurrency.name} → Recorded as ≈ LKR ${String.format("%,.0f", convertedLkr)}",
+                        text = "Effective rate: ${String.format(Locale.US, "%.2f", rate)} LKR/${form.selectedCurrency.name} → Recorded as ≈ LKR ${String.format(Locale.US, "%,.0f", convertedLkr)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,

@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.components
 
+import java.util.Locale
 import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -69,7 +70,7 @@ fun CommittedVsDiscretionaryBar(
                     letterSpacing = 0.5.sp
                 )
                 Text(
-                    text = "Total LKR ${String.format("%,.0f", committedAmountLkr + discretionaryAmountLkr)}",
+                    text = "Total LKR ${String.format(Locale.US, "%,.0f", committedAmountLkr + discretionaryAmountLkr)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
@@ -128,7 +129,7 @@ fun CommittedVsDiscretionaryBar(
                             fontSize = 12.sp
                         )
                         Text(
-                            text = "LKR ${String.format("%,.0f", committedAmountLkr)} (Rent/Bills)",
+                            text = "LKR ${String.format(Locale.US, "%,.0f", committedAmountLkr)} (Rent/Bills)",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.pulseColors.textTertiary,
                             fontSize = 11.sp
@@ -153,7 +154,7 @@ fun CommittedVsDiscretionaryBar(
                             fontSize = 12.sp
                         )
                         Text(
-                            text = "LKR ${String.format("%,.0f", discretionaryAmountLkr)} (Lifestyle)",
+                            text = "LKR ${String.format(Locale.US, "%,.0f", discretionaryAmountLkr)} (Lifestyle)",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.pulseColors.textTertiary,
                             fontSize = 11.sp

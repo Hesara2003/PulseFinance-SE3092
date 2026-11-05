@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.expense
 
+import java.util.Locale
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
@@ -262,7 +263,7 @@ internal fun AuditMetrics(flaggedAnnualLkr: Double, shareOfGoalRemainingPct: Dou
             iconTint = MaterialTheme.colorScheme.primary,
             iconBackground = MaterialTheme.pulseColors.successContainer,
             label = "POTENTIAL SAVINGS",
-            value = shareOfGoalRemainingPct?.let { "%.1f%%".format(it) } ?: "—",
+            value = shareOfGoalRemainingPct?.let { "%.1f%%".format(Locale.US, it) } ?: "—",
             valueColor = MaterialTheme.colorScheme.primary,
             caption = goalTitle?.let { "of what's left for $it" } ?: "Set a goal to compare",
             modifier = Modifier.weight(1f)

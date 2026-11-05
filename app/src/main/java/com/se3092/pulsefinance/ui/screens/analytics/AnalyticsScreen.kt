@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.analytics
 
+import java.util.Locale
 import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.runtime.remember
 import com.se3092.pulsefinance.ui.components.PulseNoticeHost
@@ -485,7 +486,7 @@ fun AnalyticsScreen(
 
                                     Text(
                                         text = if (selectedDay.hasRecords) {
-                                            "LKR ${String.format("%,.2f", selectedDay.amountLkr)}"
+                                            "LKR ${String.format(Locale.US, "%,.2f", selectedDay.amountLkr)}"
                                         } else {
                                             "No data recorded"
                                         },

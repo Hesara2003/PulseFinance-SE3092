@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.components
 
+import java.util.Locale
 import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.ui.common.goalIllustration
 import androidx.compose.ui.res.painterResource
@@ -52,7 +53,7 @@ fun GoalCard(
     onMoreClick: () -> Unit = {}
 ) {
     val progress = (goal.currentSavedLkr / goal.targetAmountLkr).coerceIn(0.0, 1.0).toFloat()
-    val percentageStr = String.format("%.1f%%", progress * 100)
+    val percentageStr = String.format(Locale.US, "%.1f%%", progress * 100)
 
     Surface(
         modifier = modifier
@@ -246,7 +247,7 @@ fun GoalCard(
                                     fontSize = 11.sp
                                 )
                                 Text(
-                                    text = "LKR ${String.format("%,.0f", goal.currentSavedLkr)}",
+                                    text = "LKR ${String.format(Locale.US, "%,.0f", goal.currentSavedLkr)}",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.ExtraBold,
@@ -262,7 +263,7 @@ fun GoalCard(
                                     fontSize = 11.sp
                                 )
                                 Text(
-                                    text = "LKR ${String.format("%,.0f", goal.targetAmountLkr)}",
+                                    text = "LKR ${String.format(Locale.US, "%,.0f", goal.targetAmountLkr)}",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Bold,
@@ -293,7 +294,7 @@ fun GoalCard(
                                 color = MaterialTheme.pulseColors.onPrimaryFixed
                             )
                             Text(
-                                text = "$${String.format("%,.0f", goal.usdReferencePrice)} · ${usdTargetNote(goal)}",
+                                text = "$${String.format(Locale.US, "%,.0f", goal.usdReferencePrice)} · ${usdTargetNote(goal)}",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.pulseColors.onPrimaryFixed
                             )
@@ -327,13 +328,13 @@ fun GoalCard(
                                     append("Required Pace: ")
                                 }
                                 withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)) {
-                                    append("LKR ${String.format("%,.0f", goal.requiredDailySavingsLkr)}")
+                                    append("LKR ${String.format(Locale.US, "%,.0f", goal.requiredDailySavingsLkr)}")
                                 }
                                 withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)) {
                                     append("/day ")
                                 }
                                 withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)) {
-                                    append("(~LKR ${String.format("%,.0f", goal.requiredMonthlySavingsLkr)}/mo)")
+                                    append("(~LKR ${String.format(Locale.US, "%,.0f", goal.requiredMonthlySavingsLkr)}/mo)")
                                 }
                             }
                         )

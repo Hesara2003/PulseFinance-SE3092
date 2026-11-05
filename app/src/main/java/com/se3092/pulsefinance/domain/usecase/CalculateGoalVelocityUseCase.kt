@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.domain.usecase
 
+import java.util.Locale
 import com.se3092.pulsefinance.domain.model.DAY_MILLIS
 import com.se3092.pulsefinance.domain.model.SavingsGoal
 import javax.inject.Inject
@@ -45,11 +46,11 @@ class CalculateGoalVelocityUseCase @Inject constructor() {
             goal.isComplete ->
                 "Target reached — $title is fully funded."
             actualMonthlySavingsRateLkr <= 0 ->
-                "You're currently spending everything you earn. Saving LKR ${"%,.0f".format(requiredMonthly)}/month gets $title on time."
+                "You're currently spending everything you earn. Saving LKR ${"%,.0f".format(Locale.US, requiredMonthly)}/month gets $title on time."
             isPacing ->
-                "On track: at LKR ${"%,.0f".format(actualMonthlySavingsRateLkr)}/month you reach $title before the deadline."
+                "On track: at LKR ${"%,.0f".format(Locale.US, actualMonthlySavingsRateLkr)}/month you reach $title before the deadline."
             else ->
-                "Behind pace by LKR ${"%,.0f".format(requiredMonthly - actualMonthlySavingsRateLkr)}/month — LKR ${"%,.0f".format(shortfall)} short at the deadline."
+                "Behind pace by LKR ${"%,.0f".format(Locale.US, requiredMonthly - actualMonthlySavingsRateLkr)}/month — LKR ${"%,.0f".format(Locale.US, shortfall)} short at the deadline."
         }
 
         return GoalVelocityReport(

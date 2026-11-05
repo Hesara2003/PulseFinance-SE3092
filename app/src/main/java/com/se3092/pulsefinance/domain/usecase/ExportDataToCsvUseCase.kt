@@ -74,7 +74,7 @@ class ExportDataToCsvUseCase @Inject constructor() {
                     escape(g.title),
                     g.targetAmountLkr.toString(),
                     g.currentSavedLkr.toString(),
-                    "%.1f%%".format(g.progressPercentage * 100),
+                    "%.1f%%".format(Locale.US, g.progressPercentage * 100),
                     dateStr,
                     if (g.isComplete) "COMPLETED" else "ACTIVE",
                     usdRef

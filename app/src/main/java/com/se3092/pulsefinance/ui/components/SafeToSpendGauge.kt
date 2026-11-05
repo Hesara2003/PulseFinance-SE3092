@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.components
 
+import java.util.Locale
 import com.se3092.pulsefinance.ui.theme.pulseColors
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -117,7 +118,7 @@ fun SafeToSpendGauge(
             ) {
                 Column {
                     Text(
-                        text = "LKR ${String.format("%,.0f", dailyAllowanceLkr)}",
+                        text = "LKR ${String.format(Locale.US, "%,.0f", dailyAllowanceLkr)}",
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.ExtraBold,
