@@ -13,6 +13,7 @@ import com.se3092.pulsefinance.data.remote.dto.ApitConfigDto
 import com.se3092.pulsefinance.data.remote.dto.ExpenseDto
 import com.se3092.pulsefinance.data.remote.dto.GoalDto
 import com.se3092.pulsefinance.data.remote.dto.IncomeDto
+import com.se3092.pulsefinance.data.remote.dto.OnboardingMapper
 import com.se3092.pulsefinance.domain.model.OnboardingProfile
 import com.se3092.pulsefinance.domain.model.SeasonalReserve
 import com.se3092.pulsefinance.domain.model.SubscriptionDecision
@@ -228,19 +229,29 @@ class FirestoreDataSource @Inject constructor(
             .logFailure("deleteSeasonalReserve")
     }
 
-    // ---------------- First-run setup (FR-AUTH-4, FR-AUTH-5) ----------------
+    // ---------------- First-run setup (FR-AUTH-4, FR-AUTH-5, FR-AUTH-6) ----------------
     fun saveOnboardingProfile(userId: String, profile: OnboardingProfile) {
-        val payload = mapOf(
-            FIELD_ONBOARDING to mapOf(
-                "monthlySalaryLkr" to profile.monthlySalaryLkr,
-                "incomeSources" to profile.incomeSources.map { (source, variability) -> source.name to variability.name }.toMap(),
-                "fixedCommitments" to profile.fixedCommitments.map {
-                    mapOf("title" to it.title, "amountLkr" to it.amountLkr, "category" to it.category.name)
-                },
-                "completedAt" to profile.completedAt
-            )
-        )
+        val payload = mapOf(FIELD_ONBOARDING to OnboardingMapper.toMap(profile))
         userDoc(userId).set(payload, SetOptions.merge()).logFailure("saveOnboardingProfile")
+    }
+
+    /** Emits null until the `onboarding` map exists; it may hold only the runway if setup was skipped. */
+    fun observeOnboardingProfile(userId: String): Flow<OnboardingProfile?> = callbackFlow {
+        val listener = userDoc(userId).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
+            val raw = snapshot?.get(FIELD_ONBOARDING) as? Map<*, *>
+            trySend(raw?.let(OnboardingMapper::fromMap))
+        }
+        awaitClose { listener.remove() }
+    }
+
+    /** Merge write: changes the buffer without touching the rest of what setup captured. */
+    fun saveRunway(userId: String, months: Int, savedLkr: Double) {
+        val payload = mapOf(FIELD_ONBOARDING to OnboardingMapper.runwayFields(months, savedLkr))
+        userDoc(userId).set(payload, SetOptions.merge()).logFailure("saveRunway")
     }
 
     // ---------------- App configuration (read-only) ----------------
