@@ -75,7 +75,7 @@ Every screen gets its data through `whenSignedIn`. When he signs out, each flow 
 | Card numbers, CVV | Never collected, stored or shown | C-13, C-14 |
 | His balances on the dashboard | Can be hidden with the eye icon on the dashboard | — |
 | Bank SMS | Never read. He shares an SMS into the app through the share sheet, and the parsed draft is shown for him to confirm | FR-EXP-7, NFR-12 |
-| Local cache | Room database `pulse_finance_db` and the exchange-rate SharedPreferences, both in app-private internal storage | NFR-3 |
+| Local cache | Room database `pulse_finance_db` and the exchange-rate SharedPreferences, both in app-private internal storage. Excluded from Android cloud backup and device transfer (`allowBackup="false"` and `res/xml` backup rules); Firestore restores the data on a new phone | NFR-3 |
 
 ---
 
@@ -114,8 +114,6 @@ These are honest limitations of the current build, not features:
 
 | Gap | Effect | Possible fix |
 |---|---|---|
-| `android:allowBackup="true"` | Android backup can include the Room cache and rate preferences | Set `allowBackup="false"`, or exclude `databases/` with backup rules |
-| No `FLAG_SECURE` | Balances and revealed account numbers can appear in screenshots and the recent-apps preview | Set `FLAG_SECURE` on `MainActivity` |
 | Debug demo credentials are in `app/build.gradle.kts` | Anyone with repo access can read them; the repo is private | Read them from `local.properties` instead |
 | Usage access is not requested in context | FR-SUB-5 only works if he finds the setting himself | Explain and request from the subscription audit (NFR-12) |
 | Room is not encrypted | The cache is protected only by the app sandbox | SQLCipher, if the threat model requires it |
