@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.data.remote.firebase
 
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.channels.awaitClose
@@ -28,6 +29,13 @@ class FirebaseAuthDataSource @Inject constructor(
     val userPhotoUrl: String?
         get() = auth.currentUser?.photoUrl?.toString()
 
+    val isEmailVerified: Boolean
+        get() = auth.currentUser?.isEmailVerified == true
+
+    /** True for an email-and-password account; false for Google, which re-authenticates with a token. */
+    val usesPasswordSignIn: Boolean
+        get() = auth.currentUser?.providerData?.any { it.providerId == EmailAuthProvider.PROVIDER_ID } == true
+
     fun observeAuthState(): Flow<String?> = callbackFlow {
         val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             trySend(firebaseAuth.currentUser?.uid)
@@ -50,6 +58,41 @@ class FirebaseAuthDataSource @Inject constructor(
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         val result = auth.signInWithCredential(credential).await()
         result.user?.uid ?: throw IllegalStateException("Firebase User ID is null after Google sign-in")
+    }
+
+    suspend fun sendPasswordReset(email: String): Result<Unit> = runCatching {
+        auth.sendPasswordResetEmail(email.trim()).await()
+        Unit
+    }
+
+    suspend fun sendEmailVerification(): Result<Unit> = runCatching {
+        val user = auth.currentUser ?: throw IllegalStateException("Not signed in")
+        user.sendEmailVerification().await()
+        Unit
+    }
+
+    /** Re-reads the account from Firebase so a verification done in the mail app shows up. */
+    suspend fun reloadUser(): Result<Boolean> = runCatching {
+        val user = auth.currentUser ?: throw IllegalStateException("Not signed in")
+        user.reload().await()
+        user.isEmailVerified
+    }
+
+    /** Deleting an account needs a recent sign-in; this proves it is him. */
+    suspend fun reauthenticateWithPassword(password: String) {
+        val user = auth.currentUser ?: throw IllegalStateException("Not signed in")
+        val email = user.email ?: throw IllegalStateException("This account has no email")
+        user.reauthenticate(EmailAuthProvider.getCredential(email, password)).await()
+    }
+
+    suspend fun reauthenticateWithGoogle(idToken: String) {
+        val user = auth.currentUser ?: throw IllegalStateException("Not signed in")
+        user.reauthenticate(GoogleAuthProvider.getCredential(idToken, null)).await()
+    }
+
+    suspend fun deleteCurrentUser() {
+        val user = auth.currentUser ?: throw IllegalStateException("Not signed in")
+        user.delete().await()
     }
 
     fun signOut() {

@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -520,6 +521,60 @@ class DashboardViewModel @Inject constructor(
     fun dismissNotice() {
         notice.value = null
     }
+
+    // ---------------- Account security (FR-AUTH-9, FR-AUTH-10) ----------------
+
+    private val _security = MutableStateFlow(readSecurityState())
+    val accountSecurity: StateFlow<AccountSecurityState> = _security.asStateFlow()
+
+    /** Set once the account and its data are gone, so the screen can leave. */
+    private val _accountDeleted = MutableStateFlow(false)
+    val accountDeleted: StateFlow<Boolean> = _accountDeleted.asStateFlow()
+
+    private fun readSecurityState() = AccountSecurityState(
+        email = authRepository.userEmail,
+        isEmailVerified = authRepository.isEmailVerified,
+        usesPassword = authRepository.usesPasswordSignIn
+    )
+
+    /** Opening the account menu re-reads the account, so a verification done in the mail app shows. */
+    fun refreshAccountSecurity() {
+        viewModelScope.launch {
+            authRepository.refreshEmailVerified()
+            _security.update { it.copy(email = authRepository.userEmail, isEmailVerified = authRepository.isEmailVerified, usesPassword = authRepository.usesPasswordSignIn) }
+        }
+    }
+
+    fun sendVerificationEmail() {
+        viewModelScope.launch {
+            authRepository.sendEmailVerification()
+                .onSuccess { notice.value = UiNotice("Verification email sent", "Open the link in it, then check back here") }
+                .onFailure { notice.value = UiNotice("Couldn't send the email", it.localizedMessage ?: "Try again", NoticeTone.ERROR) }
+        }
+    }
+
+    fun openDeleteAccount() = _security.update { it.copy(isDeleteOpen = true, passwordInput = "", errorMessage = null) }
+    fun dismissDeleteAccount() = _security.update { it.copy(isDeleteOpen = false, passwordInput = "", errorMessage = null) }
+    fun onDeletePasswordChange(value: String) = _security.update { it.copy(passwordInput = value, errorMessage = null) }
+
+    /** [googleIdToken] is the fresh token for a Google account; an email account uses the typed password. */
+    fun confirmDeleteAccount(googleIdToken: String? = null) {
+        val current = _security.value
+        if (current.isDeleting) return
+        viewModelScope.launch {
+            _security.update { it.copy(isDeleting = true, errorMessage = null) }
+            authRepository.deleteAccount(current.passwordInput.takeIf { current.usesPassword }, googleIdToken).fold(
+                onSuccess = {
+                    _security.update { it.copy(isDeleting = false, isDeleteOpen = false, passwordInput = "") }
+                    _accountDeleted.value = true
+                },
+                onFailure = { e -> _security.update { it.copy(isDeleting = false, errorMessage = deleteAccountFailureMessage(e)) } }
+            )
+        }
+    }
+
+    fun onGoogleReauthFailed(error: Throwable) =
+        _security.update { it.copy(errorMessage = "Couldn't confirm with Google: ${error.localizedMessage ?: "try again"}") }
 
     fun signOut() {
         viewModelScope.launch { authRepository.signOut() }

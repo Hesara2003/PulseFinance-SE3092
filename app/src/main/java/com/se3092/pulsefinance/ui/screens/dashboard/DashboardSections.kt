@@ -1,5 +1,7 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import java.util.Locale
 import com.se3092.pulsefinance.ui.screens.expense.ExpensePreset
 import com.se3092.pulsefinance.domain.model.MAX_RUNWAY_MONTHS
@@ -31,6 +33,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.MarkEmailRead
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.FileDownload
@@ -72,8 +79,13 @@ internal fun DashboardGreeting(
     isBalanceMasked: Boolean,
     onToggleMask: () -> Unit,
     onExportCsv: () -> Unit,
-    onSignOut: () -> Unit
+    isEmailVerified: Boolean,
+    onOpenAccountMenu: () -> Unit,
+    onVerifyEmail: () -> Unit,
+    onSignOut: () -> Unit,
+    onDeleteAccount: () -> Unit
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -108,12 +120,45 @@ internal fun DashboardGreeting(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        IconButton(onClick = onSignOut) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                contentDescription = "Sign out",
-                tint = MaterialTheme.pulseColors.textTertiary
-            )
+        Box {
+            IconButton(onClick = {
+                onOpenAccountMenu()
+                menuOpen = true
+            }) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Account options",
+                    tint = MaterialTheme.pulseColors.textTertiary
+                )
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                if (!isEmailVerified) {
+                    DropdownMenuItem(
+                        text = { Text("Verify my email") },
+                        leadingIcon = { Icon(Icons.Default.MarkEmailRead, contentDescription = null) },
+                        onClick = {
+                            menuOpen = false
+                            onVerifyEmail()
+                        }
+                    )
+                }
+                DropdownMenuItem(
+                    text = { Text("Sign out") },
+                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null) },
+                    onClick = {
+                        menuOpen = false
+                        onSignOut()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Delete my account", color = MaterialTheme.colorScheme.error) },
+                    leadingIcon = { Icon(Icons.Default.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                    onClick = {
+                        menuOpen = false
+                        onDeleteAccount()
+                    }
+                )
+            }
         }
     }
 }

@@ -241,6 +241,26 @@ fun AuthScreen(
                 }
             }
 
+            state.infoMessage?.let { info ->
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                ) {
+                    Text(
+                        text = info,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(10.dp)
+                    )
+                }
+            }
+
             // =========================================================================
             // Expandable Custom Credentials Drawer
             // =========================================================================
@@ -314,7 +334,22 @@ fun AuthScreen(
                             )
                         )
 
-                        Spacer(modifier = Modifier.height(6.dp))
+                        if (state.isLoginMode) {
+                            TextButton(
+                                onClick = viewModel::sendPasswordReset,
+                                enabled = !state.isLoading,
+                                modifier = Modifier.align(Alignment.End)
+                            ) {
+                                Text(
+                                    text = "Forgot password?",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
 
                         TextButton(onClick = viewModel::toggleAuthMode) {
                             Text(

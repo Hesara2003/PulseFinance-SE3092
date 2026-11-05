@@ -42,10 +42,16 @@ class FakeAuthRepository(signedIn: Boolean = true) : AuthRepository {
     override val userEmail: String? = "kavindu@example.com"
     override val userDisplayName: String? = "Kavindu Silva"
     override val userPhotoUrl: String? = null
+    override val isEmailVerified: Boolean = true
+    override val usesPasswordSignIn: Boolean = true
     override fun observeAuthState(): Flow<String?> = user
     override suspend fun signInWithEmail(email: String, password: String) = Result.success(TEST_USER)
     override suspend fun signUpWithEmail(email: String, password: String) = Result.success(TEST_USER)
     override suspend fun signInWithGoogle(idToken: String) = Result.success(TEST_USER)
+    override suspend fun sendPasswordReset(email: String) = Result.success(Unit)
+    override suspend fun sendEmailVerification() = Result.success(Unit)
+    override suspend fun refreshEmailVerified() = Result.success(true)
+    override suspend fun deleteAccount(password: String?, googleIdToken: String?) = Result.success(Unit)
     override suspend fun signOut() { user.value = null }
 }
 

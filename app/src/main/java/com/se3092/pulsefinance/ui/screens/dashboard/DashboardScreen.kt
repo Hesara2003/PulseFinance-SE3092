@@ -1,9 +1,12 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.LaunchedEffect
 import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.ui.common.shareCsv
 import androidx.compose.foundation.ExperimentalFoundationApi
 import com.se3092.pulsefinance.ui.components.DeleteTransactionDialog
+import com.se3092.pulsefinance.ui.screens.auth.GoogleIdTokenRequester
 import com.se3092.pulsefinance.ui.components.ExpenseActionsDialog
 import com.se3092.pulsefinance.ui.screens.expense.ExpenseEditorSheet
 import com.se3092.pulsefinance.ui.common.TransactionItem
@@ -110,6 +113,13 @@ fun DashboardScreen(
     val expenseEditor by viewModel.editingExpense.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val security by viewModel.accountSecurity.collectAsStateWithLifecycle()
+    val accountDeleted by viewModel.accountDeleted.collectAsStateWithLifecycle()
+
+    // The account and its data are gone: leave exactly as signing out does.
+    LaunchedEffect(accountDeleted) {
+        if (accountDeleted) onSignOut()
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -144,10 +154,14 @@ fun DashboardScreen(
                     isBalanceMasked = isBalanceMasked,
                     onToggleMask = { isBalanceMasked = !isBalanceMasked },
                     onExportCsv = { shareCsv(context, viewModel.exportCsv()) },
+                    isEmailVerified = security.isEmailVerified,
+                    onOpenAccountMenu = viewModel::refreshAccountSecurity,
+                    onVerifyEmail = viewModel::sendVerificationEmail,
                     onSignOut = {
                         viewModel.signOut()
                         onSignOut()
-                    }
+                    },
+                    onDeleteAccount = viewModel::openDeleteAccount
                 )
             }
 
@@ -310,6 +324,26 @@ fun DashboardScreen(
 
         // Scaffold stacks its content from the top, so this floats over the list.
         PulseNoticeHost(notice = state.notice, onDismiss = viewModel::dismissNotice)
+
+        if (security.isDeleteOpen) {
+            DeleteAccountDialog(
+                state = security,
+                onPasswordChange = viewModel::onDeletePasswordChange,
+                onConfirm = {
+                    if (security.usesPassword) {
+                        viewModel.confirmDeleteAccount()
+                    } else {
+                        coroutineScope.launch {
+                            GoogleIdTokenRequester.request(context).fold(
+                                onSuccess = { token -> token?.let { viewModel.confirmDeleteAccount(it) } },
+                                onFailure = viewModel::onGoogleReauthFailed
+                            )
+                        }
+                    }
+                },
+                onDismiss = viewModel::dismissDeleteAccount
+            )
+        }
 
         pendingActions?.let { tx ->
             ExpenseActionsDialog(
