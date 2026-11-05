@@ -1,19 +1,18 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
+import com.se3092.pulsefinance.ui.common.shareCsv
 import androidx.compose.foundation.ExperimentalFoundationApi
 import com.se3092.pulsefinance.ui.components.DeleteTransactionDialog
 import com.se3092.pulsefinance.ui.common.TransactionItem
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.foundation.combinedClickable
-import com.se3092.pulsefinance.ui.common.presetIllustration
-import com.se3092.pulsefinance.ui.common.transactionIllustration
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,11 +25,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.HourglassTop
@@ -38,16 +35,11 @@ import androidx.compose.material.icons.filled.NorthEast
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.SouthWest
 import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -63,8 +55,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
 import com.se3092.pulsefinance.domain.model.Account
-import com.se3092.pulsefinance.domain.model.MAX_RUNWAY_MONTHS
-import com.se3092.pulsefinance.domain.model.MIN_RUNWAY_MONTHS
 import com.se3092.pulsefinance.ui.common.BiometricHelper
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -94,31 +84,10 @@ import com.se3092.pulsefinance.ui.common.compactAmount
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.signedLkr
 import com.se3092.pulsefinance.ui.components.CommittedVsDiscretionaryBar
-import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import com.se3092.pulsefinance.ui.components.QuestCard
 import com.se3092.pulsefinance.ui.screens.expense.AddExpenseBottomSheet
 import com.se3092.pulsefinance.ui.theme.Display
-import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.Numeric
-import com.se3092.pulsefinance.ui.theme.OnAccent
-import com.se3092.pulsefinance.ui.theme.Saffron
-import com.se3092.pulsefinance.ui.theme.SaffronSoft
-import com.se3092.pulsefinance.ui.theme.Teal
-import com.se3092.pulsefinance.ui.theme.WarmAmber
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoContainer
-import com.se3092.pulsefinance.ui.theme.NeoContainerHigh
-import com.se3092.pulsefinance.ui.theme.NeoErrorContainer
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoSurface
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
-import com.se3092.pulsefinance.ui.theme.NeoTrack
 import com.se3092.pulsefinance.ui.components.PulseNoticeHost
 import com.se3092.pulsefinance.ui.common.accountIllustration
 
@@ -137,16 +106,16 @@ fun DashboardScreen(
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
-        containerColor = NeoSurface,
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { viewModel.openAddExpense() },
-                containerColor = NeoGreen,
-                contentColor = OnAccent,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 shape = CircleShape,
                 modifier = Modifier
                     .padding(bottom = 76.dp)
-                    .shadow(14.dp, CircleShape, spotColor = NeoGreenGlow)
+                    .shadow(14.dp, CircleShape, spotColor = MaterialTheme.pulseColors.primaryGlow)
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add Expense")
             }
@@ -159,61 +128,24 @@ fun DashboardScreen(
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // =========================================================================
-            // 1. Greeting with the user's generated avatar
-            // =========================================================================
+            // Greeting, with hide-amounts, CSV export and sign-out
             item {
                 Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    ProfileAvatar(initials = state.initials, size = 48.dp)
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = state.greeting,
-                            fontSize = 13.sp,
-                            color = NeoTextSecondary
-                        )
-                        Text(
-                            text = state.firstName,
-                            fontFamily = Display,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 24.sp,
-                            color = NeoTextPrimary
-                        )
-                    }
-                    IconButton(onClick = { isBalanceMasked = !isBalanceMasked }) {
-                        Icon(
-                            imageVector = if (isBalanceMasked) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = "Hide amounts",
-                            tint = NeoTextSecondary
-                        )
-                    }
-                    IconButton(onClick = { viewModel.exportCsv(context) }) {
-                        Icon(
-                            imageVector = Icons.Default.FileDownload,
-                            contentDescription = "Export CSV",
-                            tint = NeoTextSecondary
-                        )
-                    }
-                    IconButton(onClick = {
+                DashboardGreeting(
+                    initials = state.initials,
+                    greeting = state.greeting,
+                    firstName = state.firstName,
+                    isBalanceMasked = isBalanceMasked,
+                    onToggleMask = { isBalanceMasked = !isBalanceMasked },
+                    onExportCsv = { shareCsv(context, viewModel.exportCsv()) },
+                    onSignOut = {
                         viewModel.signOut()
                         onSignOut()
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "Sign out",
-                            tint = NeoTextTertiary
-                        )
                     }
-                }
+                )
             }
 
-            // =========================================================================
-            // 2. Hero: what Kavindu can spend today, and how the month is going
-            // =========================================================================
+            // Hero: what Kavindu can spend today, and how the month is going
             item {
                 SafeToSpendHero(
                     dailyAllowanceLkr = state.summary.safeToSpendDailyLkr,
@@ -230,121 +162,19 @@ fun DashboardScreen(
                 )
             }
 
-            // =========================================================================
-            // 2b. Sri Lankan Seasonal Peaks Proactive Alert (FR-LK-4, FR-LK-5)
-            // =========================================================================
+            // Seasonal Peak alert (FR-LK-4, FR-LK-5)
             state.seasonalAlert?.let { alert ->
                 item {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        color = NeoCard,
-                        border = BorderStroke(1.dp, Saffron.copy(alpha = 0.5f)),
-                        shadowElevation = 3.dp
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(SaffronSoft),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.AcUnit,
-                                        contentDescription = null,
-                                        tint = Saffron,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Column {
-                                    Text(
-                                        text = alert.festivalName,
-                                        fontSize = 14.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = NeoTextPrimary
-                                    )
-                                    Text(
-                                        text = "Peak in ${alert.daysUntilPeak} days · Set aside ${lkr(alert.suggestedSetAsideLkr)}",
-                                        fontSize = 12.sp,
-                                        color = Saffron,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                            Text(
-                                text = alert.message,
-                                fontSize = 12.sp,
-                                color = NeoTextSecondary,
-                                lineHeight = 17.sp
-                            )
-                            // One-tap set-aside: holds the amount back from Safe-to-Spend until the peak (FR-LK-5)
-                            val reserve = state.seasonalReserve
-                            if (reserve != null) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(14.dp))
-                                        .background(SaffronSoft)
-                                        .padding(start = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = null,
-                                        tint = Saffron,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Text(
-                                        text = "${lkr(reserve.amountLkr)} set aside · held back from Safe-to-Spend",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = NeoTextPrimary,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(horizontal = 8.dp)
-                                    )
-                                    TextButton(onClick = viewModel::undoSeasonalSetAside) {
-                                        Text("Undo", color = Saffron, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                    }
-                                }
-                            } else if (alert.suggestedSetAsideLkr > 0) {
-                                Button(
-                                    onClick = viewModel::setAsideForSeasonalPeak,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(44.dp),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Saffron, contentColor = Color.White)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Savings,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Set aside ${lkr(alert.suggestedSetAsideLkr)}",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    SeasonalPeakCard(
+                        alert = alert,
+                        reserve = state.seasonalReserve,
+                        onSetAside = viewModel::setAsideForSeasonalPeak,
+                        onUndoSetAside = viewModel::undoSeasonalSetAside
+                    )
                 }
             }
 
-            // =========================================================================
-            // 2b-ii. Emergency Runway Buffer (FR-AUTH-6)
-            // =========================================================================
+            // Emergency Runway Buffer (FR-AUTH-6)
             if (state.showRunwayCard) {
                 item {
                     SafetyBufferCard(
@@ -356,98 +186,47 @@ fun DashboardScreen(
                 }
             }
 
-            // =========================================================================
-            // 2c. Recorded Accounts & Spending Freeze Section (FR-ACC-1...7)
-            // =========================================================================
+            // Accounts and Spending Freeze (FR-ACC-1…7). Reveal and copy need the Activity, so they stay here.
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 2.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "Accounts & Channels",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = NeoTextPrimary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp
+                AccountsSection(
+                    accounts = state.accounts,
+                    combinedBalanceLkr = state.combinedBalanceLkr,
+                    totalFreezeBreaks = state.totalFreezeBreaks,
+                    revealedAccountIds = state.revealedAccountIds,
+                    isBalanceMasked = isBalanceMasked,
+                    onRevealAccount = { account ->
+                        val activity = context as? FragmentActivity
+                        if (activity != null) {
+                            BiometricHelper.authenticate(
+                                activity = activity,
+                                title = "Reveal ${account.name} Number",
+                                subtitle = "Device authentication required to view sensitive account details",
+                                onSuccess = { viewModel.setAccountRevealed(account.id, true) },
+                                onError = { /* keep masked on error */ }
                             )
-                            Text(
-                                text = "Combined balance: ${if (isBalanceMasked) "••••••" else lkr(state.combinedBalanceLkr)}",
-                                fontSize = 12.sp,
-                                color = NeoTextSecondary
-                            )
+                        } else {
+                            viewModel.setAccountRevealed(account.id, true)
                         }
-                        if (state.totalFreezeBreaks > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(NeoErrorContainer)
-                                    .padding(horizontal = 9.dp, vertical = 3.dp)
-                            ) {
-                                Text(
-                                    text = "${state.totalFreezeBreaks} Freeze Break${if (state.totalFreezeBreaks > 1) "s" else ""}",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = NeoRose
-                                )
-                            }
+                    },
+                    onCopyAccountNumber = { account ->
+                        BiometricHelper.copyWithAutoWipe(
+                            context = context,
+                            label = "${account.name} Account Number",
+                            text = account.accountNumber,
+                            scope = coroutineScope,
+                            wipeDelaySeconds = 60L
+                        ) {
+                            viewModel.setAccountRevealed(account.id, false)
                         }
+                    },
+                    onToggleFreeze = { account ->
+                        if (account.isFrozen) viewModel.unfreezeAccount(account)
+                        else viewModel.freezeAccount(account, 14)
                     }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        state.accounts.forEach { account ->
-                            AccountCardItem(
-                                account = account,
-                                isBalanceMasked = isBalanceMasked,
-                                isRevealed = state.revealedAccountIds.contains(account.id),
-                                onRevealClick = {
-                                    val activity = context as? FragmentActivity
-                                    if (activity != null) {
-                                        BiometricHelper.authenticate(
-                                            activity = activity,
-                                            title = "Reveal ${account.name} Number",
-                                            subtitle = "Device authentication required to view sensitive account details",
-                                            onSuccess = { viewModel.setAccountRevealed(account.id, true) },
-                                            onError = { /* keep masked on error */ }
-                                        )
-                                    } else {
-                                        viewModel.setAccountRevealed(account.id, true)
-                                    }
-                                },
-                                onCopyClick = {
-                                    BiometricHelper.copyWithAutoWipe(
-                                        context = context,
-                                        label = "${account.name} Account Number",
-                                        text = account.accountNumber,
-                                        scope = coroutineScope,
-                                        wipeDelaySeconds = 60L
-                                    ) {
-                                        viewModel.setAccountRevealed(account.id, false)
-                                    }
-                                },
-                                onFreezeToggle = {
-                                    if (account.isFrozen) viewModel.unfreezeAccount(account)
-                                    else viewModel.freezeAccount(account, 14)
-                                }
-                            )
-                        }
-                    }
-                }
+                )
             }
 
-            // =========================================================================
-            // 3. Money waiting: unpaid invoices framed as money owed to him, not an alarm
-            // =========================================================================
+            // Money waiting: unpaid invoices framed as money owed to him, not an alarm
             if (state.unpaidInvoices.isNotEmpty()) item {
                 val firstUnpaid = state.unpaidInvoices.first()
                 val hasOverdue = state.overdueInvoiceCount > 0
@@ -461,9 +240,7 @@ fun DashboardScreen(
                 )
             }
 
-            // =========================================================================
-            // 3b. Goal quest
-            // =========================================================================
+            // Goal quest
             item {
                 val quest = state.quest
                 if (quest != null) {
@@ -473,247 +250,34 @@ fun DashboardScreen(
                 }
             }
 
-            // =========================================================================
-            // 4. 3-Tap Quick Presets Carousel
-            // =========================================================================
+            // One-tap presets
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 2.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Log it in one tap",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = NeoTextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp
-                        )
-                        Text(
-                            text = "Your usual spends",
-                            fontSize = 11.5.sp,
-                            color = NeoTextSecondary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        // Top, so the shorter "Add" tile (no amount line) lines up with the presets
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        // "+ Add" circular button
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { viewModel.openAddExpense() }
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .clip(RoundedCornerShape(18.dp))
-                                    .background(NeoContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Add Custom",
-                                    tint = NeoTextSecondary,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Add",
-                                fontSize = 11.sp,
-                                color = NeoTextPrimary,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        // The user's own repeated spends (starter templates until habits emerge)
-                        state.presets.forEach { preset ->
-                            QuickPresetBadge(
-                                illustration = presetIllustration(preset.title, preset.category),
-                                label = preset.title,
-                                amount = preset.amountLkr?.let(::compactAmount)
-                            ) {
-                                viewModel.openAddExpense(preset)
-                            }
-                        }
-                    }
-                }
+                QuickPresetsSection(
+                    presets = state.presets,
+                    onAddExpense = { viewModel.openAddExpense() },
+                    onPreset = { preset -> viewModel.openAddExpense(preset) }
+                )
             }
 
-            // =========================================================================
-            // 5. Recent Transactions Section (Horizontal Slider Replica)
-            // =========================================================================
+            // Lately: newest income and expenses
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 2.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Lately",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = NeoTextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp
-                        )
-                        Text(
-                            text = "View all",
-                            fontSize = 12.sp,
-                            color = NeoGreenDark,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.clickable { onNavigateToAnalytics() }
-                        )
-                    }
-
-                    if (state.recentTransactions.isEmpty()) {
-                        Text(
-                            text = "Nothing logged yet. Tap + to record your first expense, or add income from the Income hub.",
-                            fontSize = 12.5.sp,
-                            color = NeoTextSecondary,
-                            modifier = Modifier.padding(horizontal = 2.dp)
-                        )
-                    } else {
-                        // Horizontal Cards Slider — newest income and expenses together
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            state.recentTransactions.forEach { tx ->
-                                TransactionSquareCard(
-                                    currency = tx.originalAmountLabel?.substringBefore(' ') ?: "LKR",
-                                    amount = tx.originalAmountLabel?.substringAfter(' ')
-                                        ?: "%,.0f".format(kotlin.math.abs(tx.amountLkr)),
-                                    title = tx.title,
-                                    illustration = transactionIllustration(tx),
-                                    isIncoming = tx.isIncoming,
-                                    // Income is edited on the Income screen; expenses can be deleted here.
-                                    onLongClick = tx.expenseId?.let { { pendingDelete = tx } }
-                                )
-                            }
-                        }
-                    }
-                }
+                LatelySection(
+                    transactions = state.recentTransactions,
+                    onViewAll = onNavigateToAnalytics,
+                    onLongPressExpense = { tx -> pendingDelete = tx }
+                )
             }
 
-            // =========================================================================
-            // 6. Weekly Velocity Teaser Card
-            // =========================================================================
+            // Discretionary spending this week
             item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    color = NeoCard,
-                    border = BorderStroke(1.dp, NeoBorder),
-                    shadowElevation = 2.dp
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(7.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .clip(CircleShape)
-                                        .background(NeoGreen)
-                                )
-                                Column {
-                                    Text(
-                                        text = "Discretionary this week",
-                                        fontSize = 12.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = NeoTextPrimary
-                                    )
-                                    Text(
-                                        text = lkr(state.weekDiscretionaryLkr),
-                                        fontSize = 11.5.sp,
-                                        color = NeoTextSecondary
-                                    )
-                                }
-                            }
-                            // Fewer discretionary rupees than last week is the win worth showing.
-                            state.weekChangePct?.let { change ->
-                                Text(
-                                    text = if (change <= 0) "${-change}% less than last week" else "+$change% vs last week",
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (change <= 0) NeoGreenDark else NeoRose
-                                )
-                            }
-                        }
-
-                        // Micro Capsule 7-Day Chart (Mon..Sun of the current week)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(64.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            state.weekBars.forEach { bar ->
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(10.dp)
-                                            .height(40.dp)
-                                            .clip(CircleShape)
-                                            .background(NeoContainerHigh),
-                                        contentAlignment = Alignment.BottomCenter
-                                    ) {
-                                        if (bar.amountLkr > 0) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height((40 * bar.fillRatio).coerceAtLeast(4f).dp)
-                                                    .clip(CircleShape)
-                                                    .background(NeoGreen)
-                                            )
-                                        }
-                                    }
-                                    Text(
-                                        text = bar.label,
-                                        fontSize = 10.sp,
-                                        color = if (bar.isToday) NeoGreenDark else NeoTextSecondary,
-                                        fontWeight = if (bar.isToday) FontWeight.ExtraBold else FontWeight.Medium
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                WeeklyDiscretionaryCard(
+                    weekDiscretionaryLkr = state.weekDiscretionaryLkr,
+                    weekChangePct = state.weekChangePct,
+                    weekBars = state.weekBars
+                )
             }
 
-            // =========================================================================
-            // 7. Safe-to-Spend & Goal Pacing Cards (Extended Features)
-            // =========================================================================
+            // Getting started (no data yet) and committed vs discretionary
             if (!state.isLoading && !state.summary.hasAnyData) item {
                 GettingStartedCard(
                     onLogExpense = { viewModel.openAddExpense() },
@@ -774,7 +338,7 @@ fun DashboardScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = NeoRose)
+                        Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                         Text("Spending Freeze Active", fontWeight = FontWeight.Bold)
                     }
                 },
@@ -783,35 +347,35 @@ fun DashboardScreen(
                         Text(
                             text = "You placed a Spending Freeze on ${warning.account.name} to curb impulsive spending.",
                             fontSize = 13.5.sp,
-                            color = NeoTextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Spending ${lkr(warning.amountLkr)} on '${warning.title}' will delay your savings goal by ~${warning.goalDaysDelayed} day${if (warning.goalDaysDelayed > 1) "s" else ""}.",
                             fontSize = 13.sp,
-                            color = NeoRose,
+                            color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
                             text = "We will never block your expense, but this will be recorded as a Freeze Break.",
                             fontSize = 12.sp,
-                            color = NeoTextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = { viewModel.confirmFrozenExpenseBreak() },
-                        colors = ButtonDefaults.buttonColors(containerColor = NeoRose, contentColor = OnAccent)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
                     ) {
                         Text("Log anyway", fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { viewModel.dismissFrozenWarning() }) {
-                        Text("Cancel", color = NeoTextSecondary)
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
-                containerColor = NeoCard,
+                containerColor = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(24.dp)
             )
         }
@@ -828,8 +392,8 @@ private fun GettingStartedCard(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -839,12 +403,12 @@ private fun GettingStartedCard(
                 text = "Get your first clear picture",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = NeoTextPrimary
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = "Three quick steps and this screen starts showing where your money really goes.",
                 fontSize = 12.sp,
-                color = NeoTextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             GettingStartedStep("1", "Record this month's income — salary, freelance, AdSense or crypto", onAddIncome)
             GettingStartedStep("2", "Log today's spending — presets make it one tap", onLogExpense)
@@ -859,7 +423,7 @@ private fun GettingStartedStep(number: String, text: String, onClick: () -> Unit
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(NeoCardLow)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -869,16 +433,16 @@ private fun GettingStartedStep(number: String, text: String, onClick: () -> Unit
             modifier = Modifier
                 .size(24.dp)
                 .clip(CircleShape)
-                .background(NeoGreen),
+                .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = number, color = OnAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(text = number, color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
-        Text(text = text, fontSize = 12.5.sp, color = NeoTextPrimary, modifier = Modifier.weight(1f))
+        Text(text = text, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = NeoTextTertiary,
+            tint = MaterialTheme.pulseColors.textTertiary,
             modifier = Modifier.size(18.dp)
         )
     }
@@ -891,8 +455,8 @@ private fun SetGoalPromptCard(onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(18.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -905,14 +469,14 @@ private fun SetGoalPromptCard(onClick: () -> Unit) {
                 modifier = Modifier.size(64.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Set a savings goal", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeoTextPrimary)
+                Text(text = "Set a savings goal", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     text = "See the exact monthly pace needed and when you'll get there",
                     fontSize = 12.sp,
-                    color = NeoTextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = NeoTextTertiary)
+            Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.pulseColors.textTertiary)
         }
     }
 }
@@ -935,7 +499,7 @@ fun QuickPresetBadge(
             modifier = Modifier
                 .size(56.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(NeoCardLow),
+                .background(MaterialTheme.colorScheme.surfaceContainerLow),
             contentAlignment = Alignment.Center
         ) {
             Image(
@@ -948,7 +512,7 @@ fun QuickPresetBadge(
         Text(
             text = label,
             fontSize = 11.sp,
-            color = NeoTextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -958,7 +522,7 @@ fun QuickPresetBadge(
             fontFamily = Numeric,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
-            color = NeoTextTertiary
+            color = MaterialTheme.pulseColors.textTertiary
         )
     }
 }
@@ -981,8 +545,8 @@ fun TransactionSquareCard(
             .shadow(
                 elevation = 4.dp,
                 shape = RoundedCornerShape(18.dp),
-                ambientColor = Color(0x1F0F172A),
-                spotColor = Color(0x1A0F172A)
+                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.12f),
+                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.10f)
             )
             .clip(RoundedCornerShape(18.dp))
             .then(
@@ -997,8 +561,8 @@ fun TransactionSquareCard(
                 ) else Modifier
             ),
         shape = RoundedCornerShape(18.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier
@@ -1017,19 +581,19 @@ fun TransactionSquareCard(
                         text = currency,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium,
-                        color = NeoTextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = amount,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = NeoTextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
                 Surface(
                     shape = CircleShape,
-                    color = NeoCardLow,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier.size(26.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -1039,7 +603,7 @@ fun TransactionSquareCard(
                             else
                                 Icons.Default.NorthEast,
                             contentDescription = null,
-                            tint = if (isIncoming) NeoGreenDark else NeoTextPrimary,
+                            tint = if (isIncoming) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(13.dp)
                         )
                     }
@@ -1060,7 +624,7 @@ fun TransactionSquareCard(
                     text = title,
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Medium,
-                    color = NeoTextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1088,13 +652,13 @@ private fun SafeToSpendHero(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(16.dp, RoundedCornerShape(28.dp), ambientColor = NeoGreenGlow, spotColor = NeoGreenGlow),
+            .shadow(16.dp, RoundedCornerShape(28.dp), ambientColor = MaterialTheme.pulseColors.primaryGlow, spotColor = MaterialTheme.pulseColors.primaryGlow),
         shape = RoundedCornerShape(28.dp),
-        color = NeoGreen
+        color = MaterialTheme.colorScheme.primaryContainer
     ) {
         Box(
             modifier = Modifier.background(
-                Brush.linearGradient(listOf(NeoGreen, Color(0xFF00A844)))
+                Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.pulseColors.primaryDeep))
             )
         ) {
             // A rising sun of saffron arcs in the corner: decoration only.
@@ -1129,7 +693,7 @@ private fun SafeToSpendHero(
             ) {
                 Text(
                     text = "SAFE TO SPEND TODAY",
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.4.sp
@@ -1144,17 +708,17 @@ private fun SafeToSpendHero(
                     fontWeight = FontWeight.Bold,
                     fontSize = 42.sp,
                     letterSpacing = (-1).sp,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
                     text = if (isLoading) "Working out today's number…"
                     else "after rent, bills and your goal saving · $daysRemaining days left in $monthLabel",
                     fontSize = 13.sp,
-                    color = Color.White.copy(alpha = 0.9f)
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
                 )
                 incomeBasisNote?.let {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = it, fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
+                    Text(text = it, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f))
                 }
                 if (!isLoading) {
                     Spacer(modifier = Modifier.height(14.dp))
@@ -1162,9 +726,9 @@ private fun SafeToSpendHero(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        HeroStat("This month", if (masked) "••••" else signedLkr(netLkr), Color.White)
-                        HeroStat("In", if (masked) "••••" else compactAmount(inLkr), Color.White)
-                        HeroStat("Out", if (masked) "••••" else compactAmount(outLkr), Color.White)
+                        HeroStat("This month", if (masked) "••••" else signedLkr(netLkr), MaterialTheme.colorScheme.onPrimaryContainer)
+                        HeroStat("In", if (masked) "••••" else compactAmount(inLkr), MaterialTheme.colorScheme.onPrimaryContainer)
+                        HeroStat("Out", if (masked) "••••" else compactAmount(outLkr), MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
             }
@@ -1175,134 +739,8 @@ private fun SafeToSpendHero(
 @Composable
 private fun HeroStat(label: String, value: String, color: Color) {
     Column {
-        Text(text = label, fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+        Text(text = label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f))
         Text(text = value, fontFamily = Numeric, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = color)
-    }
-}
-
-/**
- * Emergency Runway Buffer (FR-AUTH-6): how many months of his fixed costs he wants kept aside in
- * case income stops, and how far along he is. It is a goal to grow into, so it uses the calm
- * accent rather than an attention colour. Until he picks a number of months it just asks.
- */
-@Composable
-private fun SafetyBufferCard(
-    state: DashboardUiState,
-    masked: Boolean,
-    onMonths: (Int) -> Unit,
-    onAdd: (Double) -> Unit
-) {
-    val runway = state.runway
-    fun money(amount: Double) = if (masked) "••••" else lkr(amount)
-    fun months(count: Int) = if (count == 1) "1 month" else "$count months"
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder),
-        shadowElevation = 2.dp
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(SaffronSoft),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Savings, contentDescription = null, tint = Saffron, modifier = Modifier.size(20.dp))
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Safety buffer",
-                        fontFamily = Display,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = NeoTextPrimary
-                    )
-                    Text(
-                        text = if (runway != null) {
-                            "${months(runway.months)} of your fixed costs · ${money(runway.targetLkr)}"
-                        } else {
-                            "Months of your fixed costs to keep aside, in case income stops"
-                        },
-                        fontSize = 12.sp,
-                        color = NeoTextSecondary
-                    )
-                }
-            }
-
-            if (runway != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(CircleShape)
-                        .background(NeoTrack)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(runway.progress)
-                            .height(8.dp)
-                            .clip(CircleShape)
-                            .background(Saffron)
-                    )
-                }
-                Text(
-                    text = if (runway.isFunded) {
-                        "Fully funded · ${money(runway.savedLkr)} covers ${months(runway.months)}"
-                    } else {
-                        "${money(runway.savedLkr)} set aside · covers ${"%.1f".format(runway.monthsCovered)} of ${runway.months} months"
-                    },
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = NeoTextPrimary
-                )
-            }
-
-            Text(text = "Months to keep aside", fontSize = 11.sp, color = NeoTextTertiary)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                (MIN_RUNWAY_MONTHS..MAX_RUNWAY_MONTHS).forEach { count ->
-                    BufferChip(label = "$count", selected = state.runwayMonths == count, onClick = { onMonths(count) })
-                }
-            }
-
-            if (runway != null && !runway.isFunded) {
-                Text(text = "Add to it", fontSize = 11.sp, color = NeoTextTertiary)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(5_000.0, 10_000.0, 25_000.0).forEach { amount ->
-                        BufferChip(label = "+${"%,.0f".format(amount)}", selected = false, onClick = { onAdd(amount) })
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun BufferChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(if (selected) Saffron else NeoCardLow)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 7.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            fontSize = 12.5.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
-            color = if (selected) Color.White else NeoTextSecondary
-        )
     }
 }
 
@@ -1314,8 +752,8 @@ private fun MoneyWaitingCard(amount: String, detail: String, onClick: () -> Unit
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
-        color = WarmAmber.copy(alpha = 0.10f),
-        border = BorderStroke(1.dp, WarmAmber.copy(alpha = 0.35f))
+        color = MaterialTheme.pulseColors.warning.copy(alpha = 0.10f),
+        border = BorderStroke(1.dp, MaterialTheme.pulseColors.warning.copy(alpha = 0.35f))
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -1326,10 +764,10 @@ private fun MoneyWaitingCard(amount: String, detail: String, onClick: () -> Unit
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(WarmAmber.copy(alpha = 0.18f)),
+                    .background(MaterialTheme.pulseColors.warning.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.HourglassTop, contentDescription = null, tint = WarmAmber, modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.HourglassTop, contentDescription = null, tint = MaterialTheme.pulseColors.warning, modifier = Modifier.size(20.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -1337,17 +775,17 @@ private fun MoneyWaitingCard(amount: String, detail: String, onClick: () -> Unit
                     fontFamily = Display,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = NeoTextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                Text(text = detail, fontSize = 12.sp, color = NeoTextSecondary)
+                Text(text = detail, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = "Follow up", tint = WarmAmber)
+            Icon(Icons.Default.ChevronRight, contentDescription = "Follow up", tint = MaterialTheme.pulseColors.warning)
         }
     }
 }
 
 @Composable
-private fun AccountCardItem(
+internal fun AccountCardItem(
     account: Account,
     isBalanceMasked: Boolean,
     isRevealed: Boolean,
@@ -1361,12 +799,12 @@ private fun AccountCardItem(
             .shadow(
                 elevation = 6.dp,
                 shape = RoundedCornerShape(20.dp),
-                ambientColor = Color(0x080F172A),
-                spotColor = Color(0x080F172A)
+                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.03f),
+                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.03f)
             ),
         shape = RoundedCornerShape(20.dp),
-        color = if (account.isFrozen) NeoCardLow else NeoCard,
-        border = BorderStroke(1.dp, if (account.isFrozen) NeoRose.copy(alpha = 0.5f) else NeoBorder)
+        color = if (account.isFrozen) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, if (account.isFrozen) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier
@@ -1388,7 +826,7 @@ private fun AccountCardItem(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(if (account.isFrozen) NeoErrorContainer else NeoCardLow),
+                            .background(if (account.isFrozen) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerLow),
                         contentAlignment = Alignment.Center
                     ) {
                         // A frozen account shows the lock, its status; otherwise what kind of account it is.
@@ -1396,7 +834,7 @@ private fun AccountCardItem(
                             Icon(
                                 imageVector = Icons.Default.Lock,
                                 contentDescription = "Frozen",
-                                tint = NeoRose,
+                                tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(18.dp)
                             )
                         } else {
@@ -1412,21 +850,21 @@ private fun AccountCardItem(
                             text = account.name,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = NeoTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = account.type.displayName,
                             fontSize = 11.sp,
-                            color = NeoTextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
                 Surface(
                     shape = CircleShape,
-                    color = if (account.isFrozen) NeoRose else NeoContainer,
+                    color = if (account.isFrozen) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceContainer,
                     modifier = Modifier.clickable(onClick = onFreezeToggle)
                 ) {
                     Row(
@@ -1437,14 +875,14 @@ private fun AccountCardItem(
                         Icon(
                             imageVector = if (account.isFrozen) Icons.Default.Lock else Icons.Default.LockOpen,
                             contentDescription = null,
-                            tint = if (account.isFrozen) OnAccent else NeoTextSecondary,
+                            tint = if (account.isFrozen) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(12.dp)
                         )
                         Text(
                             text = if (account.isFrozen) "Frozen" else "Freeze",
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (account.isFrozen) OnAccent else NeoTextSecondary
+                            color = if (account.isFrozen) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -1455,14 +893,14 @@ private fun AccountCardItem(
                 text = if (isBalanceMasked) "••••••" else lkr(account.balanceLkr),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = NeoTextPrimary
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             // Sensitive Account Number Row (FR-ACC-6, FR-ACC-7)
             if (account.accountNumber.isNotBlank()) {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = NeoCardLow,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -1476,7 +914,7 @@ private fun AccountCardItem(
                             text = if (isRevealed) account.accountNumber else account.maskedAccountNumber,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = NeoTextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             if (!isRevealed) {
@@ -1484,7 +922,7 @@ private fun AccountCardItem(
                                     Icon(
                                         imageVector = Icons.Default.Visibility,
                                         contentDescription = "Reveal with biometric",
-                                        tint = NeoGreenDark,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -1493,7 +931,7 @@ private fun AccountCardItem(
                                     Icon(
                                         imageVector = Icons.Default.ContentCopy,
                                         contentDescription = "Copy number (60s auto-wipe)",
-                                        tint = NeoGreenDark,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }

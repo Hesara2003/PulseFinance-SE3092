@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.screens.goal
 
+import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
@@ -80,24 +81,8 @@ import androidx.compose.foundation.verticalScroll
 import com.se3092.pulsefinance.domain.usecase.GoalVelocityReport
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.lkr
-import com.se3092.pulsefinance.ui.theme.OnAccent
-import com.se3092.pulsefinance.ui.theme.NeoRose
 import com.se3092.pulsefinance.ui.components.GoalCard
 import com.se3092.pulsefinance.ui.components.QuestMap
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoCardLow
-import com.se3092.pulsefinance.ui.theme.NeoContainer
-import com.se3092.pulsefinance.ui.theme.NeoContainerHigh
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
-import com.se3092.pulsefinance.ui.theme.NeoGreenGlow
-import com.se3092.pulsefinance.ui.theme.NeoOnPrimaryFixed
-import com.se3092.pulsefinance.ui.theme.NeoPrimaryFixed
-import com.se3092.pulsefinance.ui.theme.NeoSurface
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 import kotlinx.coroutines.launch
 import com.se3092.pulsefinance.ui.components.PulseNoticeHost
 import androidx.annotation.DrawableRes
@@ -116,7 +101,7 @@ fun GoalScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(NeoSurface)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -148,7 +133,7 @@ fun GoalScreen(
                         text = "PulseFinance",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = NeoTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 17.sp,
                         letterSpacing = (-0.2).sp
                     )
@@ -163,7 +148,7 @@ fun GoalScreen(
                         text = state.goal?.title?.ifBlank { null } ?: "Your goal",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = NeoTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -174,7 +159,7 @@ fun GoalScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(NeoContainer),
+                            .background(MaterialTheme.colorScheme.surfaceContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         ProfileAvatar(initials = state.initials, size = 34.dp)
@@ -202,7 +187,7 @@ fun GoalScreen(
                             Text(
                                 text = "Your Quest",
                                 style = MaterialTheme.typography.headlineLarge,
-                                color = NeoTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 26.sp,
                                 letterSpacing = (-0.5).sp
@@ -212,7 +197,7 @@ fun GoalScreen(
                                 text = state.quest?.let { "Each level = ${lkr(it.levels.first().thresholdLkr)} actually saved" }
                                     ?: "Set a goal to start your journey",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = NeoTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 14.sp
                             )
                         }
@@ -241,7 +226,7 @@ fun GoalScreen(
                         Box(
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .background(NeoContainerHigh)
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Row(
@@ -254,7 +239,7 @@ fun GoalScreen(
                                         .scale(dotScale)
                                         .alpha(dotAlpha)
                                         .clip(CircleShape)
-                                        .background(NeoGreen)
+                                        .background(MaterialTheme.colorScheme.primaryContainer)
                                 )
                                 Text(
                                     text = when {
@@ -264,7 +249,7 @@ fun GoalScreen(
                                     },
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = NeoTextPrimary
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
@@ -277,8 +262,8 @@ fun GoalScreen(
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(28.dp),
-                            color = NeoCard,
-                            border = BorderStroke(1.dp, NeoBorder)
+                            color = MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                         ) {
                             QuestMap(
                                 quest = quest,
@@ -324,13 +309,13 @@ fun GoalScreen(
                             Icon(
                                 imageVector = Icons.Default.Bolt,
                                 contentDescription = "Opportunity Cost",
-                                tint = NeoGreenDark,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
                                 text = "Opportunity Cost Translator",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = NeoTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 17.sp,
                                 letterSpacing = (-0.2).sp
@@ -339,7 +324,7 @@ fun GoalScreen(
                         Text(
                             text = "Live Impact",
                             style = MaterialTheme.typography.labelSmall,
-                            color = NeoTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -353,7 +338,7 @@ fun GoalScreen(
                             Text(
                                 text = "Log a few discretionary expenses and this shows which habit, trimmed by a quarter, moves your goal closest.",
                                 fontSize = 12.5.sp,
-                                color = NeoTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 4.dp)
                             )
                         }
@@ -374,8 +359,8 @@ fun GoalScreen(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(18.dp),
-                        color = NeoCardLow,
-                        border = BorderStroke(1.dp, NeoBorder)
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Row(
                             modifier = Modifier
@@ -388,13 +373,13 @@ fun GoalScreen(
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .background(NeoGreen),
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.CalendarMonth,
                                     contentDescription = "Target Date",
-                                    tint = OnAccent,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -403,7 +388,7 @@ fun GoalScreen(
                                 Text(
                                     text = "ARRIVAL PROJECTION",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = NeoTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp,
                                     letterSpacing = 1.sp
@@ -412,13 +397,13 @@ fun GoalScreen(
                                 Text(
                                     text = "Deadline: ${formatDate(report.goal.targetDateMillis, "dd MMMM yyyy")}",
                                     fontSize = 12.sp,
-                                    color = NeoTextSecondary
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = report.projectedArrivalMillis?.let { "At your pace: ${formatDate(it, "dd MMMM yyyy")}" }
                                         ?: "At your pace: not reachable yet",
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = NeoTextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp
                                 )
@@ -441,12 +426,12 @@ fun GoalScreen(
                             .shadow(
                                 elevation = 12.dp,
                                 shape = CircleShape,
-                                spotColor = NeoGreenGlow
+                                spotColor = MaterialTheme.pulseColors.primaryGlow
                             ),
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = NeoGreen,
-                            contentColor = OnAccent
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     ) {
                         Row(
@@ -486,14 +471,14 @@ fun GoalScreen(
             ModalBottomSheet(
                 onDismissRequest = { viewModel.setAllocateSheetVisible(false) },
                 sheetState = sheetState,
-                containerColor = NeoCard,
+                containerColor = MaterialTheme.colorScheme.surface,
                 dragHandle = {
                     Box(
                         modifier = Modifier
                             .padding(vertical = 10.dp)
                             .size(width = 36.dp, height = 4.dp)
                             .clip(CircleShape)
-                            .background(NeoBorder)
+                            .background(MaterialTheme.colorScheme.outlineVariant)
                     )
                 }
             ) {
@@ -513,13 +498,13 @@ fun GoalScreen(
                                 text = "Allocate Funds",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = NeoTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 20.sp
                             )
                             Text(
                                 text = "Add to ${state.goal?.title ?: "your goal"}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = NeoTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 13.sp
                             )
                         }
@@ -534,7 +519,7 @@ fun GoalScreen(
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Close",
-                                tint = NeoTextSecondary
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -545,7 +530,7 @@ fun GoalScreen(
                     Text(
                         text = "QUICK ALLOCATION PRESETS",
                         style = MaterialTheme.typography.labelSmall,
-                        color = NeoTextTertiary,
+                        color = MaterialTheme.pulseColors.textTertiary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.sp
                     )
@@ -582,16 +567,16 @@ fun GoalScreen(
                         value = state.depositAmountInput,
                         onValueChange = viewModel::onDepositAmountChanged,
                         label = { Text("Allocation Amount", fontSize = 13.sp) },
-                        prefix = { Text("LKR ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
+                        prefix = { Text("LKR ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = NeoGreen,
-                            unfocusedBorderColor = NeoBorder,
-                            focusedTextColor = NeoTextPrimary,
-                            unfocusedTextColor = NeoTextPrimary
+                            focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
 
@@ -606,7 +591,7 @@ fun GoalScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(NeoCardLow)
+                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                                 .padding(12.dp)
                         ) {
                             Row(
@@ -616,14 +601,14 @@ fun GoalScreen(
                                 Icon(
                                     imageVector = Icons.Default.Bolt,
                                     contentDescription = null,
-                                    tint = NeoGreenDark,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(
                                     text = "Covers ~${String.format("%.1f", days)} days of your required pace",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = NeoGreenDark
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
@@ -639,13 +624,13 @@ fun GoalScreen(
                         enabled = state.depositAmountInput.isNotBlank() && !state.isUpdating,
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = NeoGreen,
-                            contentColor = OnAccent
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp)
-                            .shadow(10.dp, CircleShape, spotColor = NeoGreenGlow)
+                            .shadow(10.dp, CircleShape, spotColor = MaterialTheme.pulseColors.primaryGlow)
                     ) {
                         Text(
                             text = if (state.isUpdating) "Allocating..." else "Confirm Allocation",
@@ -686,13 +671,13 @@ private fun OpportunityCostCard(
             .shadow(
                 elevation = 6.dp,
                 shape = RoundedCornerShape(18.dp),
-                ambientColor = Color(0x080F172A),
-                spotColor = Color(0x080F172A)
+                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.03f),
+                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.03f)
             )
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(18.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
@@ -711,7 +696,7 @@ private fun OpportunityCostCard(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(NeoCardLow),
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -725,7 +710,7 @@ private fun OpportunityCostCard(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = NeoTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                         maxLines = 2,
@@ -735,7 +720,7 @@ private fun OpportunityCostCard(
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.labelSmall,
-                        color = NeoTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -747,14 +732,14 @@ private fun OpportunityCostCard(
             Box(
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(NeoPrimaryFixed)
+                    .background(MaterialTheme.pulseColors.primaryFixed)
                     .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
                 Text(
                     text = badgeText,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = NeoOnPrimaryFixed
+                    color = MaterialTheme.pulseColors.onPrimaryFixed
                 )
             }
         }
@@ -771,8 +756,8 @@ private fun PresetChip(
     Surface(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        color = NeoCardLow,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier.padding(vertical = 8.dp),
@@ -782,12 +767,12 @@ private fun PresetChip(
                 text = label,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = NeoTextPrimary
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = sublabel,
                 fontSize = 10.sp,
-                color = NeoTextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -798,8 +783,8 @@ private fun GoalSetupCard(onCreate: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier.padding(22.dp),
@@ -812,17 +797,17 @@ private fun GoalSetupCard(onCreate: () -> Unit) {
                     .size(180.dp)
                     .align(Alignment.CenterHorizontally)
             )
-            Text(text = "What are you saving for?", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = NeoTextPrimary)
+            Text(text = "What are you saving for?", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             Text(
                 text = "Name it, price it and pick a deadline. PulseFinance then shows the exact monthly pace, " +
                     "compares it to what you actually save, and projects when you'll get there.",
                 fontSize = 13.sp,
-                color = NeoTextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Button(
                 onClick = onCreate,
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "Set my goal", fontWeight = FontWeight.Bold)
@@ -833,12 +818,12 @@ private fun GoalSetupCard(onCreate: () -> Unit) {
 
 @Composable
 private fun PacingCard(report: GoalVelocityReport) {
-    val accent = if (report.isPacingOnTrack) NeoGreenDark else NeoRose
+    val accent = if (report.isPacingOnTrack) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        color = NeoCard,
-        border = BorderStroke(1.dp, NeoBorder)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -854,7 +839,7 @@ private fun PacingCard(report: GoalVelocityReport) {
                 PaceStat(
                     label = "NEEDED",
                     value = "${lkr(report.monthlyPacingTargetLkr)}/mo",
-                    color = NeoTextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -868,11 +853,11 @@ private fun PacingCard(report: GoalVelocityReport) {
                     .size(170.dp)
                     .align(Alignment.CenterHorizontally)
             )
-            Text(text = report.behavioralInsight, fontSize = 12.5.sp, color = NeoTextSecondary)
+            Text(text = report.behavioralInsight, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 text = "Savings rate = received income minus spending, averaged over your last 90 days.",
                 fontSize = 10.5.sp,
-                color = NeoTextTertiary
+                color = MaterialTheme.pulseColors.textTertiary
             )
         }
     }
@@ -883,10 +868,10 @@ private fun PaceStat(label: String, value: String, color: Color, modifier: Modif
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(NeoCardLow)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .padding(12.dp)
     ) {
-        Text(text = label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = NeoTextSecondary, letterSpacing = 0.5.sp)
+        Text(text = label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.5.sp)
         Spacer(modifier = Modifier.height(2.dp))
         Text(text = value, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = color)
     }
@@ -902,15 +887,15 @@ private fun GoalEditorSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val fieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = NeoGreen,
-        unfocusedBorderColor = NeoBorder,
-        focusedTextColor = NeoTextPrimary,
-        unfocusedTextColor = NeoTextPrimary
+        focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
     )
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = NeoCard
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -925,7 +910,7 @@ private fun GoalEditorSheet(
                 text = if (editor.isNew) "Set your goal" else "Edit goal",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = NeoTextPrimary
+                color = MaterialTheme.colorScheme.onSurface
             )
             OutlinedTextField(
                 value = editor.titleInput,
@@ -940,7 +925,7 @@ private fun GoalEditorSheet(
                 value = editor.targetInput,
                 onValueChange = { v -> onChange { it.copy(targetInput = v) } },
                 label = { Text("Target amount") },
-                prefix = { Text("LKR ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
+                prefix = { Text("LKR ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
@@ -951,7 +936,7 @@ private fun GoalEditorSheet(
                 value = editor.usdPriceInput,
                 onValueChange = { v -> onChange { it.copy(usdPriceInput = v) } },
                 label = { Text("USD Reference Price (optional, e.g. 1599)") },
-                prefix = { Text("$ ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
+                prefix = { Text("$ ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
@@ -962,7 +947,7 @@ private fun GoalEditorSheet(
                 value = editor.savedInput,
                 onValueChange = { v -> onChange { it.copy(savedInput = v) } },
                 label = { Text("Already saved") },
-                prefix = { Text("LKR ", color = NeoGreenDark, fontWeight = FontWeight.Bold) },
+                prefix = { Text("LKR ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
@@ -988,11 +973,11 @@ private fun GoalEditorSheet(
                 modifier = Modifier.fillMaxWidth(),
                 colors = fieldColors
             )
-            editor.errorMessage?.let { Text(text = it, color = NeoRose, fontSize = 12.sp) }
+            editor.errorMessage?.let { Text(text = it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp) }
             Button(
                 onClick = onSave,
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
@@ -1006,7 +991,7 @@ private fun GoalEditorSheet(
 @Composable
 private fun CelebrationDialog(celebration: Celebration, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(28.dp), color = NeoCard) {
+        Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface) {
             Column(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -1021,20 +1006,20 @@ private fun CelebrationDialog(celebration: Celebration, onDismiss: () -> Unit) {
                     text = celebration.title,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = NeoTextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center
                 )
                 Text(
                     text = celebration.message,
                     fontSize = 14.sp,
-                    color = NeoTextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Button(
                     onClick = onDismiss,
                     shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)

@@ -1,6 +1,5 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.se3092.pulsefinance.domain.model.Account
@@ -407,7 +406,8 @@ class DashboardViewModel @Inject constructor(
 
     // ---------------- CSV Data Export ----------------
 
-    fun exportCsv(context: Context) {
+    /** Builds the CSV of every record; the screen hands it to the share sheet. */
+    fun exportCsv(): String {
         val d = lastData
         val incomes = d?.incomes ?: uiState.value.unpaidInvoices
         val expenses = d?.expenses.orEmpty()
@@ -417,8 +417,8 @@ class DashboardViewModel @Inject constructor(
             expenses = expenses,
             goals = goals
         )
-        exportDataToCsvUseCase.shareCsv(context, csv)
         notice.value = UiNotice("CSV export ready", "Choose where to send it")
+        return csv
     }
 
     // ---------------- Other actions ----------------

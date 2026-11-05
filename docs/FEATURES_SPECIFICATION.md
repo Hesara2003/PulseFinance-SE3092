@@ -8,7 +8,7 @@ flowchart LR
     Onb --> Dash["Dashboard<br/>Safe-to-Spend · accounts · alerts"]
     Dash --> Inc["Income<br/>streams · payslip · crypto"]
     Dash --> Exp["Expenses<br/>quick log · subscription audit"]
-    Dash --> Goal["Goal<br/>MacBook Quest · pace · opportunity cost"]
+    Dash --> Goal["Goal<br/>Quest · pace · opportunity cost"]
     Dash --> Ana["Analytics<br/>donut · daily bars · ledger"]
 ```
 
@@ -20,8 +20,8 @@ flowchart LR
 |---|---|---|
 | Email sign-in and registration | Firebase Authentication. All his records are stored under his user ID, so they follow him to any device | FR-AUTH-1, 3 |
 | Google sign-in | "Continue with Google" through Android Credential Manager | FR-AUTH-2 |
-| Demo drawer | **Debug builds only.** "Auto Fill" enters a pre-seeded demo account. The credentials come from `BuildConfig` and are empty in release builds; they are deliberately not written in any document | FR-AUTH-7 |
-| Default accounts | His first sign-in creates four empty accounts: Primary Bank, Secondary (Auto-Debits), Cash in Hand, Binance / Crypto Wallet. Nothing else is pre-filled | FR-ACC-1 |
+| Demo drawer | **Debug builds only.** "Auto Fill" enters a pre-seeded demo account. The credentials are read from each developer's `local.properties` into `BuildConfig`, never from the repo, and are empty in release builds; without them the drawer is hidden | FR-AUTH-7 |
+| Default accounts | His first sign-in creates four empty accounts: Primary Bank, Secondary (Auto-Debits), Cash in Hand, Binance / Crypto Wallet. Nothing else is pre-filled: balances are zero and there are no account numbers | FR-ACC-1 |
 | Onboarding | Three introduction screens before sign-in: "one clear picture", "track every income stream", "kill zombie leaks". They can be skipped | — |
 | First-run setup | After a new account's first sign-in, three steps: his monthly take-home salary (optional); which sources he earns from, each rated Steady / Varies / Highly volatile; his fixed monthly commitments (Rent pre-filled, quick-add Gym, Internet, Phone, Electricity); then his **safety buffer**, 1 to 6 months of those costs to keep aside in case income stops (three is preselected, and the step shows what it comes to, e.g. LKR 116,400 for rent and broadband), plus an optional amount he has already set aside. Saved to `users/{uid}.onboarding`; each commitment is also logged as this month's committed expense so Safe-to-Spend is right from day one. Can be skipped | FR-AUTH-4, 5, 6 |
 
@@ -49,12 +49,13 @@ Safe-to-Spend per day = (Income Basis − committed spent − goal saving this m
 | Live updates | Figures update from Firestore listeners, with no refresh | FR-DASH-6 |
 | Accounts & Channels | His four accounts and their combined balance. The balance can be hidden with the eye icon | FR-ACC-2 |
 | Spending Freeze | Freezes an account for 14 days; it then shows as locked. A purchase from a frozen account shows "will delay your savings goal by ~N days" and offers **Log anyway**. The app never refuses to record it, and the break is counted ("N Freeze Breaks") | FR-ACC-3, 4, 5 |
-| Account number reveal | Account numbers show as `•••• 8472`. Revealing one needs `BiometricPrompt` (fingerprint or device PIN). Copying it for a freelance invoice clears the clipboard after 60 seconds. There is no card number or CVV anywhere in the app | FR-ACC-6, 7 |
+| Account number reveal | An account number, when set, shows as `•••• 1234`. Revealing one needs `BiometricPrompt` (fingerprint or device PIN). Copying it for a freelance invoice clears the clipboard after 60 seconds. There is no card number or CVV anywhere in the app | FR-ACC-6, 7 |
 | Seasonal Peak warning | 30 days before Avurudu (14 Apr), Vesak (15 May), Poson (15 Jun), December (25 Dec), or one of his own peak months: "Peak in N days · Set aside LKR X". The amount is last year's excess over his monthly average, or a default buffer (35k / 20k / 15k / 45k) when unknown. One tap on **Set aside** holds the amount back from Safe-to-Spend until the peak day (an earmark, not an expense), with **Undo** | FR-LK-4, 5 |
 | Safety buffer | A card on Today: "3 months of your fixed costs · LKR 116,400", a progress bar and how many months what he has set aside covers ("LKR 58,200 set aside · covers 1.5 of 3 months"). He can change the number of months (1 to 6) and add LKR 5,000 / 10,000 / 25,000 as he sets money aside. The size uses his fixed costs from setup as a floor and grows if he logs more committed spending. The amount is his own tally, not a transaction, and it does not change Safe-to-Spend. Until he picks a number of months (an account set up before this existed, or setup skipped) the card asks him to | FR-AUTH-6 |
 | Quick log | "Log it in one tap": presets from his own most-repeated spends in the last 60 days, each with its latest amount, topped up with starter shortcuts (Coffee, PickMe ride, UberEats, Dialog Reload, Mobitel Data Package, Fiber Broadband, Rent) that fill in the title, icon and category but leave the amount for him to enter | FR-EXP-3, 4, NFR-1 |
 | Share a bank SMS | Sharing a bank SMS to PulseFinance (Commercial Bank, Sampath, HNB, Nations Trust formats) opens a draft expense with the amount, merchant and card last four digits filled in. Uses the share sheet; the app never asks for READ_SMS | FR-EXP-7 |
 | CSV export | Exports income, expenses and goals as CSV through the Android share sheet | FR-DATA-1 |
+| Lately | His newest income and expenses as cards with their illustrated icons. **Long-press an expense** to delete it, after "Delete this expense?"; **View all** opens the full ledger in Analytics | FR-DASH-6 |
 | Empty state | A new user sees "Get your first clear picture" with what to do next, never a blank or zero screen | NFR-9 |
 
 ---
@@ -89,17 +90,17 @@ Safe-to-Spend per day = (Income Basis − committed spent − goal saving this m
 
 ---
 
-## 5. Goal: the MacBook Quest
+## 5. Goal: the quest (Kavindu's MacBook)
 
 | Feature | How it works | Req. |
 |---|---|---|
-| Set the goal | Title, LKR target, saved so far, deadline in months, optional USD reference price. The editor pre-fills a 12-month deadline and a USD 1,599 price; for Kavindu that is the MacBook Pro M4 at LKR 490,000 | FR-GOAL-1 |
+| Set the goal | Title, LKR target, saved so far, deadline in months, optional USD reference price. The goal can be anything; the editor pre-fills only a 12-month deadline. For Kavindu it is the MacBook Pro M4: LKR 490,000, USD 1,599. Its picture on the goal card and the quest map is chosen from its name (laptop, house, vehicle, or the piggy bank) | FR-GOAL-1 |
 | Required pace | From LKR 11,200 saved: LKR 478,800 left over 12 months ≈ **LKR 39,900/month, LKR 1,330/day** | FR-GOAL-2 |
-| Actual savings rate | "Received income minus spending, averaged over your last 90 days", or since his first record if that is shorter | FR-GOAL-3, NFR-2 |
+| Actual savings rate | Received income minus spending for each 30-day block of the last 90 days, averaged over the blocks that have records. A block with nothing logged is a Logging Gap and is skipped, not counted as zero | FR-GOAL-3, NFR-2 |
 | Arrival projection | Projected arrival date at his actual rate, and whether he is on pace or behind, by how much | FR-GOAL-4 |
 | Opportunity Cost Translator | His top three discretionary categories from the last 30 days, each trimmed by a quarter, shown as "+N days" of MacBook pace | FR-GOAL-5 |
 | Frozen-account reminder | Spending from a frozen account is priced in goal days (see §2) | FR-ACC-4 |
-| Quest map | The target split into 10 real-rupee levels (LKR 49,000 each), "Next checkpoint: LKR X saved". No streaks or lives, so a missed week is never a failure | NFR-2 |
+| Quest map | The target split into 10 real-rupee levels (LKR 49,000 each), "Next checkpoint: LKR X saved", labelled with the goal's own name. No streaks or lives, so a missed week is never a failure | NFR-2 |
 | Set money aside | Any amount, or the quick presets +5,000 / +10,000 / +25,000 for a freelance windfall. "Covers ~N days of your required pace" | FR-GOAL-7 |
 | USD-linked target | With a USD price, the LKR target follows the day's rate from the rate at which it was set (keeping the reseller markup). The card shows "Target + LKR X since *date*" | FR-GOAL-6 |
 
@@ -113,7 +114,7 @@ Safe-to-Spend per day = (Income Basis − committed spent − goal saving this m
 | Where it went | Category donut with amount and share. Discretionary categories are distinguishable from committed ones; this is where "LKR 24,000 on coffee" shows up | FR-ANA-1 |
 | Daily bars | Spending per day (or per period bucket), with the peak day highlighted | FR-ANA-3 |
 | Spent vs received | "Spent · LKR X received in the same period" | FR-ANA-1 |
-| Transactions | Ledger searchable by merchant or note, filterable by category. **Not built:** account and date filters | FR-ANA-5 (partial) |
+| Transactions | Ledger searchable by merchant or note, filterable by category, account and date range; all filters combine. Each expense has ⋮ → **Delete**, with a confirmation, so any expense from any period can be removed | FR-ANA-5 |
 
 ---
 
@@ -126,4 +127,6 @@ Safe-to-Spend per day = (Income Basis − committed spent − goal saving this m
 | Private by default | Firestore rules: only he can read or write `users/{his uid}` | NFR-5 |
 | Numbers he can trust | Original amount, currency and rate are stored with every income entry; totals are derived only from stored records | NFR-6 |
 | LKR formatting | `LKR 34,000`; foreign amounts show the original currency next to the LKR value | FR-LK-6 |
+| Confirmations and errors | One on-theme pop-up on every screen: what was saved, with its illustration ("Expense logged · LKR 850 · Coffee"); errors in amber, shown a little longer | NFR-9 |
+| Page changes | Tabs slide in from the side of the tab tapped while fading in (300 ms); sign-in and setup fade in with a slight zoom | — |
 | Accessibility | **Not yet checked:** colour-only status and 200% font scale | NFR-8 |

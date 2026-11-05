@@ -1,16 +1,17 @@
 package com.se3092.pulsefinance.domain.usecase
 
-import android.content.Context
-import android.content.Intent
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.IncomeStream
 import com.se3092.pulsefinance.domain.model.SavingsGoal
-import com.se3092.pulsefinance.ui.common.formatDate
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 /**
  * Exports all user financial records (Incomes, Expenses, Goals) to CSV (FR-DATA-1, UC15).
  * Ensures Kavindu's financial records outlive any individual tool or platform.
+ * Pure Kotlin: it only builds the CSV text; sharing it is the UI's job.
  */
 class ExportDataToCsvUseCase @Inject constructor() {
 
@@ -84,17 +85,9 @@ class ExportDataToCsvUseCase @Inject constructor() {
         return sb.toString()
     }
 
-    fun shareCsv(context: Context, csvContent: String, title: String = "PulseFinance_Export.csv") {
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/csv"
-            putExtra(Intent.EXTRA_SUBJECT, title)
-            putExtra(Intent.EXTRA_TEXT, csvContent)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        val chooser = Intent.createChooser(shareIntent, "Export PulseFinance Data (CSV)")
-        chooser.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        context.startActivity(chooser)
-    }
+    /** ISO dates, so spreadsheets read them as dates in any locale (NFR-11). */
+    private fun formatDate(millis: Long, pattern: String): String =
+        SimpleDateFormat(pattern, Locale.US).format(Date(millis))
 
     private fun escape(value: String): String {
         return if (value.contains(",") || value.contains("\"") || value.contains("\n")) {

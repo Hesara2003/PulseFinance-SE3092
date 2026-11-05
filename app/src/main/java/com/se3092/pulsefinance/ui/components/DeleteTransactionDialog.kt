@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.components
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,10 +15,6 @@ import androidx.compose.ui.unit.dp
 import com.se3092.pulsefinance.ui.common.TransactionItem
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.transactionIllustration
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.theme.NeoTextPrimary
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
 import kotlin.math.abs
 
 /** Asks before an expense is deleted: deleting can't be undone, and one stray tap shouldn't do it. */
@@ -36,21 +33,21 @@ fun DeleteTransactionDialog(
                 modifier = Modifier.size(56.dp)
             )
         },
-        title = { Text("Delete this expense?", fontWeight = FontWeight.Bold, color = NeoTextPrimary) },
+        title = { Text("Delete this expense?", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Text(
                 "${transaction.title} · ${lkr(abs(transaction.amountLkr))}. It will be removed from your totals, " +
                     "Safe-to-Spend and goal pace. This can't be undone.",
-                color = NeoTextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Delete", color = NeoRose, fontWeight = FontWeight.Bold) }
+            TextButton(onClick = onConfirm) { Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = NeoTextSecondary) }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         },
-        containerColor = NeoCard,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(24.dp)
     )
 }
