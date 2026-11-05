@@ -68,6 +68,7 @@ Everything else in `domain/` is plain Kotlin and is unit-tested on the JVM.
 flowchart LR
     subgraph SCR["Screens"]
         S_AUTH["AuthScreen<br/>+ Onboarding 1–3"]
+        S_SET["SetupScreen<br/>first-run salary · sources · commitments"]
         S_DASH["DashboardScreen<br/>SafeToSpendGauge · CommittedVsDiscretionaryBar"]
         S_INC["IncomeScreen<br/>AddIncome + Payslip sheets"]
         S_EXP["ExpenseScreen<br/>AddExpense sheet · subscription audit"]
@@ -77,6 +78,7 @@ flowchart LR
 
     subgraph VMS["ViewModels"]
         V_AUTH["AuthViewModel"]
+        V_SET["SetupViewModel"]
         V_DASH["DashboardViewModel"]
         V_INC["IncomeViewModel"]
         V_EXP["ExpenseViewModel"]
@@ -104,7 +106,8 @@ flowchart LR
         R_GOAL["Goal"]
         R_SUBR["SubscriptionReview"]
         R_TAX["TaxConfig"]
-        R_PROF["FinancialProfile<br/>(FR-AUTH-4)"]:::planned
+        R_ONB["Onboarding"]
+        R_SEAS["SeasonalReserve"]
     end
 
     subgraph EDGE["Platform helpers"]
@@ -113,6 +116,7 @@ flowchart LR
     end
 
     S_AUTH --> V_AUTH
+    S_SET --> V_SET
     S_DASH --> V_DASH
     S_INC --> V_INC
     S_EXP --> V_EXP
@@ -120,9 +124,9 @@ flowchart LR
     S_ANA --> V_ANA
 
     V_AUTH --> R_AUTH & R_ACC
-    V_AUTH -.-> R_PROF
+    V_SET --> R_ONB & R_EXP
     V_DASH --> U_SUM & U_SMS & U_SEA & U_CSV
-    V_DASH --> R_ACC & R_INC & R_EXP & R_GOAL
+    V_DASH --> R_ACC & R_INC & R_EXP & R_GOAL & R_SEAS
     S_DASH --> H_BIO
     V_INC --> U_FX & U_PAY
     V_INC --> R_INC & R_TAX
@@ -140,8 +144,9 @@ Every ViewModel also uses `AuthRepository` to get the signed-in user's ID; only 
 
 | Screen | What Kavindu does there | ViewModel uses | Solves |
 |---|---|---|---|
-| Auth + Onboarding | Signs in with email or Google; in debug builds a demo drawer fills the demo account | `AuthRepository`, `AccountRepository` (creates his four default accounts) | FR-AUTH-1, 2, 7 |
-| Dashboard | Sees today's Safe-to-Spend, the overdue "Milestone 2" banner, the committed/discretionary bar, the Seasonal Peak warning; shares a bank SMS; exports CSV | `CalculateFinancialSummary`, `BankSmsParser`, `SeasonalPeakChecker`, `ExportDataToCsv`; Account, Income, Expense, Goal | P1, P2, P5, P7, P11 |
+| Auth + Onboarding | Signs in with email or Google; in debug builds a demo drawer fills the demo account | `AuthRepository`, `AccountRepository` (creates his four default accounts and tells whether he is new) | FR-AUTH-1, 2, 7 |
+| Setup (new accounts only) | Enters his salary, picks his income sources and how variable each is, lists fixed commitments | Onboarding, Expense | FR-AUTH-4, 5 |
+| Dashboard | Sees today's Safe-to-Spend, the overdue "Milestone 2" banner, the committed/discretionary bar, the Seasonal Peak warning and sets the amount aside; shares a bank SMS; exports CSV | `CalculateFinancialSummary`, `BankSmsParser`, `SeasonalPeakChecker`, `ExportDataToCsv`; Account, Income, Expense, Goal, SeasonalReserve | P1, P2, P5, P7, P11 |
 | Income | Logs salary from a payslip (EPF, APIT), AdSense in USD at the credited LKR, freelance invoices, crypto profit or loss | `ConvertCurrency`, `CalculatePayslip`; Income, TaxConfig | P1, P2, P3, P4, P10 |
 | Expenses | Logs a PickMe in ≤ 3 taps, reviews detected subscriptions, gets a reminder when spending from a frozen account | `DetectSubscriptions`; Expense, Goal, Account, SubscriptionReview; `UsageStatsHelper` | P5, P6, P11 |
 | Goal | Sees the required LKR 1,330/day pace for the MacBook, his actual savings rate, "days of MacBook" for each habit | `CalculateGoalVelocity`, `CalculateSavingsRate`, `ConvertCurrency`; Goal, Income, Expense | P8 |
