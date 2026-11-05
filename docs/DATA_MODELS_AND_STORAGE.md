@@ -15,7 +15,7 @@ Every collection and field below is taken from the code on `main`. Problem IDs (
 | **Firestore `config/`** | App-wide settings that are not his data: the APIT tax bands | A budget revision changes the tax bands; editing a document is faster than shipping an app update (FR-LK-2). |
 | **SharedPreferences** (`pulse_exchange_rates`) | The day's USD→LKR, USDT→USD and ETH→USD rates | Fetched at most once a day from open.er-api.com and CoinGecko, and usable offline with their age shown (FR-INC-5, C-17). |
 
-Room is **only a cache**. It uses `fallbackToDestructiveMigration()`, so a schema change wipes it and it is rebuilt from Firestore on the next sync. Pending offline writes are not lost when that happens, because they are queued in Firestore's own cache, not in Room.
+Room is **only a cache**. It uses `fallbackToDestructiveMigration()`, so a schema change wipes it and it is rebuilt from Firestore on the next sync. Pending offline writes are not lost when that happens, because they are queued in Firestore's own cache, not in Room. For the same reason Room is emptied on sign-out, and it is left out of Android backups and device transfer (`allowBackup="false"`, `res/xml` backup rules): Firestore restores his records when he signs in.
 
 ---
 
@@ -29,7 +29,7 @@ users/
         ├── accounts/{accountId}         AccountDto      where money is held or paid from (P5)
         ├── expenses/{expenseId}         ExpenseDto      money out (P5, P6, P7)
         ├── income_streams/{incomeId}    IncomeDto       money in, received or invoiced (P1–P4)
-        └── goals/{goalId}               GoalDto         the MacBook goal (P8)
+        └── goals/{goalId}               GoalDto         the savings goal — his MacBook (P8)
 
 config/                                  read-only for signed-in users
   └── apitBands                          ApitConfigDto   APIT tax schedule (FR-LK-2)
@@ -43,6 +43,19 @@ There is no `profile` subcollection. Small per-user settings live as fields on t
 | `seasonalReserves.<peakKey>` | `amountLkr`, `setAsideAt`, `peakDateMillis` for each "Set aside" | Seasonal Peak warning (FR-LK-5) |
 | `onboarding` | `monthlySalaryLkr`, `incomeSources` (source → `LOW` / `MODERATE` / `VOLATILE`), `fixedCommitments`, `completedAt` | First-run setup (FR-AUTH-4, 5) |
 
+### Why this structure
+
+| Decision | Why, for Kavindu's data |
+|---|---|
+| **Everything he records lives under `users/{uid}/…`** | Ownership is the path itself, so the security rule is one comparison (`request.auth.uid == userId`) and no query ever needs a `where userId == …` filter. His records can't be mixed with another user's, and deleting his account is deleting one subtree. |
+| **One collection per kind of record** (`accounts`, `expenses`, `income_streams`, `goals`) rather than one mixed "transactions" collection | Each kind has a different shape and different rules: income carries a currency, rate and invoice status (P1–P4); an expense carries a category and committed flag (P7). Separate collections let the rules validate each shape, and let each screen listen to only what it shows: the Income hub never downloads his expenses. |
+| **A document per record**, not an array inside one document | He logs a coffee or a PickMe most days; a year is hundreds of expenses. One big document would hit Firestore's 1 MiB limit, and every new expense would rewrite the whole list. One document per record keeps each write small and lets an offline write queue on its own (FR-EXP-6). |
+| **Small settings as map fields on `users/{uid}`** (subscription reviews, seasonal reserves, onboarding) | Each is a few entries keyed by merchant or festival, read together with the user and written with a merge, so they never overwrite each other and need no extra listener. |
+| **`config/` at the top level** | The APIT tax bands are the same for everyone and read-only for the app (FR-LK-2), so they sit outside any user. |
+| **`userId` is stored in each record too** | Redundant with the path, but the rules check that the two match, so a record can't be written claiming another user. |
+| **`paymentAccountName` is copied onto each expense** | Firestore has no joins, so the ledger and the subscription audit (FR-SUB-6) show where money went without loading accounts. Trade-off: renaming an account doesn't rename its old expenses. |
+| **Money is stored in LKR, and income also keeps its original amount, currency and rate** | Every total is a simple sum; a later rate change never moves last month's numbers (§5, ADR-0001). |
+
 ### 2.1 `users/{uid}/accounts/{accountId}`: `AccountDto`
 
 On first sign-in, `ensureDefaultAccounts` creates one zero-balance account per place Kavindu's money leaves from, so every expense can be attributed from the first entry. It checks the server first, so an empty offline cache is never mistaken for a new user.
@@ -55,7 +68,7 @@ On first sign-in, `ensureDefaultAccounts` creates one zero-balance account per p
 | `type` | string | `BANK_SECONDARY` | `BANK_PRIMARY` · `BANK_SECONDARY` · `CASH` · `CRYPTO_EXCHANGE` (FR-ACC-1) |
 | `balanceLkr` | number | `0` | Starts at zero; nothing is pre-filled |
 | `isAutoDebitSource` | boolean | `true` | The account his gym and the forgotten subscriptions are charged to (P6, FR-SUB-6) |
-| `accountNumber` | string | `1002938472` | Shown masked (`•••• 8472`) until a biometric check (FR-ACC-6) |
+| `accountNumber` | string | `""` | Empty for new accounts (no number is invented). When set, shown masked (`•••• 1234`) until a biometric check (FR-ACC-6) |
 | `isFrozen` | boolean | `false` | Spending Freeze (FR-ACC-3) |
 | `frozenUntilMillis` | number \| null | `null` | When the freeze ends |
 | `freezeBreakCount` | number | `0` | Times he logged an expense on a frozen account (FR-ACC-5) |
@@ -162,12 +175,31 @@ To change the schedule, edit the document in the Firebase console (Firestore →
 
 From [`firestore.rules`](../firestore.rules), enforced server-side (NFR-5):
 
-| Path | Read | Write |
+| Path | Read, delete | Create, update |
 |---|---|---|
-| `users/{uid}` and every subcollection above | only that signed-in user | only that signed-in user |
+| `users/{uid}` (the map fields) | only that signed-in user | only that signed-in user |
+| `users/{uid}/expenses`, `income_streams`, `goals`, `accounts` | only that signed-in user | only that user, **and** the record must match its DTO: `userId` equal to the path, amounts numbers (≥ 0, except a crypto loss), category / source / currency / status / account type from the allowed values, an exchange rate above 0 |
 | `config/{doc}` | any signed-in user | nobody from the app (console only) |
 
-Deploy with `firebase deploy --only firestore:rules`.
+The full field checks, and the 21 emulator tests behind them, are in [API_AND_SECURITY.md](API_AND_SECURITY.md) §1. Deploy with `firebase deploy --only firestore` (rules and indexes).
+
+### 2.8 Indexing strategy
+
+Every query PulseFinance runs, and the index that serves it:
+
+| Query | Where | Index |
+|---|---|---|
+| `users/{uid}/expenses` ordered by `timestamp` (newest first), live | `FirestoreDataSource.observeExpenses` | Automatic single-field index on `timestamp` |
+| `users/{uid}/income_streams` ordered by `dateReceivedOrExpected`, live | `observeIncomeStreams` | Automatic single-field index on `dateReceivedOrExpected` |
+| `users/{uid}/goals`, `users/{uid}/accounts`, whole collection, live | `observeGoals`, `observeAccounts` | None needed (no filter or sort) |
+| `users/{uid}/accounts` `limit(1)` from the server: is this a new user? | `hasAnyAccountOnServer` | None needed |
+| `users/{uid}` and `config/apitBands` by ID | reviews, reserves, onboarding, tax bands | Document lookup, no index |
+
+**No composite index is needed, so [`firestore.indexes.json`](../firestore.indexes.json) declares none.** That's a deliberate choice, not an omission:
+- **Filtering happens on the device.** Analytics periods, category, account and date-range filters (FR-ANA-5), Safe-to-Spend and the subscription scan all run over the records already in the Room cache. They have to be there anyway for offline use (NFR-3), and one person's records — hundreds a year — are small enough to filter instantly. A server query per filter would cost reads, fail offline, and need a composite index for each filter + sort pair.
+- **Each listener reads one user's collection.** Firestore bills and indexes per document, so there's nothing to gain from narrowing the query further.
+
+**When this would change:** if a user's history grew to tens of thousands of records, the expense listener should load only a recent window (`where timestamp >= start`, `orderBy timestamp`). That's still a single field, so still no composite index. A composite index (declared in `firestore.indexes.json`) would only be needed for a server-side query that filters on one field and sorts on another, for example `where category == "SUBSCRIPTION"` ordered by `timestamp`.
 
 ---
 
