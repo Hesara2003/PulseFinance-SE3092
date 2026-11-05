@@ -446,12 +446,12 @@ fun DashboardScreen(
             }
 
             // =========================================================================
-            // 3b. MacBook Quest
+            // 3b. Goal quest
             // =========================================================================
             item {
                 val quest = state.quest
                 if (quest != null) {
-                    QuestCard(quest = quest, initials = state.initials, onClick = onNavigateToGoal)
+                    QuestCard(quest = quest, initials = state.initials, goalTitle = state.primaryGoal?.title.orEmpty(), onClick = onNavigateToGoal)
                 } else if (!state.isLoading) {
                     SetGoalPromptCard(onClick = onNavigateToGoal)
                 }
@@ -1132,7 +1132,7 @@ private fun SafeToSpendHero(
                 )
                 Text(
                     text = if (isLoading) "Working out today's number…"
-                    else "after rent, bills and your MacBook saving · $daysRemaining days left in $monthLabel",
+                    else "after rent, bills and your goal saving · $daysRemaining days left in $monthLabel",
                     fontSize = 13.sp,
                     color = Color.White.copy(alpha = 0.9f)
                 )

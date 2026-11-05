@@ -208,7 +208,7 @@ class GoalViewModel @Inject constructor(
         val goal = uiState.value.goal
         local.update {
             it.copy(
-                editor = if (goal == null) GoalEditorState(isVisible = true, usdPriceInput = "1599")
+                editor = if (goal == null) GoalEditorState(isVisible = true)
                 else GoalEditorState(
                     isVisible = true,
                     isNew = false,

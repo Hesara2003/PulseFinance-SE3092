@@ -82,7 +82,7 @@ import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoRose
-import com.se3092.pulsefinance.ui.components.MacBookGoalCard
+import com.se3092.pulsefinance.ui.components.GoalCard
 import com.se3092.pulsefinance.ui.components.QuestMap
 import com.se3092.pulsefinance.ui.theme.NeoBorder
 import com.se3092.pulsefinance.ui.theme.NeoCard
@@ -160,7 +160,7 @@ fun GoalScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "MacBook Quest",
+                        text = state.goal?.title?.ifBlank { null } ?: "Your goal",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         color = NeoTextSecondary,
@@ -283,6 +283,7 @@ fun GoalScreen(
                             QuestMap(
                                 quest = quest,
                                 initials = state.initials,
+                                goalTitle = state.goal?.title.orEmpty(),
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                             )
                         }
@@ -293,7 +294,7 @@ fun GoalScreen(
                 item {
                     val goal = state.goal
                     if (goal != null) {
-                        MacBookGoalCard(
+                        GoalCard(
                             goal = goal,
                             onMoreClick = { viewModel.openGoalEditor() }
                         )
@@ -929,7 +930,7 @@ private fun GoalEditorSheet(
             OutlinedTextField(
                 value = editor.titleInput,
                 onValueChange = { v -> onChange { it.copy(titleInput = v) } },
-                label = { Text("Goal (e.g. MacBook Pro M4)") },
+                label = { Text("Goal (e.g. new laptop, trip to Japan)") },
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),

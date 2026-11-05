@@ -75,6 +75,24 @@ fun categoryIllustration(category: ExpenseCategory): Int = when (category) {
     ExpenseCategory.OTHER -> R.drawable.ic_preset_shopping
 }
 
+/**
+ * Picture for a savings goal, guessed from its name like the presets: a laptop for a laptop or
+ * phone, a house for a home, a vehicle for a car or bike, otherwise the piggy bank. The goal can
+ * be anything, so nothing here assumes a MacBook.
+ */
+@DrawableRes
+fun goalIllustration(title: String): Int {
+    val t = title.lowercase()
+    // Match from the start of a word, so "car" finds "cars" but not "scar".
+    fun has(vararg words: String) = words.any { Regex("\\b${Regex.escape(it)}").containsMatchIn(t) }
+    return when {
+        has("macbook", "laptop", "computer", "pc", "iphone", "phone", "ipad", "tablet", "camera", "console", "ps5", "monitor") -> R.drawable.ic_preset_tech
+        has("house", "home", "flat", "apartment", "land", "rent", "deposit") -> R.drawable.ic_preset_house
+        has("car", "bike", "scooter", "motor", "vehicle", "tuk") -> R.drawable.ic_preset_ride
+        else -> R.drawable.illustration_piggy_bank
+    }
+}
+
 /** Illustrated icon for a payment account: a bank for both bank accounts, cash, or the exchange's coin. */
 @DrawableRes
 fun accountIllustration(type: AccountType): Int = when (type) {
