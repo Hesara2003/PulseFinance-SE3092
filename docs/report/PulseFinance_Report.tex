@@ -167,7 +167,7 @@
 \textbf{Name} & \textbf{Registration number}\\
 \midrule
 \NameHesara & \IDHesara\\
-\NameSandali & \IDSandali\\
+\NameSandali & \IT23651456\\
 \NameShazaan & \IDShazaan\\
 \bottomrule
 \end{tabular}\par}
@@ -175,16 +175,8 @@
 {\large \SubmissionDate\par}
 \end{titlepage}
 
-% ---- Summary + contents -----------------------------------------------------
+% ---- Contents ---------------------------------------------------------------
 \pagenumbering{roman}
-\section*{Summary}
-\addcontentsline{toc}{section}{Summary}
-Kavindu Silva earned more than \lkr{1.6 million} in twelve months and has \lkr{11,200} left. His money arrives four ways: a salary that lands on the 25th, freelance milestones he sometimes forgets to chase, Google AdSense paid in US dollars at whatever rate his bank applies, and crypto trades that gained in Q1 and lost in Q3. It leaves through his card, cash, PickMe and UberEats, and a secondary account that auto-debits a gym and two subscriptions he meant to cancel six months ago. He wants a MacBook Pro M4, about \lkr{490,000}, within a year. He has tried four tools -- a Google Sheet, a Play Store budget app, a Notes file and his bank's own summary -- and abandoned all four.
-
-This report argues that the problem was never discipline. \emph{None of those tools could represent his financial life accurately enough to be worth maintaining.} PulseFinance is designed against each of those four failures. It records income at the amount actually received and freezes the exchange rate with it; it keeps unpaid invoices out of what he can spend; it captures cash and secondary-account spending through presets and shared bank SMS; it surfaces forgotten subscriptions from his own charges; and it turns the MacBook into a required daily pace that it compares with what he really saves.
-
-The report covers the requirements analysis (Section~\ref{sec:requirements}), the MVVM architecture (Section~\ref{sec:architecture}), the Firestore schema (Section~\ref{sec:schema}), annotated wireframes of every main screen (Section~\ref{sec:wireframes}) and the justification of sixteen design decisions (Section~\ref{sec:decisions}). Every requirement, field and screen element is traced back to a specific part of Kavindu's scenario. At the time of writing, 68 of the 73 requirements are implemented; the five that are not are listed with their gaps in Section~\ref{sec:status}.
-
 \tableofcontents
 \clearpage
 \pagenumbering{arabic}
@@ -738,7 +730,7 @@ Room (\code{AppDatabase}, version 3) mirrors the four collections in the tables 
 % ============================================================================
 \section{Annotated Wireframes}
 \label{sec:wireframes}
-The wireframes below show each main screen as built, with the layout, labels and order of elements taken from the Compose code. Each numbered callout is explained in the table beside it: what the element does for Kavindu and which problem and requirement it serves. The bottom dock (Today, Analytics, Income, Quest, Audit) is the same on every screen after setup. Amounts and names in the wireframes are illustrative values drawn from Kavindu's scenario, not data from a real account.
+The wireframes below show each main screen. Today, Log an Expense, Income and Quest are annotated designs made in Figma; Setup, Audit and Analytics are drawn from the Compose code. Each numbered callout is explained in the table beside it: what the element does for Kavindu and which problem and requirement it serves. The bottom dock (Today, Analytics, Income, Quest, Audit) is the same on every screen after setup. Amounts and names in the wireframes are illustrative values drawn from Kavindu's scenario, not data from a real account.
 
 % ---- Setup ----------------------------------------------------------------
 \subsection{First-run setup}
@@ -782,107 +774,82 @@ The wireframes below show each main screen as built, with the layout, labels and
 \end{tabularx}
 \end{minipage}
 
-% ---- Dashboard --------------------------------------------------------------
+% ---- Dashboard -----------------------------------------------------------------
 \subsection{Today (dashboard)}
-\begin{minipage}[t]{0.42\textwidth}\vspace{0pt}
+\begin{figure}[H]
 \centering
-\begin{tikzpicture}[scale=0.8,every node/.style={scale=0.8}]
-\phoneframe{Good evening, Kavindu}
-\fill[hero] (0.35,8.55) rectangle (5.65,10.75);
-\node[text=white,font=\sffamily\tiny\bfseries,anchor=west] at (0.55,10.45) {SAFE TO SPEND TODAY};
-\node[text=white,font=\sffamily\Large\bfseries,anchor=west] at (0.55,9.75) {LKR 2,140};
-\node[text=white,font=\sffamily\tiny,anchor=west] at (0.55,9.1) {17 days left \quad In 126,400 \quad Out 58,000};
-\node[num] at (5.75,9.75) {1};
-\draw[warn] (0.35,7.65) rectangle (5.65,8.35);
-\node[wftext,text=pfamberdark] at (0.5,8.0) {LKR 45,000 is waiting for you \quad [Mark received]};
-\node[num] at (5.75,8.0) {2};
-\draw[card] (0.35,6.55) rectangle (5.65,7.45);
-\node[wfmuted] at (0.5,7.2) {This month};
-\fill[pfviolet] (0.5,6.75) rectangle (3.2,6.95); \fill[pforange] (3.2,6.75) rectangle (5.5,6.95);
-\node[num] at (5.75,7.0) {3};
-\draw[warn] (0.35,5.6) rectangle (5.65,6.35);
-\node[wftext,text=pfamberdark] at (0.5,5.98) {Vesak: Peak in 18 days \quad [Set aside LKR 20,000]};
-\node[num] at (5.75,5.98) {4};
-\node[wfmuted] at (0.4,5.25) {Log it in one tap};
-\foreach \x/\t in {0.4/Coffee,1.75/PickMe,3.1/UberEats,4.45/Dialog}{
-  \draw[card] (\x,4.25) rectangle (\x+1.15,5.0); \node[font=\sffamily\tiny] at (\x+0.57,4.62) {\t};}
-\node[num] at (5.75,4.62) {5};
-\draw[card] (0.35,2.55) rectangle (5.65,3.95);
-\node[wfmuted] at (0.5,3.7) {Accounts \& Channels \quad Combined: \textbullet\textbullet\textbullet\textbullet};
-\node[wftext] at (0.5,3.3) {Primary Bank \quad\quad \textbullet\textbullet\textbullet\textbullet{} 2178};
-\node[wftext] at (0.5,2.9) {Secondary (Auto-Debits) \quad locked until 18 Nov};
-\node[num] at (5.75,3.25) {6};
-\node[wfmuted] at (0.4,1.95) {Lately \quad\quad\quad 2 Freeze Breaks};
-\node[num] at (5.75,1.95) {7};
-\dock{1}
-\end{tikzpicture}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.55\textwidth}\vspace{0pt}
-\small
-\begin{tabularx}{\linewidth}{@{}p{0.45cm}L@{}}
-\toprule
-\# & \textbf{Element and justification}\\
-\midrule
-\callout{1} & \textbf{Safe to spend today.} One number he can act on at the till: (Income Basis $-$ committed $-$ goal saving $-$ discretionary so far) $\div$ days left. Monthly in/out sits underneath as context, not the headline. \prob{P1}, \prob{P7}, \req{FR-DASH-1}--\req{FR-DASH-3}\\
-\callout{2} & \textbf{Overdue invoice, amber not red.} Names the client and amount, with one-tap ``Mark received''. Unpaid invoices are never part of the allowance. \prob{P2}, \req{FR-DASH-2}, \req{FR-DASH-5}\\
-\callout{3} & \textbf{Committed vs discretionary bar} with amounts: rent and broadband against coffee, PickMe and UberEats. \prob{P7}, \req{FR-DASH-4}\\
-\callout{4} & \textbf{Seasonal Peak warning} 30 days ahead, with last year's excess if known and a one-tap ``Set aside'' that holds the amount back from Safe-to-Spend. \prob{P11}, \req{FR-LK-4}, \req{FR-LK-5}\\
-\callout{5} & \textbf{One-tap presets} from his own most repeated spends, each with its last amount, topped up with Sri Lankan starter shortcuts that fill in everything but the amount -- a guessed price would be wrong for most people. Three taps, five seconds. Below them, \textbf{Lately} shows his newest records; long-pressing an expense deletes it after a confirmation. \prob{P9}, \req{FR-EXP-3}, \req{NFR-1}\\
-\callout{6} & \textbf{Accounts.} Masked numbers revealed by fingerprint; a frozen account shows as locked. \prob{P5}, \req{FR-ACC-2}, \req{FR-ACC-3}, \req{FR-ACC-6}\\
-\callout{7} & \textbf{Freeze Breaks} counted without blame; spending is never refused. \req{FR-ACC-4}, \req{FR-ACC-5}\\
-\bottomrule
-\end{tabularx}
-\end{minipage}
+\includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{figures/wf-today.png}
+\caption{Annotated wireframe of the Today screen, the first screen after sign-in.}
+\end{figure}
 
-% ---- Income -----------------------------------------------------------------
-\subsection{Income hub}
-\begin{minipage}[t]{0.42\textwidth}\vspace{0pt}
-\centering
-\begin{tikzpicture}[scale=0.8,every node/.style={scale=0.8}]
-\phoneframe{Multi Stream Income Hub}
-\draw[card] (0.35,9.3) rectangle (5.65,10.75);
-\node[wfmuted] at (0.5,10.45) {Received cash vs. unpaid invoices};
-\fill[pfgreen] (0.5,9.85) rectangle (3.9,10.05); \fill[pfamber] (3.9,9.85) rectangle (5.5,10.05);
-\node[wftext] at (0.5,9.55) {72\% collected};
-\node[num] at (5.75,10.0) {1};
-\node[wfmuted] at (0.4,8.95) {THIS MONTH BY SOURCE};
-\foreach \y/\s/\a in {8.4/Primary Salary/{LKR 126,400},7.75/Freelance Projects/{LKR 45,000 overdue},7.1/Google AdSense/{USD 45 = LKR 13,612}}{
-  \draw[card] (0.4,\y-0.27) rectangle (5.6,\y+0.27);
-  \node[wftext] at (0.55,\y) {\s}; \node[font=\sffamily\tiny,anchor=east] at (5.5,\y) {\a};}
-\node[num] at (5.75,7.75) {2};
-\draw[card] (0.35,5.7) rectangle (5.65,6.55);
-\node[wfmuted] at (0.5,6.3) {Crypto net, year to date};
-\node[wftext,text=pfamberdark] at (0.5,5.95) {$-$LKR 18,300 \quad 6 gain/loss entries};
-\node[num] at (5.75,6.1) {3};
-\draw[card] (0.35,4.6) rectangle (5.65,5.45);
-\node[wfmuted] at (0.5,5.2) {Accumulated EPF Wealth};
-\node[wftext] at (0.5,4.85) {Employer 12\% + Employee 8\%};
-\node[num] at (5.75,5.0) {4};
-\draw[card,fill=pfgreenlight] (0.35,1.35) rectangle (5.65,4.35);
-\node[wftext,font=\sffamily\tiny\bfseries] at (0.5,4.1) {Record Income (sheet)};
-\node[wftext] at (0.5,3.7) {Source: AdSense \quad Currency: USD};
-\node[wftext] at (0.5,3.3) {Amount: 45};
-\node[wftext] at (0.5,2.9) {Bank credited: LKR 13,612.50};
-\node[wfmuted] at (0.5,2.5) {Effective rate: 302.50 LKR/USD};
-\node[wfmuted] at (0.5,2.1) {Suggested 304.10 \textperiodcentered{} Updated 3h ago};
-\node[num] at (5.75,2.9) {5};
-\dock{3}
-\end{tikzpicture}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.55\textwidth}\vspace{0pt}
-\small
-\begin{tabularx}{\linewidth}{@{}p{0.45cm}L@{}}
+\begin{tabularx}{\textwidth}{@{}p{0.6cm}L@{}}
 \toprule
-\# & \textbf{Element and justification}\\
+\# & \textbf{Traces to}\\
 \midrule
-\callout{1} & \textbf{Received vs unpaid.} The first honest answer to ``what did I earn this month?'' -- realised money in green, invoices still owed in amber. \prob{P1}, \req{FR-INC-9}\\
-\callout{2} & \textbf{By source}, each in its own currency next to its LKR value. The freelance milestone turns overdue on its own once the due date passes. \prob{P2}, \req{FR-INC-1}, \req{FR-INC-4}, \req{FR-LK-6}\\
-\callout{3} & \textbf{Crypto net, year to date.} Losses are negative income, so the Q1 gain and Q3 loss net out honestly. \prob{P4}, \req{FR-INC-7}, \req{FR-INC-8}\\
-\callout{4} & \textbf{EPF balance} shown as savings he already owns; the payslip sheet derives EPF and APIT from gross salary using the bands in Firestore. \prob{P10}, \req{FR-LK-1}--\req{FR-LK-3}\\
-\callout{5} & \textbf{What the bank actually credited.} The fetched rate is only a suggestion with its age; he types the LKR that arrived and the effective rate is stored and frozen. This is why past months still match his bank (ADR-0001). \prob{P3}, \req{FR-INC-2}, \req{FR-INC-5}, \req{FR-INC-6}\\
+\callout{1} & \prob{P9}: an app he wants to open, not a ledger (F1, \req{NFR-9})\\
+\callout{2} & \prob{P1}, \req{FR-DASH-1}, \req{FR-DASH-2}\\
+\callout{3} & \prob{P1}, \req{FR-DASH-3} (Income Basis)\\
+\callout{4} & \prob{P1}, \req{FR-INC-9}\\
+\callout{5} & \prob{P2}, \req{FR-DASH-2}, \req{FR-DASH-5}; amber not red (DD-13)\\
+\callout{6} & \prob{P8}, \req{FR-GOAL-2}, \req{NFR-2}\\
+\callout{7} & \prob{P9}, \req{FR-EXP-3}, \req{FR-EXP-4}, \req{NFR-1}\\
+\callout{8} & \prob{P7}, \prob{P11}; progress framed as a win (\req{NFR-2})\\
+\callout{9} & \prob{P7}, \req{FR-DASH-4}\\
+\callout{10} & \req{NFR-1}: logging from anywhere\\
 \bottomrule
 \end{tabularx}
-\end{minipage}
+\clearpage
+
+% ---- Log an expense ------------------------------------------------------------
+\subsection{Log an expense}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{figures/wf-log-expense.png}
+\caption{Annotated wireframe of the Log an Expense sheet, opened from a preset, the + button or a shared bank SMS.}
+\end{figure}
+
+\begin{tabularx}{\textwidth}{@{}p{0.6cm}L@{}}
+\toprule
+\# & \textbf{Traces to}\\
+\midrule
+\callout{1} & \prob{P9}, \req{FR-EXP-3}, \req{NFR-1}\\
+\callout{2} & \prob{P9}, F1 (data-entry overhead), \req{NFR-1}\\
+\callout{3} & \prob{P7}, \req{FR-EXP-1}\\
+\callout{4} & \prob{P7}, \req{FR-EXP-2}; F4 (PickMe filed as ``online retail)\\
+\callout{5} & \prob{P9}, \req{NFR-2}: catching up after a gap\\
+\callout{6} & \prob{P5}, \req{FR-EXP-5}; F4 (bank summary missed cash and the secondary account)\\
+\callout{7} & \req{FR-EXP-1}: no empty records\\
+\bottomrule
+\end{tabularx}
+\clearpage
+
+% ---- Income --------------------------------------------------------------------
+\subsection{Income hub}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{figures/wf-income.png}
+\caption{Annotated wireframes of the Income hub (left) and the Record Income sheet (right).}
+\end{figure}
+
+\begin{tabularx}{\textwidth}{@{}p{0.6cm}L@{}}
+\toprule
+\# & \textbf{Traces to}\\
+\midrule
+\callout{1} & \prob{P1}, \req{FR-INC-9}\\
+\callout{2} & \prob{P2}, \req{FR-DASH-2}, \req{FR-INC-9}\\
+\callout{3} & \prob{P1}, \req{FR-INC-1}\\
+\callout{4} & \prob{P1}, \req{FR-INC-9}\\
+\callout{5} & \prob{P4}, \req{FR-INC-7}, \req{FR-INC-8}\\
+\callout{6} & \prob{P2}, \req{FR-INC-3}, \req{FR-INC-4}, \req{FR-DASH-5}\\
+\callout{7} & \prob{P3}, \req{FR-INC-2}, \req{NFR-6}, ADR-0001\\
+\callout{8} & \prob{P1}, \req{FR-INC-1}; F2 (single income source)\\
+\callout{9} & \prob{P2}, \req{FR-INC-1}\\
+\callout{10} & \prob{P3}, \prob{P4}, \req{FR-INC-1}; F2 (USD only)\\
+\callout{11} & \prob{P3}, \req{FR-INC-5}, \req{FR-INC-6}\\
+\callout{12} & \prob{P2}, \req{FR-INC-3}\\
+\bottomrule
+\end{tabularx}
+\clearpage
 
 % ---- Audit ------------------------------------------------------------------
 \subsection{Audit (expenses and subscriptions)}
@@ -935,58 +902,27 @@ The wireframes below show each main screen as built, with the layout, labels and
 \end{tabularx}
 \end{minipage}
 
-% ---- Quest ------------------------------------------------------------------
+% ---- Quest ---------------------------------------------------------------------
 \subsection{Quest (savings goal)}
-\begin{minipage}[t]{0.42\textwidth}\vspace{0pt}
+\begin{figure}[H]
 \centering
-\begin{tikzpicture}[scale=0.8,every node/.style={scale=0.8}]
-\phoneframe{Your Quest}
-\draw[card] (0.35,8.6) rectangle (5.65,10.75);
-\node[wftext,font=\sffamily\scriptsize\bfseries] at (0.5,10.4) {MacBook Pro M4};
-\node[wfmuted] at (0.5,10.0) {LKR 60,200 / LKR 490,000};
-\draw[pfgreen,line width=1.4pt] (0.6,9.2) .. controls (1.6,9.9) and (2.4,8.8) .. (3.3,9.4);
-\draw[pfborder,line width=1.4pt,dashed] (3.3,9.4) .. controls (4.1,9.9) and (4.8,9.0) .. (5.4,9.5);
-\foreach \x/\y in {0.6/9.2,1.9/9.35,3.3/9.4,4.4/9.55,5.4/9.5} \fill[pfgreendark] (\x,\y) circle (0.07);
-\node[wfmuted] at (0.5,8.8) {Next checkpoint: LKR 98,000 saved};
-\node[num] at (5.75,9.9) {1};
-\draw[card] (0.35,7.2) rectangle (5.65,8.35);
-\node[wfmuted] at (0.5,8.1) {ARRIVAL PROJECTION};
-\node[wftext] at (0.5,7.75) {Need LKR 1,330/day \textperiodcentered{} saving LKR 640/day};
-\node[wftext,text=pfamberdark] at (0.5,7.4) {Behind pace: arrives Feb 2028};
-\node[num] at (5.75,7.75) {2};
-\draw[warn,fill=pfgreenlight,draw=pfgreen] (0.35,6.55) rectangle (5.65,6.95);
-\node[wftext,text=pfgreendark] at (0.5,6.75) {USD 1,599 \textperiodcentered{} Target + LKR 9,800 since 01 Nov};
-\node[num] at (5.75,6.75) {3};
-\draw[card] (0.35,4.6) rectangle (5.65,6.3);
-\node[wfmuted] at (0.5,6.05) {Opportunity Cost Translator};
-\node[wftext] at (0.5,5.65) {Food \& dining $-$25\% \hfill +4.1 days};
-\node[wftext] at (0.5,5.25) {Transport \& PickMe $-$25\% \hfill +1.8 days};
-\node[wftext] at (0.5,4.85) {Entertainment $-$25\% \hfill +0.9 days};
-\node[num] at (5.75,5.45) {4};
-\draw[card] (0.35,2.7) rectangle (5.65,4.35);
-\node[wfmuted] at (0.5,4.1) {QUICK ALLOCATION PRESETS};
-\node[chip] at (1.1,3.65) {+5,000}; \node[chip] at (2.3,3.65) {+10,000}; \node[chip] at (3.55,3.65) {+25,000};
-\node[wftext,text=pfgreendark] at (0.5,3.05) {Covers ~18.8 days of your required pace};
-\node[num] at (5.75,3.5) {5};
-\fill[pfgreen,rounded corners=6pt] (0.4,1.5) rectangle (5.6,2.2);
-\node[text=white,font=\sffamily\scriptsize\bfseries] at (3,1.85) {Set Money Aside};
-\dock{4}
-\end{tikzpicture}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.55\textwidth}\vspace{0pt}
-\small
-\begin{tabularx}{\linewidth}{@{}p{0.45cm}L@{}}
+\includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{figures/wf-quest.png}
+\caption{Annotated wireframe of the Quest screen: the savings goal as a road of real-rupee levels.}
+\end{figure}
+
+\begin{tabularx}{\textwidth}{@{}p{0.6cm}L@{}}
 \toprule
-\# & \textbf{Element and justification}\\
+\# & \textbf{Traces to}\\
 \midrule
-\callout{1} & \textbf{The goal as a journey of ten real-rupee levels} (\lkr{49,000} each). Progress only moves forward: no streaks or lives to lose, because a gap in tracking ended his Google Sheet. \prob{P9}, \req{NFR-2}\\
-\callout{2} & \textbf{Required vs actual pace.} \lkr{478,800} left over 12 months is about \lkr{1,330} a day; his actual savings rate comes from what he recorded over the last 90 days. The arrival date says whether he is on pace and by how much. \prob{P8}, \req{FR-GOAL-2}--\req{FR-GOAL-4}\\
-\callout{3} & \textbf{USD-linked target.} Apple prices in dollars; when the rupee moves, the reseller target moves with it, and the change is shown rather than hidden. \req{FR-GOAL-6}\\
-\callout{4} & \textbf{Opportunity Cost Translator.} His top three discretionary categories from the last 30 days, each trimmed by a quarter, priced in days of MacBook. \prob{P11}, \req{FR-GOAL-5}\\
-\callout{5} & \textbf{Windfall boosters} for a freelance milestone, with immediate feedback in days. \req{FR-GOAL-7}\\
+\callout{1} & \prob{P8}, \req{NFR-2}\\
+\callout{2} & \prob{P8}, \req{FR-GOAL-1}\\
+\callout{3} & \prob{P8}, \req{FR-GOAL-2}\\
+\callout{4} & \prob{P9}, \req{NFR-2}, DD-12\\
+\callout{5} & \prob{P8}, \req{FR-GOAL-3}, \req{FR-GOAL-4}\\
+\callout{6} & \prob{P8}, \req{FR-GOAL-2}\\
 \bottomrule
 \end{tabularx}
-\end{minipage}
+\clearpage
 
 % ---- Analytics --------------------------------------------------------------
 \subsection{Analytics}
