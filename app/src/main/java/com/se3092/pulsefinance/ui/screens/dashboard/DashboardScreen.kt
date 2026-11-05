@@ -4,6 +4,8 @@ import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.ui.common.shareCsv
 import androidx.compose.foundation.ExperimentalFoundationApi
 import com.se3092.pulsefinance.ui.components.DeleteTransactionDialog
+import com.se3092.pulsefinance.ui.components.ExpenseActionsDialog
+import com.se3092.pulsefinance.ui.screens.expense.ExpenseEditorSheet
 import com.se3092.pulsefinance.ui.common.TransactionItem
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -102,6 +104,8 @@ fun DashboardScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var isBalanceMasked by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<TransactionItem?>(null) }
+    var pendingActions by remember { mutableStateOf<TransactionItem?>(null) }
+    val expenseEditor by viewModel.editingExpense.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -264,7 +268,7 @@ fun DashboardScreen(
                 LatelySection(
                     transactions = state.recentTransactions,
                     onViewAll = onNavigateToAnalytics,
-                    onLongPressExpense = { tx -> pendingDelete = tx }
+                    onLongPressExpense = { tx -> pendingActions = tx }
                 )
             }
 
@@ -301,6 +305,31 @@ fun DashboardScreen(
 
         // Scaffold stacks its content from the top, so this floats over the list.
         PulseNoticeHost(notice = state.notice, onDismiss = viewModel::dismissNotice)
+
+        pendingActions?.let { tx ->
+            ExpenseActionsDialog(
+                transaction = tx,
+                onEdit = {
+                    tx.expenseId?.let(viewModel::startEditExpense)
+                    pendingActions = null
+                },
+                onDelete = {
+                    pendingDelete = tx
+                    pendingActions = null
+                },
+                onDismiss = { pendingActions = null }
+            )
+        }
+
+        expenseEditor?.let { editor ->
+            ExpenseEditorSheet(
+                state = editor,
+                accounts = state.accounts,
+                onChange = viewModel::onExpenseEditChange,
+                onSave = viewModel::saveExpenseEdit,
+                onDismiss = viewModel::dismissExpenseEdit
+            )
+        }
 
         pendingDelete?.let { tx ->
             DeleteTransactionDialog(
@@ -552,7 +581,7 @@ fun TransactionSquareCard(
             .then(
                 if (onLongClick != null) Modifier.combinedClickable(
                     onClickLabel = null,
-                    onLongClickLabel = "Delete $title",
+                    onLongClickLabel = "Edit or delete $title",
                     onClick = {},
                     onLongClick = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
