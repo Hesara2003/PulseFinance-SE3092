@@ -47,7 +47,8 @@ Safe-to-Spend per day = (Income Basis − committed spent − goal saving this m
 | Committed vs discretionary bar | This month's split with amounts, e.g. rent LKR 34,000 and broadband LKR 4,800 on one side, coffee, PickMe and UberEats on the other | FR-DASH-4 |
 | Overdue invoice banner | "*amount* is waiting for you", with the client name and one-tap **Mark received** | FR-DASH-5 |
 | Live updates | Figures update from Firestore listeners, with no refresh | FR-DASH-6 |
-| Accounts & Channels | His four accounts and their combined balance. The balance can be hidden with the eye icon | FR-ACC-2 |
+| Accounts & Channels | His accounts and their combined balance. The balance can be hidden with the eye icon | FR-ACC-2 |
+| Manage accounts | **Add** opens a sheet for a new account (Primary Bank, Secondary, Cash, Binance / Crypto Wallet or another name), with what it holds now. The pencil on each card edits its name, type, balance, number and whether it pays subscriptions. Balances are his own record, never read from a bank, and may be negative for a card he owes on. Deleting asks first, leaves the expenses logged against it, and he always keeps at least one account | FR-ACC-8, 9 |
 | Spending Freeze | Freezes an account for 14 days; it then shows as locked. A purchase from a frozen account shows "will delay your savings goal by ~N days" and offers **Log anyway**. The app never refuses to record it, and the break is counted ("N Freeze Breaks") | FR-ACC-3, 4, 5 |
 | Account number reveal | An account number, when set, shows as `•••• 1234`. Revealing one needs `BiometricPrompt` (fingerprint or device PIN). Copying it for a freelance invoice clears the clipboard after 60 seconds. There is no card number or CVV anywhere in the app | FR-ACC-6, 7 |
 | Seasonal Peak warning | 30 days before Avurudu (14 Apr), Vesak (15 May), Poson (15 Jun), December (25 Dec), or one of his own peak months: "Peak in N days · Set aside LKR X". The amount is last year's excess over his monthly average, or a default buffer (35k / 20k / 15k / 45k) when unknown. One tap on **Set aside** holds the amount back from Safe-to-Spend until the peak day (an earmark, not an expense), with **Undo** | FR-LK-4, 5 |
@@ -55,7 +56,7 @@ Safe-to-Spend per day = (Income Basis − committed spent − goal saving this m
 | Quick log | "Log it in one tap": presets from his own most-repeated spends in the last 60 days, each with its latest amount, topped up with starter shortcuts (Coffee, PickMe ride, UberEats, Dialog Reload, Mobitel Data Package, Fiber Broadband, Rent) that fill in the title, icon and category but leave the amount for him to enter | FR-EXP-3, 4, NFR-1 |
 | Share a bank SMS | Sharing a bank SMS to PulseFinance (Commercial Bank, Sampath, HNB, Nations Trust formats) opens a draft expense with the amount, merchant and card last four digits filled in. Uses the share sheet; the app never asks for READ_SMS | FR-EXP-7 |
 | CSV export | Exports income, expenses and goals as CSV through the Android share sheet | FR-DATA-1 |
-| Lately | His newest income and expenses as cards with their illustrated icons. **Long-press an expense** to delete it, after "Delete this expense?"; **View all** opens the full ledger in Analytics | FR-DASH-6 |
+| Lately | His newest income and expenses as cards with their illustrated icons. **Long-press an expense** to **Edit** it or delete it, after "Delete this expense?"; **View all** opens the full ledger in Analytics | FR-DASH-6 |
 | Empty state | A new user sees "Get your first clear picture" with what to do next, never a blank or zero screen | NFR-9 |
 
 ---
@@ -67,6 +68,8 @@ Safe-to-Spend per day = (Income Basis − committed spent − goal saving this m
 | Record income | Source (Salary, Freelance, AdSense, Crypto), title, client or platform, amount, currency (LKR, USD, USDT, ETH), date. Status is received or invoiced | FR-INC-1 |
 | Day's rate as a suggestion | The form pre-fills the day's rate (open.er-api.com, CoinGecko), cached once a day and labelled with its age | FR-INC-5 |
 | What the bank actually credited | For his AdSense payout he can type the LKR amount that arrived instead of a rate; the form shows "Effective rate: …". The rate is frozen on save and never recomputed | FR-INC-2, 6, ADR-0001 |
+| Edit an entry | **Edit** on each card opens the same sheet filled in. The rate he received is kept as it was, not replaced by today's, and so is the date, unless he picks another. A change of source or currency is the only thing that fetches a new suggestion | FR-INC-10, ADR-0001 |
+| Monthly income prompt | When monthly rupee income (a salary) hasn't been recorded this month, a card offers **Add this month's Monthly Salary?** with last month's amount. Nothing is added until he taps; **Not yet** hides it for the session. Dollar income is never suggested, because the rate received can't be assumed | FR-INC-11 |
 | Pending and overdue invoices | A freelance milestone is saved as invoiced with a due date. It becomes overdue automatically once the date passes, and **Mark received** moves it to received | FR-INC-3, 4 |
 | Received vs unpaid | "*n*% collected" bar for the month, and "This month by source" totals | FR-INC-9 |
 | Crypto | Profit or loss per trade (a loss is negative). "Crypto net, year to date" | FR-INC-7, 8 |
@@ -114,7 +117,7 @@ Safe-to-Spend per day = (Income Basis − committed spent − goal saving this m
 | Where it went | Category donut with amount and share. Discretionary categories are distinguishable from committed ones; this is where "LKR 24,000 on coffee" shows up | FR-ANA-1 |
 | Daily bars | Spending per day (or per period bucket), with the peak day highlighted | FR-ANA-3 |
 | Spent vs received | "Spent · LKR X received in the same period" | FR-ANA-1 |
-| Transactions | Ledger searchable by merchant or note, filterable by category, account and date range; all filters combine. Each expense has ⋮ → **Delete**, with a confirmation, so any expense from any period can be removed | FR-ANA-5 |
+| Transactions | Ledger searchable by merchant or note, filterable by category, account and date range; all filters combine. Each expense has ⋮ → **Edit** or **Delete** (with a confirmation), so any expense from any period can be corrected or removed. Editing changes the amount, title, category, committed flag, date (a date picker, never in the future) and account, and keeps the notes. An expense can't be moved onto a frozen account | FR-ANA-5, FR-EXP-8 |
 
 ---
 

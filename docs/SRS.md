@@ -260,6 +260,9 @@ flowchart LR
 | FR-AUTH-4 | Onboarding shall capture his salary, his active Income Sources (Salary, Freelance, AdSense, Crypto) and his fixed monthly commitments (e.g. rent LKR 34,000) in three short steps. | §3.2, §3.3 | F2 (single source) | M | Done |
 | FR-AUTH-5 | Onboarding shall let him state each source's expected variability (low / moderate / highly volatile). | §3.2 ("different levels of predictability") | F2 | C | Done |
 | FR-AUTH-6 | Onboarding shall let him set an emergency-runway buffer of 1–6 months of committed costs. | §3.1 (LKR 11,200 savings) | — | C | Done |
+| FR-AUTH-8 | The system shall let Kavindu reset a forgotten password by email, and shall answer the same way whether or not the address has an account. | Audit 05/11/2026 | — | S | Planned (PR #155) |
+| FR-AUTH-9 | The system shall let Kavindu delete his account: after he re-authenticates it shall erase every record stored for him, delete his sign-in and empty the on-device cache, and shall change nothing if the re-authentication fails (ADR-0002). | Audit 05/11/2026 (data ownership) | F1 | S | Planned (PR #155) |
+| FR-AUTH-10 | The system shall send a verification email when an email account is created, and let him request another from the account menu; verification shall not be required to use the app. | Audit 05/11/2026 | — | C | Planned (PR #155) |
 | FR-AUTH-7 | A debug-build-only demo drawer shall fill in the credentials of a real, pre-seeded Firebase account; credentials shall come from build configuration, never from source code, and the drawer shall not exist in release builds. | §6.4 (live demo), §4.3 (no hard-coded data) | — | M | Done |
 
 ### 5.2 Income (FR-INC)
@@ -275,6 +278,8 @@ flowchart LR
 | FR-INC-7 | A crypto trade shall be recorded as a Crypto Trading Result: positive for a profit, negative for a loss. | §3.2 ("significant gain in Q1 and a material loss in Q3") | — | M | Done |
 | FR-INC-8 | The system shall show the Crypto YTD Net figure. | §3.2 ("cannot answer" YTD crypto earnings) | — | M | Done |
 | FR-INC-9 | The Income screen shall show Realised Income and pending/overdue amounts separately for the month, by source. | §3.2 ("opens four separate applications") | F2 | M | Done |
+| FR-INC-10 | Kavindu shall be able to correct a recorded income entry. Editing shall keep the entry's stored rate and date unless he changes them (ADR-0001). | Audit 05/11/2026 (mistakes shouldn't need delete-and-retype) | F1 | S | Done |
+| FR-INC-11 | Monthly rupee income not yet recorded this month shall be offered as a one-tap "Add this month's …" suggestion; nothing shall be added without his tap, and foreign-currency entries shall not be suggested because the rate received can't be assumed. | §3.2 (recurring salary), §3.5 (low friction) | F1 | C | Done |
 
 ### 5.3 Expenses (FR-EXP)
 
@@ -286,6 +291,7 @@ flowchart LR
 | FR-EXP-4 | Presets shall include Dialog and Mobitel mobile reloads and data packages. | Sri Lankan context (prepaid micro-spend) | F3 | S | Done |
 | FR-EXP-5 | Expenses shall be attributable to any of his accounts, including Cash and the secondary auto-debit account. | §3.3 ("cash withdrawals… secondary account") | F4 (card-only coverage) | M | Done |
 | FR-EXP-6 | An expense saved while offline shall appear immediately and sync when the connection returns. | §5 (offline persistence) | F2 | M | Done |
+| FR-EXP-8 | Kavindu shall be able to correct a logged expense's amount, title, category, date and account from the Dashboard and the Analytics ledger. It shall not be possible to move an expense onto a frozen account this way (FR-ACC-4). | Audit 05/11/2026 | F1 | S | Done |
 | FR-EXP-7 | Kavindu shall be able to share a bank transaction SMS into PulseFinance through Android's share sheet; the system shall parse amount, merchant and card last-four digits into a draft expense for one-tap confirmation, without the READ_SMS permission. | §3.3, §4.1 lens 4 | F3, F4 | S | Done |
 
 ### 5.4 Subscriptions (FR-SUB)
@@ -340,9 +346,11 @@ flowchart LR
 | FR-ACC-2 | The dashboard card shall show combined balance across his recorded accounts. | §3.1 ("cannot articulate where the rest went") | F4 | S | Done |
 | FR-ACC-3 | Kavindu shall be able to place a Spending Freeze on an account until a chosen date; the account shall appear locked on the dashboard. | §2 ("impulsive with discretionary spending") | — | S | Done |
 | FR-ACC-4 | Logging an expense against a frozen account shall show a reminder with the opportunity cost in goal-days, offering "Log anyway"; the system shall never refuse to record the expense. | §2, §3.4 | F1 (records must stay true) | S | Done |
-| FR-ACC-5 | The system shall count Freeze Breaks and show them in the weekly summary. | §2 | — | S | Done |
+| FR-ACC-5 | The system shall count Freeze Breaks and show them in the weekly summary. The count is a running total ("N Freeze Breaks so far"), because a break is not stored with a date. | §2 | — | S | Done (weekly line: PR #156) |
 | FR-ACC-6 | Account numbers shall be displayed masked (•••• 4521) and revealed only after biometric or device-PIN authentication. | §3.2 (freelance invoicing needs bank details) | — | S | Done |
 | FR-ACC-7 | A revealed account number shall be copyable for pasting into a freelance invoice; the clipboard shall be cleared after 60 seconds. | §3.2 | — | S | Done |
+| FR-ACC-8 | Kavindu shall be able to add, rename, retype and delete accounts. Deleting an account shall leave the expenses logged against it, and he shall always keep at least one account. | §3.3 (Binance wallet, cash) | F4 | S | Done |
+| FR-ACC-9 | Kavindu shall be able to set what each account holds, as his own record (not read from a bank); a balance may be negative, for a card he owes on. | §3.1, C-13 | F4 | S | Done |
 
 ### 5.9 Sri Lankan context (FR-LK)
 
@@ -360,6 +368,12 @@ flowchart LR
 | ID | Requirement | Source | Prevents | Pri | Status |
 |---|---|---|---|---|---|
 | FR-DATA-1 | Kavindu shall be able to export all his income, expenses and goal records to CSV. | §3.5 (four abandoned tools; data should outlive the tool) | F1, F3 | S | Done |
+
+### 5.11 Notifications (FR-NTF)
+
+| ID | Requirement | Source | Prevents | Pri | Status |
+|---|---|---|---|---|---|
+| FR-NTF-1 | When an invoice is overdue, the system shall send at most one notification a day naming the work, the amount and how late it is. Reminders shall be off until he opts in, shall be offered only once an invoice is overdue, and the Android 13 notification permission shall be requested at that moment (ADR-0003). | §3.2 ("twice forgotten to follow up") | — | C | Planned (PR #160) |
 
 ---
 
@@ -458,17 +472,37 @@ flowchart LR
 
 ## 10. Priority Summary for 30/10/2026
 
-Status as of 05/11/2026, checked against the code on `main`.
+Status as of 05/11/2026, checked against the code on `main`. A requirement marked *Planned (PR #n)* is built and in review but not yet on `main`.
 
 | Priority | Done | Partial | Planned |
 |---|---|---|---|
 | **Must** | FR-AUTH-1, 3, 4, 7 · FR-INC-1–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1–6 · FR-ANA-1, 2 · FR-ACC-1 · FR-LK-1, 2, 6 · NFR-1, 2, 3–7, 9, 12 | — | — |
-| **Should** | FR-AUTH-2 · FR-EXP-4, 7 · FR-SUB-4, 5, 6 · FR-GOAL-5, 6 · FR-ANA-3 · FR-ACC-2–7 · FR-LK-3–5 · FR-DATA-1 · NFR-8, 10, 11 | — | — |
-| **Could** | FR-AUTH-5, 6 · FR-GOAL-7 · FR-ANA-4, 5 | — | — |
+| **Should** | FR-AUTH-2 · FR-INC-10 · FR-EXP-4, 7, 8 · FR-SUB-4, 5, 6 · FR-GOAL-5, 6 · FR-ANA-3 · FR-ACC-2–9 · FR-LK-3–5 · FR-DATA-1 · NFR-8, 10, 11 | — | FR-AUTH-8, 9 (PR #155) |
+| **Could** | FR-AUTH-5, 6 · FR-INC-11 · FR-GOAL-7 · FR-ANA-4, 5 | — | FR-AUTH-10 (PR #155) · FR-NTF-1 (PR #160) |
 
 ### 10.1 Open gaps
 
-No open gaps. Every requirement in this table is Done.
+An earlier version of this section said there were no open gaps. A fuller audit of the app on 05/11/2026 found the following, and each has a tracking issue.
+
+**Built and waiting for review**
+
+- FR-AUTH-8, 9, 10 (password reset, delete account, verification email): PR #155.
+- FR-NTF-1 (overdue-invoice reminder): PR #160.
+- FR-ACC-5: the weekly summary now carries the Freeze Break count (PR #156). Until it merges, the count appears only on the Today screen's account section.
+
+**Not done**
+
+| Gap | Why it matters | Where tracked |
+|---|---|---|
+| About 200 user-visible strings are written into the Kotlin code, not `strings.xml` | Blocks translating the app into Sinhala or Tamil, which a Sri Lankan user base would expect | Audit finding, no requirement yet |
+| Android lint reports 94 warnings on `main`: 66 are dependency versions behind the latest, and 18 are number formatting without a locale (fixed in PR #156) | No errors, and CI now fails on errors (PR #157). Upgrading the dependencies and the Android Gradle Plugin is a deliberate, separate piece of work | #149 |
+| ViewModel test coverage covers Income and Dashboard only (PR for #148) | Setup, Goal and Auth ViewModels have no tests | #148 |
+| NFR performance targets (NFR-1, 2) have not been measured on a device | Needs a physical phone and a stopwatch, not code; only the accessibility check is recorded so far | `docs/qa/` |
+| The demo account's password is shared in the team's local configuration | Rotating it affects all three developers' setups | Audit finding |
+| The Google OAuth consent screen is in testing mode (#105) and the logo author credit is missing (#109) | Only the project owner can change these in the Google console and on Flaticon | #105, #109 |
+| Annotated wireframes are still to be added to the report | Deliverable for the technical report | #108 |
+
+Firestore rules were previously only partly deployed: the live project ran a 33-line version. The validating rules in `firestore.rules` were deployed on 05/11/2026 after 18 emulator tests passed (PR #158).
 
 ---
 
