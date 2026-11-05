@@ -23,7 +23,8 @@ class DetectSubscriptionsUseCase @Inject constructor() {
         reviews: Map<String, SubscriptionReview>,
         accounts: List<Account> = emptyList(),
         appUsageDaysProvider: ((key: String) -> Int?)? = null,
-        now: Long = System.currentTimeMillis()
+        now: Long = System.currentTimeMillis(),
+        appLinkedProvider: ((key: String) -> Boolean)? = null
     ): List<DetectedSubscription> {
         val lookbackStart = now - LOOKBACK_DAYS * DAY_MILLIS
         val activeCutoff = now - ACTIVE_DAYS * DAY_MILLIS
@@ -80,6 +81,7 @@ class DetectSubscriptionsUseCase @Inject constructor() {
                     risk = risk,
                     consecutiveUnusedMonths = consecutiveUnused,
                     lastAppOpenedDaysAgo = appDaysAgo,
+                    isAppLinked = appLinkedProvider?.invoke(key) ?: false,
                     isSecondaryAccount = isSecondary
                 )
             }

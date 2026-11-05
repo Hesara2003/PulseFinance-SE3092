@@ -18,6 +18,14 @@ object UsageStatsHelper {
         "canva" to "com.canva.editor"
     )
 
+    /** True when the subscription maps to an Android app whose usage we could read. */
+    fun isAppLinked(subscriptionKey: String): Boolean = packageFor(subscriptionKey) != null
+
+    private fun packageFor(subscriptionKey: String): String? =
+        SUBSCRIPTION_PACKAGES.entries.firstOrNull { (k, _) ->
+            subscriptionKey.contains(k, ignoreCase = true)
+        }?.value
+
     fun hasUsagePermission(context: Context): Boolean {
         return try {
             val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager ?: return false
@@ -47,9 +55,7 @@ object UsageStatsHelper {
      */
     fun getLastOpenedDaysAgo(context: Context, subscriptionKey: String, now: Long = System.currentTimeMillis()): Int? {
         if (!hasUsagePermission(context)) return null
-        val matchedPackage = SUBSCRIPTION_PACKAGES.entries.firstOrNull { (k, _) ->
-            subscriptionKey.contains(k, ignoreCase = true)
-        }?.value ?: return null
+        val matchedPackage = packageFor(subscriptionKey) ?: return null
 
         return try {
             val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager ?: return null

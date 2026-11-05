@@ -80,6 +80,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.se3092.pulsefinance.domain.model.DetectedSubscription
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
@@ -116,6 +118,9 @@ fun ExpenseScreen(
     viewModel: ExpenseViewModel
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Picks up usage access granted in system Settings when the user comes back.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshUsageAccess() }
 
     // Auto-dismiss toast
     LaunchedEffect(state.message) {
@@ -239,6 +244,14 @@ fun ExpenseScreen(
                             }
                         }
                     }
+                }
+
+                // Usage access explainer (NFR-12): shown only in context, never at app start.
+                if (state.showUsageAccessCard) item {
+                    UsageAccessCard(
+                        onAllow = viewModel::requestUsageAccess,
+                        onDecline = viewModel::declineUsageAccess
+                    )
                 }
 
                 // 2. High-Impact Leak Alert Card
@@ -1056,3 +1069,49 @@ private data class Quadruple<A, B, C, D>(
     val third: C,
     val fourth: D
 )
+
+@Composable
+private fun UsageAccessCard(onAllow: () -> Unit, onDecline: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = NeoCardLow,
+        border = BorderStroke(1.dp, NeoGreenDark.copy(alpha = 0.25f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PhoneAndroid,
+                    contentDescription = null,
+                    tint = NeoGreenDark,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "See when you last opened your apps",
+                    fontWeight = FontWeight.Bold,
+                    color = NeoTextPrimary
+                )
+            }
+            Text(
+                text = "Allowing usage access lets PulseFinance show when you last opened apps " +
+                    "like Netflix or Spotify, so a subscription you never use is flagged sooner. " +
+                    "It stays on your phone and is only used for this audit.",
+                fontSize = 13.sp,
+                color = NeoTextSecondary
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onAllow,
+                    colors = ButtonDefaults.buttonColors(containerColor = NeoGreenDark)
+                ) { Text("Open settings") }
+                TextButton(onClick = onDecline) { Text("Not now", color = NeoTextSecondary) }
+            }
+        }
+    }
+}
