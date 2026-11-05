@@ -434,39 +434,10 @@ Sinhala/Tamil UI, ``lakhs'' formatting & Kavindu works in English and reads LKR 
 \section{Architecture}
 \label{sec:architecture}
 
-\subsection{Layers}
-PulseFinance is a single-activity Compose app following MVVM with a domain layer (C-3). Dependencies point inwards: screens depend on ViewModels, ViewModels on use cases and repository interfaces, and the data layer implements those interfaces. Figure~\ref{fig:layers} shows the layers; Figure~\ref{fig:mvvm} on the following page shows every screen, ViewModel, use case, repository and data source.
+\subsection{MVVM layers}
+PulseFinance is a single-activity Compose app following MVVM with a domain layer (C-3). Dependencies point inwards: screens depend on ViewModels, ViewModels on use cases and repository interfaces, and the data layer implements those interfaces. Figure~\ref{fig:mvvm} is drawn from the constructors of the ViewModels on \code{main}. Each row reads left to right: a Compose screen, its ViewModel, the use cases and repository interfaces that ViewModel depends on, then the nine repository implementations that every row converges on, and finally the data sources only the data layer touches. Screens never reach a repository or data source directly, and only the repository implementations know about Room and Firestore. Every ViewModel also injects \code{AuthRepository} to obtain the signed-in user's ID; that link is omitted for readability. Dotted arrows are platform helpers rather than repositories.
 
 \begin{figure}[H]
-\centering
-\begin{tikzpicture}[node distance=0.35cm]
-\node[layer=pfgreendark,minimum width=14cm,minimum height=1.1cm,align=center] (ui)
-  {\textbf{UI} -- Jetpack Compose screens, one \code{MainActivity}, \code{AppNavGraph}\\[-1pt]
-   \scriptsize Setup \textperiodcentered{} Today \textperiodcentered{} Income \textperiodcentered{} Audit \textperiodcentered{} Quest \textperiodcentered{} Analytics};
-\node[layer=pfblue,minimum width=14cm,minimum height=1.1cm,align=center,below=of ui] (vm)
-  {\textbf{ViewModels} -- \code{@HiltViewModel}, one \code{StateFlow<UiState>} each\\[-1pt]
-   \scriptsize Auth \textperiodcentered{} Setup \textperiodcentered{} Dashboard \textperiodcentered{} Income \textperiodcentered{} Expense \textperiodcentered{} Goal \textperiodcentered{} Analytics};
-\node[layer=pfamber,minimum width=14cm,minimum height=1.1cm,align=center,below=of vm] (dom)
-  {\textbf{Domain} -- models, 9 use cases, repository interfaces (plain Kotlin, unit-tested)\\[-1pt]
-   \scriptsize Safe-to-Spend \textperiodcentered{} goal velocity \textperiodcentered{} savings rate \textperiodcentered{} payslip/APIT \textperiodcentered{} subscriptions \textperiodcentered{} seasonal peaks \textperiodcentered{} SMS \textperiodcentered{} CSV \textperiodcentered{} currency};
-\node[layer=pfviolet,minimum width=6.8cm,minimum height=1.25cm,align=center,below=of dom,xshift=-3.6cm] (local)
-  {\textbf{Room cache} (\code{AppDatabase} v3)\\[-1pt]\scriptsize what every screen reads};
-\node[layer=pfviolet,minimum width=6.8cm,minimum height=1.25cm,align=center,below=of dom,xshift=3.6cm] (remote)
-  {\textbf{Firebase Auth + Firestore}\\[-1pt]\scriptsize source of truth, offline write queue};
-\draw[arr] (ui) -- node[right,font=\sffamily\scriptsize]{collects state, sends events} (vm);
-\draw[arr] (vm) -- node[right,font=\sffamily\scriptsize]{calls use cases and repositories} (dom);
-\draw[arr] (dom.south) ++(-3.6,0) -- (local);
-\draw[arr] (dom.south) ++(3.6,0) -- (remote);
-\draw[arr,dashed] (remote.west) -- node[above,font=\sffamily\scriptsize]{listener mirrors} (local.east);
-\end{tikzpicture}
-\caption{Layers of PulseFinance. Arrows show dependency and data direction.}
-\label{fig:layers}
-\end{figure}
-
-\subsection{MVVM diagram}
-Figure~\ref{fig:mvvm} is drawn from the constructors of the ViewModels on \code{main}. Each row reads left to right: a Compose screen, its ViewModel, the use cases and repository interfaces that ViewModel depends on, then the nine repository implementations that every row converges on, and finally the data sources only the data layer touches. Screens never reach a repository or data source directly, and only the repository implementations know about Room and Firestore. Every ViewModel also injects \code{AuthRepository} to obtain the signed-in user's ID; that link is omitted for readability. Dotted arrows are platform helpers rather than repositories.
-
-\begin{figure}[p]
 \centering
 \includegraphics[width=\textwidth,height=0.88\textheight,keepaspectratio]{figures/mvvm-architecture.png}
 \caption{MVVM diagram. Screens (Jetpack Compose) $\rightarrow$ ViewModels exposing \code{StateFlow<UiState>} $\rightarrow$ domain use cases and repository interfaces $\rightarrow$ the nine \code{RepositoryImpl} classes, bound with Hilt \code{@Binds}, which read Room and sync Firestore through \code{cacheBackedFlow} $\rightarrow$ data sources. Dotted arrows lead to platform helpers.}
