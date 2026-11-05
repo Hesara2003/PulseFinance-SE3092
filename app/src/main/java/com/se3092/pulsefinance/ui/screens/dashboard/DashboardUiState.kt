@@ -2,7 +2,6 @@ package com.se3092.pulsefinance.ui.screens.dashboard
 
 import com.se3092.pulsefinance.ui.components.UiNotice
 import com.se3092.pulsefinance.domain.model.Account
-import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.FinancialSummary
 import com.se3092.pulsefinance.domain.model.GoalQuest
 import com.se3092.pulsefinance.domain.model.IncomeStream
@@ -38,7 +37,6 @@ data class DashboardUiState(
     val summary: FinancialSummary = FinancialSummary(),
     val primaryGoal: SavingsGoal? = null,
     val recentTransactions: List<TransactionItem> = emptyList(),
-    val recentExpenses: List<Expense> = emptyList(),
     val accounts: List<Account> = emptyList(),
     val presets: List<ExpensePreset> = emptyList(),
     val weekBars: List<DayBar> = emptyList(),

@@ -1,5 +1,11 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import com.se3092.pulsefinance.ui.components.DeleteTransactionDialog
+import com.se3092.pulsefinance.ui.common.TransactionItem
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.foundation.combinedClickable
 import com.se3092.pulsefinance.ui.common.presetIllustration
 import com.se3092.pulsefinance.ui.common.transactionIllustration
 import androidx.annotation.DrawableRes
@@ -20,7 +26,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -87,7 +92,6 @@ import com.se3092.pulsefinance.ui.common.compactAmount
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.signedLkr
 import com.se3092.pulsefinance.ui.components.CommittedVsDiscretionaryBar
-import com.se3092.pulsefinance.ui.components.ExpenseItemCard
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import com.se3092.pulsefinance.ui.components.QuestCard
 import com.se3092.pulsefinance.ui.screens.expense.AddExpenseBottomSheet
@@ -126,6 +130,7 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var isBalanceMasked by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<TransactionItem?>(null) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -579,7 +584,9 @@ fun DashboardScreen(
                                         ?: "%,.0f".format(kotlin.math.abs(tx.amountLkr)),
                                     title = tx.title,
                                     illustration = transactionIllustration(tx),
-                                    isIncoming = tx.isIncoming
+                                    isIncoming = tx.isIncoming,
+                                    // Income is edited on the Income screen; expenses can be deleted here.
+                                    onLongClick = tx.expenseId?.let { { pendingDelete = tx } }
                                 )
                             }
                         }
@@ -707,25 +714,6 @@ fun DashboardScreen(
                 )
             }
 
-            // Real Expense Ledger List (if logged items exist)
-            if (state.recentExpenses.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Everything you logged",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = NeoTextPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                }
-                items(state.recentExpenses, key = { it.id }) { expense ->
-                    ExpenseItemCard(
-                        expense = expense,
-                        onDelete = { viewModel.deleteExpense(expense.id) }
-                    )
-                }
-            }
-
             item {
                 Spacer(modifier = Modifier.height(90.dp)) // Clearance for bottom navigation dock
             }
@@ -733,6 +721,17 @@ fun DashboardScreen(
 
         // Scaffold stacks its content from the top, so this floats over the list.
         PulseNoticeHost(notice = state.notice, onDismiss = viewModel::dismissNotice)
+
+        pendingDelete?.let { tx ->
+            DeleteTransactionDialog(
+                transaction = tx,
+                onConfirm = {
+                    tx.expenseId?.let(viewModel::deleteExpense)
+                    pendingDelete = null
+                },
+                onDismiss = { pendingDelete = null }
+            )
+        }
 
         if (state.addExpense.isVisible) {
             AddExpenseBottomSheet(
@@ -948,14 +947,18 @@ fun QuickPresetBadge(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TransactionSquareCard(
     currency: String,
     amount: String,
     title: String,
     @DrawableRes illustration: Int,
-    isIncoming: Boolean
+    isIncoming: Boolean,
+    /** Long-press action, for expenses (delete); null for income. */
+    onLongClick: (() -> Unit)? = null
 ) {
+    val haptics = LocalHapticFeedback.current
     Surface(
         modifier = Modifier
             .size(width = 136.dp, height = 136.dp)
@@ -964,6 +967,18 @@ fun TransactionSquareCard(
                 shape = RoundedCornerShape(18.dp),
                 ambientColor = Color(0x1F0F172A),
                 spotColor = Color(0x1A0F172A)
+            )
+            .clip(RoundedCornerShape(18.dp))
+            .then(
+                if (onLongClick != null) Modifier.combinedClickable(
+                    onClickLabel = null,
+                    onLongClickLabel = "Delete $title",
+                    onClick = {},
+                    onLongClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onLongClick()
+                    }
+                ) else Modifier
             ),
         shape = RoundedCornerShape(18.dp),
         color = NeoCard,

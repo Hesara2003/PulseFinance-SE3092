@@ -135,7 +135,6 @@ class DashboardViewModel @Inject constructor(
             summary = calculateFinancialSummaryUseCase(data.incomes, data.expenses, data.goal, now, data.seasonalReserves.values.toList()),
             primaryGoal = data.goal,
             recentTransactions = buildLedger(data.incomes, data.expenses).take(6),
-            recentExpenses = data.expenses.take(5),
             accounts = data.accounts,
             presets = deriveExpensePresets(data.expenses, now),
             weekBars = weekBars,
@@ -374,7 +373,7 @@ class DashboardViewModel @Inject constructor(
     fun exportCsv(context: Context) {
         val d = lastData
         val incomes = d?.incomes ?: uiState.value.unpaidInvoices
-        val expenses = d?.expenses ?: uiState.value.recentExpenses
+        val expenses = d?.expenses.orEmpty()
         val goals = listOfNotNull(d?.goal ?: uiState.value.primaryGoal)
         val csv = exportDataToCsvUseCase.generateCsv(
             incomes = incomes,
