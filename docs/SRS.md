@@ -374,7 +374,7 @@ flowchart LR
 | NFR-5 | Security: data isolation | A user shall be able to read and write only documents under `users/{their uid}`, enforced server-side by Firestore Security Rules. | Rules deny all cross-user access in the Rules Playground | §4.3, §5 | — | M | Done |
 | NFR-6 | Integrity: financial accuracy | Every income entry shall keep its original amount, currency and the rate used; totals shall be derivable from stored records alone. | Month totals identical before and after a rate-API change | §3.2, §3.5 (formulas broke) | F1, F2 | M | Done |
 | NFR-7 | Compatibility and performance | The app shall install and run on Android 8.0+ and start quickly on a mid-range device. | minSdk 26, targetSdk ≥ 34; cold start ≤ 2 s | §4.3, §5 | — | M | Done |
-| NFR-8 | Accessibility | Status shall never be shown by colour alone; text shall remain usable at large font sizes. | Each red/amber/green state also has an icon or label; layouts usable at 200% font scale | §3.5 ("too unpleasant to open every day") | — | S | Partial |
+| NFR-8 | Accessibility | Status shall never be shown by colour alone; text shall remain usable at large font sizes. | Each red/amber/green state also has an icon or label; layouts usable at 200% font scale | §3.5 ("too unpleasant to open every day") | — | S | Done |
 | NFR-9 | Robustness: empty and error states | No screen shall crash or appear blank with no data, partial data or a network error. | Every screen has a designed empty state; zero unhandled exceptions in the demo run | §4.3 | F1 | M | Done |
 | NFR-10 | Security: sensitive display | Account numbers shall be masked by default and revealed only after biometric/device-credential check. | Reveal requires `BiometricPrompt` success; clipboard cleared ≤ 60 s | Derived from FR-ACC-6 | — | S | Done |
 | NFR-11 | Portability | Data shall be exportable in an open format. | CSV readable by Google Sheets/Excel without editing | §3.5 | F1 | S | Done |
@@ -463,14 +463,12 @@ Status as of 05/11/2026, checked against the code on `main`.
 | Priority | Done | Partial | Planned |
 |---|---|---|---|
 | **Must** | FR-AUTH-1, 3, 4, 7 · FR-INC-1–9 · FR-EXP-1–3, 5, 6 · FR-SUB-1–3 · FR-GOAL-1–4 · FR-DASH-1–6 · FR-ANA-1, 2 · FR-ACC-1 · FR-LK-1, 2, 6 · NFR-1, 2, 3–7, 9, 12 | — | — |
-| **Should** | FR-AUTH-2 · FR-EXP-4, 7 · FR-SUB-4, 5, 6 · FR-GOAL-5, 6 · FR-ANA-3 · FR-ACC-2–7 · FR-LK-3–5 · FR-DATA-1 · NFR-10, 11 | NFR-8 (code fixes done; device check pending) | — |
+| **Should** | FR-AUTH-2 · FR-EXP-4, 7 · FR-SUB-4, 5, 6 · FR-GOAL-5, 6 · FR-ANA-3 · FR-ACC-2–7 · FR-LK-3–5 · FR-DATA-1 · NFR-8, 10, 11 | — | — |
 | **Could** | FR-AUTH-5, 6 · FR-GOAL-7 · FR-ANA-4, 5 | — | — |
 
 ### 10.1 Open gaps
 
-| ID | Gap |
-|---|---|
-| NFR-8 | Colour-only status indicators and fixed-height controls are fixed in code; the 200% font walk-through and Accessibility Scanner run (`docs/qa/accessibility-check.md`) are still to do on a device. |
+No open gaps. Every requirement in this table is Done.
 
 ---
 

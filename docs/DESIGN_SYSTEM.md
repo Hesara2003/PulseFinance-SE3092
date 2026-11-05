@@ -131,7 +131,7 @@ Plain Material icons are kept for controls and status: chevrons, close, the eye 
 
 ## 6. Accessibility
 
-Accessibility has not been checked yet (NFR-8).
+Accessibility was checked on a device on 05/11/2026 (NFR-8): font size and display size at maximum, Google Accessibility Scanner on every screen, no findings (`docs/qa/accessibility-check.md`).
 
 - **Already true:** attention states use dark amber text on pale amber; icon-only controls carry content descriptions; the dock tabs and the Income button are exposed as tabs (`Role.Tab`), and the pop-up is a polite live region so screen readers announce it.
-- **Still to verify:** that every green/amber state also has an icon or text label, and that layouts survive a 200% font scale.
+- **Also true:** every green, amber or red state carries an icon or a text label as well as its colour, and fixed-height controls use `heightIn(min = ...)` so text is not clipped at 200% font scale.
