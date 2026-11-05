@@ -107,7 +107,25 @@ jobs:
       - name: 🔨 Make Gradlew Executable
         run: chmod +x ./gradlew
 
+      - name: 🔐 Restore release keystore
+        if: ${{ (github.event.inputs.build_type || 'release') == 'release' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          # One permanent key for every release. A new key per run makes each APK
+          # impossible to install over the last one, and Google sign-in needs a stable SHA-1.
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret is missing, so the release APK cannot be signed. See docs/RELEASE_WORKFLOW_AND_GDRIVE.md."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "RELEASE_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
       - name: 🚀 Build APK (${{ github.event.inputs.build_type || 'release' }})
+        env:
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           BUILD_TYPE="${{ github.event.inputs.build_type || 'release' }}"
           if [ "$BUILD_TYPE" = "debug" ]; then
@@ -116,52 +134,31 @@ jobs:
             ./gradlew assembleRelease --no-daemon
           fi
 
-      - name: ✍️ Sign Release APK (if Keystore Secret Available or Self-Sign for Testing)
-        id: sign_apk
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      - name: ✅ Verify the APK is signed
         run: |
           BUILD_TYPE="${{ github.event.inputs.build_type || 'release' }}"
-          APK_DIR="app/build/outputs/apk/$BUILD_TYPE"
-          
-          if [ "$BUILD_TYPE" = "debug" ]; then
-            SRC_APK=$(find "$APK_DIR" -name "*.apk" | head -n 1)
-            FINAL_APK="app/build/outputs/apk/release/PulseFinance-v${{ env.CLEAN_VERSION }}.apk"
-            mkdir -p "app/build/outputs/apk/release"
-            cp "$SRC_APK" "$FINAL_APK"
-            echo "APK_PATH=$FINAL_APK" >> $GITHUB_ENV
-          else
-            # Release build signing logic
-            UNSIGNED_APK=$(find "$APK_DIR" -name "*unsigned.apk" -o -name "*release*.apk" | head -n 1)
-            FINAL_APK="$APK_DIR/PulseFinance-v${{ env.CLEAN_VERSION }}.apk"
-            
-            if [ -n "$KEYSTORE_BASE64" ]; then
-              echo "Signing APK with provided production keystore secret..."
-              echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
-              zipalign -v -p 4 "$UNSIGNED_APK" aligned.apk || cp "$UNSIGNED_APK" aligned.apk
-              apksigner sign --ks release.keystore --ks-pass "pass:$KEYSTORE_PASSWORD" \
-                --key-pass "pass:$KEY_PASSWORD" --ks-key-alias "$KEY_ALIAS" \
-                --out "$FINAL_APK" aligned.apk
-            else
-              echo "No production keystore secret provided. Signing with CI test key to ensure APK is installable..."
-              keytool -genkey -v -keystore test.keystore -alias testKey -keyalg RSA -keysize 2048 \
-                -validity 10000 -storepass pulsefinance -keypass pulsefinance \
-                -dname "CN=PulseFinance, OU=Mobile, O=PulseFinance, L=Colombo, C=LK"
-              apksigner sign --ks test.keystore --ks-pass pass:pulsefinance \
-                --key-pass pass:pulsefinance --ks-key-alias testKey \
-                --out "$FINAL_APK" "$UNSIGNED_APK" || cp "$UNSIGNED_APK" "$FINAL_APK"
-            fi
-            echo "APK_PATH=$FINAL_APK" >> $GITHUB_ENV
+          SRC_APK=$(find "app/build/outputs/apk/$BUILD_TYPE" -name "*.apk" ! -name "*unsigned*" | head -n 1)
+          if [ -z "$SRC_APK" ]; then
+            echo "::error::No signed APK was produced in app/build/outputs/apk/$BUILD_TYPE."
+            ls -la "app/build/outputs/apk/$BUILD_TYPE" || true
+            exit 1
           fi
-          
-          echo "Verified APK at: $FINAL_APK"
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)"
+          # Fails the job, so an APK Android would refuse never reaches Google Drive.
+          "$BUILD_TOOLS/apksigner" verify --print-certs "$SRC_APK"
+
+          FINAL_APK="app/build/outputs/apk/release/PulseFinance-v${{ env.CLEAN_VERSION }}.apk"
+          mkdir -p "$(dirname "$FINAL_APK")"
+          [ "$SRC_APK" -ef "$FINAL_APK" ] || cp "$SRC_APK" "$FINAL_APK"
+          echo "APK_PATH=$FINAL_APK" >> "$GITHUB_ENV"
           ls -lh "$FINAL_APK"
 
       - name: 📦 Build Android App Bundle (AAB)
         if: ${{ github.event.inputs.bundle_aab != false }}
+        env:
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           ./gradlew bundleRelease --no-daemon || true
           AAB_FILE=$(find app/build/outputs/bundle -name "*.aab" | head -n 1)

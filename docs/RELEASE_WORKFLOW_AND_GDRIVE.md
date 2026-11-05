@@ -6,7 +6,7 @@ PulseFinance-SE3092 has an automated release pipeline in [`.github/workflows/rel
 
 It runs on **every push to `main`** (which includes every merged PR), on pushed version tags (`v1.2.3`), on a published GitHub Release, and manually (§2, Option C). Each run:
 1. Compiles and packages the Android Application Package (**APK**) and Android App Bundle (**AAB**).
-2. Signs the APK so it is immediately installable on physical Android devices.
+2. Signs the APK and AAB with the team's permanent release key and verifies the signature (§4), so the APK installs on physical devices and updates over the previous build.
 3. Automatically uploads the bundled artifacts to the shared Google Drive folder:
    - **Target Folder URL:** [`https://drive.google.com/drive/folders/1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d`](https://drive.google.com/drive/folders/1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d?usp=sharing)
    - **Target Folder ID:** `1GRAAyZV_luvfbuwS06Pa01GojCZQkg7d`
@@ -102,18 +102,30 @@ To use a Shared Drive instead, configure a Google Cloud service account:
 
 ---
 
-## 4. Keystore Signing Configuration (Optional)
+## 4. Release signing (required)
 
-If you have a production release keystore, you can configure these optional secrets for official Play Store release signing:
+Android refuses to install an unsigned APK, and only installs an update signed with the same key as the version already on the phone. Every release is therefore signed with one permanent key, by Gradle itself (`signingConfigs.release` in `app/build.gradle.kts`).
 
 | Secret Name | Description |
 | :--- | :--- |
-| `ANDROID_KEYSTORE_BASE64` | Base64-encoded release `.keystore` or `.jks` file |
+| `ANDROID_KEYSTORE_BASE64` | Base64-encoded release `.jks` file |
 | `KEYSTORE_PASSWORD` | Password for the keystore |
 | `KEY_ALIAS` | Key alias name |
 | `KEY_PASSWORD` | Password for the key alias |
 
-> **Note:** If these secrets are not configured, the workflow automatically self-signs the release APK using an automated CI key. This ensures the uploaded APK on Google Drive is **immediately installable** on test Android devices without manual signing.
+- If `ANDROID_KEYSTORE_BASE64` is missing, a release run **fails** instead of uploading an APK nobody can install.
+- After the build, `apksigner verify` checks the APK; an unsigned or broken APK fails the run before anything reaches Google Drive.
+- The keystore never enters the repo. Keep a backup of the `.jks` file and its passwords somewhere safe outside GitHub: secrets cannot be read back, and a lost key means no build can ever update the installed app again.
+- Google sign-in in release builds needs the key's SHA-1 added to the Android app in the Firebase console.
+
+To build a signed release locally, point Gradle at the keystore:
+
+```bash
+RELEASE_KEYSTORE_FILE=/path/to/release.jks RELEASE_KEYSTORE_PASSWORD=… \
+RELEASE_KEY_ALIAS=… RELEASE_KEY_PASSWORD=… ./gradlew assembleRelease
+```
+
+Without these variables, `assembleRelease` produces an unsigned APK that is only useful for inspection.
 
 ---
 
