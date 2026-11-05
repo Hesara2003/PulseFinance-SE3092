@@ -32,6 +32,7 @@
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{amsmath,amssymb}
+\usepackage{xurl}
 \usepackage[hidelinks]{hyperref}
 
 % ---- Colours from ui/theme/Color.kt ------------------------------------------
@@ -490,7 +491,7 @@ Daily exchange rates (\req{FR-INC-5}) & \code{ExchangeRateService} & HTTPS on \c
 \label{sec:schema}
 
 \subsection{Collections}
-Everything Kavindu records lives under his own user document, so a single rule protects it all (\req{NFR-5}) and the same data appears on any device he signs in on (\req{FR-AUTH-3}). App-wide configuration that is not his data lives in a separate read-only \code{config} collection.
+Everything Kavindu records lives under his own user document, so a single rule protects it all (\req{NFR-5}) and the same data appears on any device he signs in on (\req{FR-AUTH-3}). App-wide configuration that is not his data lives in a separate read-only \code{config} collection. The live database is in the Firebase console at \url{https://console.firebase.google.com/project/finance-app-se3092/firestore/databases/-default-/data} (project members only).
 
 \begin{lstlisting}
 users/
@@ -699,7 +700,7 @@ Room (\code{AppDatabase}, version 3) mirrors the four collections in the tables 
 % ============================================================================
 \section{Annotated Wireframes}
 \label{sec:wireframes}
-The wireframes below are annotated designs of the main screens, made in Figma: Today, Log an Expense, Income and Quest. Each numbered callout is explained beside the screen: what the element does for Kavindu and which of his problems it answers. The bottom dock (Today, Analytics, Income, Quest, Audit) is the same on every screen after setup. Amounts and names in the wireframes are illustrative values drawn from Kavindu's scenario, not data from a real account.
+The wireframes below are annotated designs of the main screens, made in Figma: Today, Log an Expense, Income and Quest. The high-fidelity wireframes can be viewed in Figma at \url{https://www.figma.com/design/LvHHjUqY2v2T1Awmhsk4RH/PulseFinance-Annotated-Wireframes?node-id=16-547&p=f}. Each numbered callout is explained beside the screen: what the element does for Kavindu and which of his problems it answers. The bottom dock (Today, Analytics, Income, Quest, Audit) is the same on every screen after setup. Amounts and names in the wireframes are illustrative values drawn from Kavindu's scenario, not data from a real account.
 
 % ---- Dashboard -----------------------------------------------------------------
 \subsection{Today (dashboard)}
