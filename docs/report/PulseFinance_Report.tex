@@ -737,7 +737,7 @@ Room (\code{AppDatabase}, version 3) mirrors the four collections in the tables 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth,keepaspectratio]{figures/firestore-class-diagram.png}
-\caption{Firestore data model in UML notation. Multiplicities: \code{1..1} exactly one, \code{0..1} none or one, \code{0..*} none or many. Each user has none or many accounts, expenses, income entries and subscription reviews, and at most one savings goal (the app reads the earliest created). An expense is paid from none or one account, because \code{paymentAccountId} may be empty. The three maps are fields of the user document.}
+\caption{Firestore data model in UML notation. Multiplicities: \mbox{\texttt{1..1}} exactly one, \mbox{\texttt{0..1}} none or one, \mbox{\texttt{0..*}} none or many. Each user has none or many accounts, expenses, income entries and subscription reviews, and at most one savings goal (the app reads the earliest created). An expense is paid from none or one account, because \code{paymentAccountId} may be empty. The three maps are fields of the user document.}
 \end{figure}
 
 % ============================================================================
