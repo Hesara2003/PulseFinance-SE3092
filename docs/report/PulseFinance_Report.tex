@@ -202,7 +202,7 @@ It does this without importing anything from a bank (constraint C-12). Kavindu r
 \ref{sec:requirements} Requirements analysis & Scenario analysis, failed-tool analysis, problem statements, 73 requirements with status, constraints, traceability\\
 \ref{sec:architecture} Architecture & Layers, the MVVM diagram, offline-first data flow, dependency injection\\
 \ref{sec:schema} Firestore schema & Collections, fields with Kavindu's data as examples, rules, local cache, ER model\\
-\ref{sec:wireframes} Annotated wireframes & Six screens, each element tied to a problem and a requirement\\
+\ref{sec:wireframes} Annotated wireframes & Four screens designed in Figma, each element annotated with the problem it answers\\
 \ref{sec:decisions} Design decisions & Sixteen decisions with context, alternatives and consequences\\
 \ref{sec:status} Implementation status & Testing, delivery, open gaps, team contributions\\
 \bottomrule
@@ -730,7 +730,7 @@ Room (\code{AppDatabase}, version 3) mirrors the four collections in the tables 
 % ============================================================================
 \section{Annotated Wireframes}
 \label{sec:wireframes}
-The wireframes below show each main screen. Today, Log an Expense, Income and Quest are annotated designs made in Figma; Audit and Analytics are drawn from the Compose code. Each numbered callout is explained in the table beside it: what the element does for Kavindu and which problem and requirement it serves. The bottom dock (Today, Analytics, Income, Quest, Audit) is the same on every screen after setup. Amounts and names in the wireframes are illustrative values drawn from Kavindu's scenario, not data from a real account.
+The wireframes below are annotated designs of the main screens, made in Figma: Today, Log an Expense, Income and Quest. Each numbered callout is explained beside the screen: what the element does for Kavindu and which of his problems it answers. The bottom dock (Today, Analytics, Income, Quest, Audit) is the same on every screen after setup. Amounts and names in the wireframes are illustrative values drawn from Kavindu's scenario, not data from a real account.
 
 % ---- Dashboard -----------------------------------------------------------------
 \subsection{Today (dashboard)}
@@ -740,22 +740,6 @@ The wireframes below show each main screen. Today, Log an Expense, Income and Qu
 \caption{Annotated wireframe of the Today screen, the first screen after sign-in.}
 \end{figure}
 
-\begin{tabularx}{\textwidth}{@{}p{0.6cm}L@{}}
-\toprule
-\# & \textbf{Traces to}\\
-\midrule
-\callout{1} & \prob{P9}: an app he wants to open, not a ledger (F1, \req{NFR-9})\\
-\callout{2} & \prob{P1}, \req{FR-DASH-1}, \req{FR-DASH-2}\\
-\callout{3} & \prob{P1}, \req{FR-DASH-3} (Income Basis)\\
-\callout{4} & \prob{P1}, \req{FR-INC-9}\\
-\callout{5} & \prob{P2}, \req{FR-DASH-2}, \req{FR-DASH-5}; amber not red (DD-13)\\
-\callout{6} & \prob{P8}, \req{FR-GOAL-2}, \req{NFR-2}\\
-\callout{7} & \prob{P9}, \req{FR-EXP-3}, \req{FR-EXP-4}, \req{NFR-1}\\
-\callout{8} & \prob{P7}, \prob{P11}; progress framed as a win (\req{NFR-2})\\
-\callout{9} & \prob{P7}, \req{FR-DASH-4}\\
-\callout{10} & \req{NFR-1}: logging from anywhere\\
-\bottomrule
-\end{tabularx}
 \clearpage
 
 % ---- Log an expense ------------------------------------------------------------
@@ -766,19 +750,6 @@ The wireframes below show each main screen. Today, Log an Expense, Income and Qu
 \caption{Annotated wireframe of the Log an Expense sheet, opened from a preset, the + button or a shared bank SMS.}
 \end{figure}
 
-\begin{tabularx}{\textwidth}{@{}p{0.6cm}L@{}}
-\toprule
-\# & \textbf{Traces to}\\
-\midrule
-\callout{1} & \prob{P9}, \req{FR-EXP-3}, \req{NFR-1}\\
-\callout{2} & \prob{P9}, F1 (data-entry overhead), \req{NFR-1}\\
-\callout{3} & \prob{P7}, \req{FR-EXP-1}\\
-\callout{4} & \prob{P7}, \req{FR-EXP-2}; F4 (PickMe filed as ``online retail)\\
-\callout{5} & \prob{P9}, \req{NFR-2}: catching up after a gap\\
-\callout{6} & \prob{P5}, \req{FR-EXP-5}; F4 (bank summary missed cash and the secondary account)\\
-\callout{7} & \req{FR-EXP-1}: no empty records\\
-\bottomrule
-\end{tabularx}
 \clearpage
 
 % ---- Income --------------------------------------------------------------------
@@ -789,76 +760,7 @@ The wireframes below show each main screen. Today, Log an Expense, Income and Qu
 \caption{Annotated wireframes of the Income hub (left) and the Record Income sheet (right).}
 \end{figure}
 
-\begin{tabularx}{\textwidth}{@{}p{0.6cm}L@{}}
-\toprule
-\# & \textbf{Traces to}\\
-\midrule
-\callout{1} & \prob{P1}, \req{FR-INC-9}\\
-\callout{2} & \prob{P2}, \req{FR-DASH-2}, \req{FR-INC-9}\\
-\callout{3} & \prob{P1}, \req{FR-INC-1}\\
-\callout{4} & \prob{P1}, \req{FR-INC-9}\\
-\callout{5} & \prob{P4}, \req{FR-INC-7}, \req{FR-INC-8}\\
-\callout{6} & \prob{P2}, \req{FR-INC-3}, \req{FR-INC-4}, \req{FR-DASH-5}\\
-\callout{7} & \prob{P3}, \req{FR-INC-2}, \req{NFR-6}, ADR-0001\\
-\callout{8} & \prob{P1}, \req{FR-INC-1}; F2 (single income source)\\
-\callout{9} & \prob{P2}, \req{FR-INC-1}\\
-\callout{10} & \prob{P3}, \prob{P4}, \req{FR-INC-1}; F2 (USD only)\\
-\callout{11} & \prob{P3}, \req{FR-INC-5}, \req{FR-INC-6}\\
-\callout{12} & \prob{P2}, \req{FR-INC-3}\\
-\bottomrule
-\end{tabularx}
 \clearpage
-
-% ---- Audit ------------------------------------------------------------------
-\subsection{Audit (expenses and subscriptions)}
-\begin{minipage}[t]{0.42\textwidth}\vspace{0pt}
-\centering
-\begin{tikzpicture}[scale=0.8,every node/.style={scale=0.8}]
-\phoneframe{Zombie Subscription Audit}
-\draw[card] (0.35,9.4) rectangle (2.9,10.75); \draw[card] (3.1,9.4) rectangle (5.65,10.75);
-\node[wfmuted] at (0.45,10.45) {TOTAL ANNUAL DRAIN}; \node[wftext,font=\sffamily\scriptsize\bfseries] at (0.5,9.85) {LKR 176,400};
-\node[wfmuted] at (3.25,10.45) {POTENTIAL SAVINGS};  \node[wftext,font=\sffamily\scriptsize\bfseries,text=pfgreendark] at (3.25,9.85) {LKR 102,000};
-\node[num] at (5.75,10.1) {1};
-\node[wftext,font=\sffamily\tiny\bfseries,text=pfamberdark] at (0.4,9.0) {Secondary Account (Auto-Debit)};
-\node[num] at (5.75,9.0) {2};
-\draw[warn] (0.35,7.05) rectangle (5.65,8.7);
-\node[wftext] at (0.5,8.45) {Gym membership \hfill LKR 8,500/mo};
-\node[wfmuted] at (0.5,8.1) {LKR 102,000 / yr \textperiodcentered{} High Risk};
-\node[wftext,text=pfamberdark,text width=4.7cm] at (0.5,7.67) {Unused for 2 consecutive months! Cancellation recommended.};
-\node[chip] at (1.3,7.2) {I cancelled it};
-\node[num] at (5.75,7.95) {3};
-\draw[card] (0.35,5.55) rectangle (5.65,7.0);
-\node[wftext] at (0.5,6.75) {Netflix Premium \hfill LKR 2,990/mo};
-\node[wfmuted] at (0.5,6.4) {Last opened 41 days ago};
-\node[wftext] at (0.5,6.05) {Did you use this this month?};
-\node[chip] at (4.3,5.8) {Yes}; \node[chip] at (5.05,5.8) {No};
-\node[num] at (5.75,6.4) {4};
-\draw[card] (0.35,4.3) rectangle (5.65,5.3);
-\node[wftext] at (0.5,5.0) {Spotify \hfill LKR 1,190/mo \quad Low};
-\node[wfmuted] at (0.5,4.6) {Primary Bank};
-\draw[card,fill=pfgreenlight] (0.35,1.35) rectangle (5.65,4.0);
-\node[wftext,font=\sffamily\tiny\bfseries] at (0.5,3.75) {Add expense (sheet)};
-\node[wftext] at (0.5,3.35) {LKR 1,450 \quad Transport \quad PickMe};
-\node[wftext] at (0.5,2.95) {[Discretionary | Committed]};
-\node[wftext] at (0.5,2.55) {Paid from: Cash in Hand};
-\node[num] at (5.75,2.75) {5};
-\dock{5}
-\end{tikzpicture}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.55\textwidth}\vspace{0pt}
-\small
-\begin{tabularx}{\linewidth}{@{}p{0.45cm}L@{}}
-\toprule
-\# & \textbf{Element and justification}\\
-\midrule
-\callout{1} & \textbf{Annual drain and potential savings.} A monthly LKR 8,500 is easy to ignore; LKR 102,000 a year is not. \prob{P6}, \req{FR-SUB-2}\\
-\callout{2} & \textbf{Grouped by account, secondary first.} His bank app never showed the auto-debit account; this group is where the forgotten charges live. \prob{P5}, \prob{P6}, \req{FR-SUB-6}\\
-\callout{3} & \textbf{Risk with a reason.} High after two ``No'' answers, after 30+ days unopened, or when still charging after a cancel. ``I cancelled it'' records the decision so a later charge is caught. \req{FR-SUB-3}, \req{FR-SUB-4}\\
-\callout{4} & \textbf{One question after each charge.} ``Did you use this this month?'' replaces any automatic guess; app-usage data adds evidence when usage access is granted. \req{FR-SUB-4}, \req{FR-SUB-5}\\
-\callout{5} & \textbf{Add expense.} The category proposes discretionary or committed and he flips it in one tap; any account, including cash. This is what fixed ``PickMe filed as online retail''. \prob{P5}, \prob{P7}, \req{FR-EXP-1}, \req{FR-EXP-2}, \req{FR-EXP-5}\\
-\bottomrule
-\end{tabularx}
-\end{minipage}
 
 % ---- Quest ---------------------------------------------------------------------
 \subsection{Quest (savings goal)}
@@ -868,68 +770,7 @@ The wireframes below show each main screen. Today, Log an Expense, Income and Qu
 \caption{Annotated wireframe of the Quest screen: the savings goal as a road of real-rupee levels.}
 \end{figure}
 
-\begin{tabularx}{\textwidth}{@{}p{0.6cm}L@{}}
-\toprule
-\# & \textbf{Traces to}\\
-\midrule
-\callout{1} & \prob{P8}, \req{NFR-2}\\
-\callout{2} & \prob{P8}, \req{FR-GOAL-1}\\
-\callout{3} & \prob{P8}, \req{FR-GOAL-2}\\
-\callout{4} & \prob{P9}, \req{NFR-2}, DD-12\\
-\callout{5} & \prob{P8}, \req{FR-GOAL-3}, \req{FR-GOAL-4}\\
-\callout{6} & \prob{P8}, \req{FR-GOAL-2}\\
-\bottomrule
-\end{tabularx}
 \clearpage
-
-% ---- Analytics --------------------------------------------------------------
-\subsection{Analytics}
-\begin{minipage}[t]{0.42\textwidth}\vspace{0pt}
-\centering
-\begin{tikzpicture}[scale=0.8,every node/.style={scale=0.8}]
-\phoneframe{Financial Analytics \& Clarity}
-\node[chip] at (0.9,10.45) {Day}; \node[chipon] at (1.85,10.45) {Week}; \node[chip] at (2.85,10.45) {Month}; \node[chip] at (3.85,10.45) {Year};
-\node[num] at (5.75,10.45) {1};
-\node[wftext,font=\sffamily\scriptsize\bfseries] at (0.4,9.85) {LKR 31,450};
-\node[wfmuted] at (0.4,9.5) {Spent \textperiodcentered{} LKR 13,612 received in the same period};
-\foreach \i/\h in {0/0.6,1/0.9,2/0.4,3/0.7,4/1.25,5/1.0,6/0.5}{
-  \pgfmathsetmacro{\x}{0.7+\i*0.7}
-  \ifnum\i=4 \fill[pfgreen,rounded corners=1pt] (\x-0.2,7.6) rectangle (\x+0.2,7.6+\h);
-  \else \fill[pfborder,rounded corners=1pt] (\x-0.2,7.6) rectangle (\x+0.2,7.6+\h); \fi}
-\node[wfmuted] at (3.5,9.0) {peak: Fri};
-\node[num] at (5.75,8.4) {2};
-\draw[card] (0.35,5.2) rectangle (5.65,7.3);
-\node[wfmuted] at (0.5,7.05) {WHERE IT WENT};
-\draw[pforange,line width=7pt] (1.6,6.0) ++(90:0.55) arc (90:-60:0.55);
-\draw[pfblue,line width=7pt] (1.6,6.0) ++(-60:0.55) arc (-60:-160:0.55);
-\draw[pfviolet,line width=7pt] (1.6,6.0) ++(-160:0.55) arc (-160:-270:0.55);
-\node[wftext] at (2.6,6.55) {Food \& Dining \quad 42\%};
-\node[wftext] at (2.6,6.15) {Transport \& PickMe \quad 27\%};
-\node[wftext] at (2.6,5.75) {Rent (committed) \quad 31\%};
-\node[num] at (5.75,6.2) {3};
-\node[wfmuted] at (0.4,4.85) {Transactions};
-\draw[card] (0.35,4.15) rectangle (5.65,4.6); \node[wfmuted] at (0.5,4.38) {Search by merchant or note...};
-\node[chip] at (1.05,3.75) {Category}; \node[chipon] at (2.3,3.75) {Cash in Hand}; \node[chip] at (3.65,3.75) {1--7 Nov};
-\node[num] at (5.75,4.0) {4};
-\foreach \y/\t/\a in {3.2/{Java Lounge \textperiodcentered{} Cash}/{LKR 850},2.65/{PickMe \textperiodcentered{} Cash}/{LKR 1,450},2.1/{Kottu \textperiodcentered{} Cash}/{LKR 1,200}}{
-  \draw[card] (0.4,\y-0.24) rectangle (5.6,\y+0.24);
-  \node[wftext] at (0.55,\y) {\t}; \node[font=\sffamily\tiny,anchor=east] at (5.5,\y) {\a};}
-\dock{2}
-\end{tikzpicture}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.55\textwidth}\vspace{0pt}
-\small
-\begin{tabularx}{\linewidth}{@{}p{0.45cm}L@{}}
-\toprule
-\# & \textbf{Element and justification}\\
-\midrule
-\callout{1} & \textbf{Day, week, month, year}, with previous and next. Weekly is the default because his impulsive spending shows up within days. \req{FR-ANA-2}, \req{FR-ANA-4}\\
-\callout{2} & \textbf{Daily bars with the peak day highlighted}, so the day that broke the week is obvious at a glance. \prob{P7}, \req{FR-ANA-3}\\
-\callout{3} & \textbf{Where it went.} The category donut is where ``LKR 24,000 on coffee'' becomes visible; committed categories are labelled so rent does not read as overspending. \prob{P7}, \req{FR-ANA-1}\\
-\callout{4} & \textbf{Search and filters} by merchant or note, category, account and date range, so a payment can be matched to a freelance project or a cash week reviewed. Every expense row has \textbf{$\vdots$ $\rightarrow$ Delete}, behind a confirmation, so a mistake from any period can be removed. \prob{P2}, \req{FR-ANA-5}\\
-\bottomrule
-\end{tabularx}
-\end{minipage}
 
 \subsection{Visual language}
 The theme is light (porcelain white \texttt{\#F7F9FB}, white cards) with one signal green (\texttt{\#00C950}, text \texttt{\#006E28}). Attention states -- an overdue invoice, a freeze break, an error -- use amber (\texttt{\#F59E0B}) with deep-amber text (\texttt{\#B45309}), not red: Kavindu avoids looking at money he is worried about, and alarm colours make avoiders look away. \textbf{One deliberate exception:} the subscription audit marks ``Still charging'' and the Cancel actions in rose (\texttt{\#E11D48}), because a forgotten subscription draining money is the one thing he should not look away from (\prob{P6}).
