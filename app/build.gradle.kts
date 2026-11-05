@@ -24,6 +24,21 @@ android {
         }
     }
 
+    // Release signing comes from the environment, so the keystore and its passwords never
+    // enter the repo. CI sets these from repository secrets. Without them a local
+    // assembleRelease produces an unsigned APK, which Android refuses to install.
+    val releaseKeystore = System.getenv("RELEASE_KEYSTORE_FILE")?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField("String", "DEMO_EMAIL", "\"kavindu.silva@pulsemail.io\"")
@@ -32,6 +47,7 @@ android {
         release {
             buildConfigField("String", "DEMO_EMAIL", "\"\"")
             buildConfigField("String", "DEMO_PASSWORD", "\"\"")
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
