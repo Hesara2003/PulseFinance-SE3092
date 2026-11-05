@@ -41,6 +41,24 @@ class FirestoreDataSource @Inject constructor(
         addOnFailureListener { Log.w(TAG, "Firestore $operation failed", it) }
     }
 
+    /**
+     * Erases everything stored for [userId]: each record collection, then the user document that
+     * holds the reviews, reserves and onboarding profile (FR-AUTH-9). It reads from the server and
+     * waits for the commits, so it fails loudly offline instead of reporting a deletion that
+     * hasn't happened.
+     */
+    suspend fun deleteAllUserData(userId: String) {
+        for (collection in USER_COLLECTIONS) {
+            val documents = userDoc(userId).collection(collection).get(Source.SERVER).await().documents
+            documents.chunked(DELETE_BATCH_SIZE).forEach { chunk ->
+                val batch = firestore.batch()
+                chunk.forEach { batch.delete(it.reference) }
+                batch.commit().await()
+            }
+        }
+        userDoc(userId).delete().await()
+    }
+
     // ---------------- Expenses ----------------
     fun observeExpenses(userId: String): Flow<List<ExpenseDto>> = callbackFlow {
         val listener = userDoc(userId).collection("expenses")
@@ -278,5 +296,8 @@ class FirestoreDataSource @Inject constructor(
         const val FIELD_SUBSCRIPTION_REVIEWS = "subscriptionReviews"
         const val FIELD_SEASONAL_RESERVES = "seasonalReserves"
         const val FIELD_ONBOARDING = "onboarding"
+        val USER_COLLECTIONS = listOf("expenses", "income_streams", "goals", "accounts")
+        /** Firestore allows 500 writes per batch; stay under it. */
+        const val DELETE_BATCH_SIZE = 400
     }
 }
