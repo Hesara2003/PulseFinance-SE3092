@@ -1,5 +1,13 @@
 package com.se3092.pulsefinance.ui.screens.analytics
 
+import androidx.compose.runtime.remember
+import com.se3092.pulsefinance.ui.components.PulseNoticeHost
+import com.se3092.pulsefinance.ui.components.DeleteTransactionDialog
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.MoreVert
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
@@ -115,6 +123,18 @@ fun AnalyticsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showDateRangePicker by rememberSaveable { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<TransactionItem?>(null) }
+
+    pendingDelete?.let { tx ->
+        DeleteTransactionDialog(
+            transaction = tx,
+            onConfirm = {
+                viewModel.deleteExpense(tx)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null }
+        )
+    }
 
     if (showDateRangePicker) {
         TransactionDateRangeDialog(
@@ -687,7 +707,11 @@ fun AnalyticsScreen(
                 }
 
                 items(visibleTransactions, key = { it.id }) { tx ->
-                    TransactionLedgerCard(tx = tx)
+                    TransactionLedgerCard(
+                        tx = tx,
+                        // Only expenses can be deleted here; income is managed on the Income screen.
+                        onDelete = tx.expenseId?.let { { pendingDelete = tx } }
+                    )
                 }
 
                 item {
@@ -695,6 +719,12 @@ fun AnalyticsScreen(
                 }
             }
         }
+
+        PulseNoticeHost(
+            notice = state.notice,
+            onDismiss = viewModel::dismissNotice,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
     }
 }
 
@@ -820,7 +850,8 @@ private fun CategoryBreakdownCard(totals: List<CategoryTotal>) {
 }
 
 @Composable
-private fun TransactionLedgerCard(tx: TransactionItem) {
+private fun TransactionLedgerCard(tx: TransactionItem, onDelete: (() -> Unit)? = null) {
+    var menuOpen by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -897,6 +928,34 @@ private fun TransactionLedgerCard(tx: TransactionItem) {
                     color = NeoTextSecondary,
                     fontSize = 11.sp
                 )
+            }
+
+            if (onDelete != null) {
+                Box {
+                    IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More options for ${tx.title}",
+                            tint = NeoTextSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = menuOpen,
+                        onDismissRequest = { menuOpen = false },
+                        containerColor = NeoCard,
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = NeoRose, fontWeight = FontWeight.SemiBold) },
+                            leadingIcon = { Icon(Icons.Default.DeleteOutline, contentDescription = null, tint = NeoRose) },
+                            onClick = {
+                                menuOpen = false
+                                onDelete()
+                            }
+                        )
+                    }
+                }
             }
         }
     }
