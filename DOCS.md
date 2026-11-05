@@ -1,12 +1,15 @@
 # PulseFinance Documentation
 
-All comprehensive project documentation is maintained in the [`docs/`](docs/) directory (and mirrored via [`doc/`](doc/)):
+The documentation lives in [`docs/`](docs/) (also reachable as `doc/`). The index is **[docs/README.md](docs/README.md)**.
 
-- **[Master Consolidated Project Documentation](docs/PROJECT_DOCUMENTATION.md)** — The complete, publication-grade master document covering architecture, scenario matrix, features, data models, security, and setup.
-- **[Architecture & Technical Design](docs/ARCHITECTURE.md)** — Clean architecture, MVVM + UDF, Room & Firebase sync, Hilt DI.
-- **[Vivid Neo-Fintech Design System](docs/DESIGN_SYSTEM.md)** — Color tokens, typography, capsule geometry, micro-interactions.
-- **[Features & Functional Specification](docs/FEATURES_SPECIFICATION.md)** — In-depth breakdown of Cockpit, Income Hub, Goal Velocity Engine, Zombie Audit, and Analytics.
-- **[Data Models & Storage](docs/DATA_MODELS_AND_STORAGE.md)** — Room entities, DAOs, Firestore schemas, TypeConverters.
-- **[Security & API Integrations](docs/API_AND_SECURITY.md)** — Firestore security rules, client sandbox, currency normalization engine.
-- **[Setup & Developer Guide](docs/SETUP_AND_CONTRIBUTION_GUIDE.md)** — Step-by-step instructions for JDK 21, Android Studio, Firebase, and building APKs.
-- **[Release Workflow & Google Drive](docs/RELEASE_WORKFLOW_AND_GDRIVE.md)** — Automated GitHub Actions CI/CD bundling APK/AAB and uploading to Google Drive.
+- **Problem and requirements:** [docs/SRS.md](docs/SRS.md)
+- **Overview:** [docs/PROJECT_DOCUMENTATION.md](docs/PROJECT_DOCUMENTATION.md)
+- **Features:** [docs/FEATURES_SPECIFICATION.md](docs/FEATURES_SPECIFICATION.md)
+- **Architecture:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Firestore schema and data:** [docs/DATA_MODELS_AND_STORAGE.md](docs/DATA_MODELS_AND_STORAGE.md)
+- **Security and APIs:** [docs/API_AND_SECURITY.md](docs/API_AND_SECURITY.md)
+- **Design system:** [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)
+- **Decisions:** [docs/adr/](docs/adr/)
+- **Glossary:** [GLOSSARY.md](GLOSSARY.md)
+- **Setup and contributing:** [docs/SETUP_AND_CONTRIBUTION_GUIDE.md](docs/SETUP_AND_CONTRIBUTION_GUIDE.md)
+- **Releases:** [docs/RELEASE_WORKFLOW_AND_GDRIVE.md](docs/RELEASE_WORKFLOW_AND_GDRIVE.md)
