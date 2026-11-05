@@ -63,6 +63,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
 import com.se3092.pulsefinance.domain.model.Account
+import com.se3092.pulsefinance.domain.model.MAX_RUNWAY_MONTHS
+import com.se3092.pulsefinance.domain.model.MIN_RUNWAY_MONTHS
 import com.se3092.pulsefinance.ui.common.BiometricHelper
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -337,6 +339,20 @@ fun DashboardScreen(
                             }
                         }
                     }
+                }
+            }
+
+            // =========================================================================
+            // 2b-ii. Emergency Runway Buffer (FR-AUTH-6)
+            // =========================================================================
+            if (state.showRunwayCard) {
+                item {
+                    SafetyBufferCard(
+                        state = state,
+                        masked = isBalanceMasked,
+                        onMonths = viewModel::setRunwayMonths,
+                        onAdd = viewModel::addToRunway
+                    )
                 }
             }
 
@@ -1161,6 +1177,132 @@ private fun HeroStat(label: String, value: String, color: Color) {
     Column {
         Text(text = label, fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
         Text(text = value, fontFamily = Numeric, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = color)
+    }
+}
+
+/**
+ * Emergency Runway Buffer (FR-AUTH-6): how many months of his fixed costs he wants kept aside in
+ * case income stops, and how far along he is. It is a goal to grow into, so it uses the calm
+ * accent rather than an attention colour. Until he picks a number of months it just asks.
+ */
+@Composable
+private fun SafetyBufferCard(
+    state: DashboardUiState,
+    masked: Boolean,
+    onMonths: (Int) -> Unit,
+    onAdd: (Double) -> Unit
+) {
+    val runway = state.runway
+    fun money(amount: Double) = if (masked) "••••" else lkr(amount)
+    fun months(count: Int) = if (count == 1) "1 month" else "$count months"
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = NeoCard,
+        border = BorderStroke(1.dp, NeoBorder),
+        shadowElevation = 2.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(SaffronSoft),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Savings, contentDescription = null, tint = Saffron, modifier = Modifier.size(20.dp))
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Safety buffer",
+                        fontFamily = Display,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = NeoTextPrimary
+                    )
+                    Text(
+                        text = if (runway != null) {
+                            "${months(runway.months)} of your fixed costs · ${money(runway.targetLkr)}"
+                        } else {
+                            "Months of your fixed costs to keep aside, in case income stops"
+                        },
+                        fontSize = 12.sp,
+                        color = NeoTextSecondary
+                    )
+                }
+            }
+
+            if (runway != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(CircleShape)
+                        .background(NeoTrack)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(runway.progress)
+                            .height(8.dp)
+                            .clip(CircleShape)
+                            .background(Saffron)
+                    )
+                }
+                Text(
+                    text = if (runway.isFunded) {
+                        "Fully funded · ${money(runway.savedLkr)} covers ${months(runway.months)}"
+                    } else {
+                        "${money(runway.savedLkr)} set aside · covers ${"%.1f".format(runway.monthsCovered)} of ${runway.months} months"
+                    },
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = NeoTextPrimary
+                )
+            }
+
+            Text(text = "Months to keep aside", fontSize = 11.sp, color = NeoTextTertiary)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                (MIN_RUNWAY_MONTHS..MAX_RUNWAY_MONTHS).forEach { count ->
+                    BufferChip(label = "$count", selected = state.runwayMonths == count, onClick = { onMonths(count) })
+                }
+            }
+
+            if (runway != null && !runway.isFunded) {
+                Text(text = "Add to it", fontSize = 11.sp, color = NeoTextTertiary)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(5_000.0, 10_000.0, 25_000.0).forEach { amount ->
+                        BufferChip(label = "+${"%,.0f".format(amount)}", selected = false, onClick = { onAdd(amount) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BufferChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(if (selected) Saffron else NeoCardLow)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 7.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            fontSize = 12.5.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            color = if (selected) Color.White else NeoTextSecondary
+        )
     }
 }
 
