@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,7 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -107,12 +113,27 @@ fun IncomeStreamCard(
                         .background(statusColor.copy(alpha = 0.12f))
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
-                    Text(
-                        text = income.status.name.replace("_", " "),
-                        color = statusColor,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = when (income.status) {
+                                InvoiceStatus.RECEIVED -> Icons.Default.CheckCircle
+                                InvoiceStatus.PENDING_INVOICE -> Icons.Default.Schedule
+                                InvoiceStatus.OVERDUE -> Icons.Default.Warning
+                            },
+                            contentDescription = null,
+                            tint = statusColor,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = income.status.name.replace("_", " "),
+                            color = statusColor,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
