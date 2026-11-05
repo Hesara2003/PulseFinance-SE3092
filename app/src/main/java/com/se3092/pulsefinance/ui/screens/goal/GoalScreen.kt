@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -149,7 +150,7 @@ fun GoalScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .heightIn(min = 56.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -455,7 +456,7 @@ fun GoalScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
+                            .heightIn(min = 56.dp)
                             .shadow(
                                 elevation = 12.dp,
                                 shape = CircleShape,
@@ -693,7 +694,7 @@ fun GoalScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp)
+                            .heightIn(min = 52.dp)
                             .shadow(10.dp, CircleShape, spotColor = NeoGreenGlow)
                     ) {
                         Text(
@@ -1063,7 +1064,7 @@ private fun GoalEditorSheet(
                 colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
+                    .heightIn(min = 52.dp)
             ) {
                 Text(text = if (editor.isNew) "Create goal" else "Save changes", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
@@ -1105,7 +1106,7 @@ private fun CelebrationDialog(celebration: Celebration, onDismiss: () -> Unit) {
                     colors = ButtonDefaults.buttonColors(containerColor = NeoGreen, contentColor = OnAccent),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .heightIn(min = 50.dp)
                 ) {
                     Text(text = "Keep going", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -372,7 +373,7 @@ fun AddIncomeBottomSheet(
                 enabled = form.amountInput.isNotBlank() && !form.isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
+                    .heightIn(min = 52.dp)
                     .shadow(10.dp, CircleShape, spotColor = NeoGreenGlow),
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
