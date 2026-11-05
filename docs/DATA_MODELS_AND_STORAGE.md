@@ -35,7 +35,13 @@ config/                                  read-only for signed-in users
   └── apitBands                          ApitConfigDto   APIT tax schedule (FR-LK-2)
 ```
 
-There is no `profile` subcollection. Onboarding does not store anything yet; that is the open gap FR-AUTH-4.
+There is no `profile` subcollection. Small per-user settings live as fields on the user document itself, written with a merge so they never overwrite each other:
+
+| Field on `users/{uid}` | Holds | Written by |
+|---|---|---|
+| `subscriptionReviews.<key>` | Keep / Cancel decision per detected subscription | Subscription audit (FR-SUB-3) |
+| `seasonalReserves.<peakKey>` | `amountLkr`, `setAsideAt`, `peakDateMillis` for each "Set aside" | Seasonal Peak warning (FR-LK-5) |
+| `onboarding` | `monthlySalaryLkr`, `incomeSources` (source → `LOW` / `MODERATE` / `VOLATILE`), `fixedCommitments`, `completedAt` | First-run setup (FR-AUTH-4, 5) |
 
 ### 2.1 `users/{uid}/accounts/{accountId}`: `AccountDto`
 

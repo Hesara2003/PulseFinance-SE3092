@@ -22,7 +22,8 @@ flowchart LR
 | Google sign-in | "Continue with Google" through Android Credential Manager | FR-AUTH-2 |
 | Demo drawer | **Debug builds only.** "Auto Fill" enters a pre-seeded demo account. The credentials come from `BuildConfig` and are empty in release builds; they are deliberately not written in any document | FR-AUTH-7 |
 | Default accounts | His first sign-in creates four empty accounts: Primary Bank, Secondary (Auto-Debits), Cash in Hand, Binance / Crypto Wallet. Nothing else is pre-filled | FR-ACC-1 |
-| Onboarding | Three introduction screens: "one clear picture", "track every income stream", "kill zombie leaks". They can be skipped. **Not built:** capturing his salary, income sources, variability, fixed commitments or a runway buffer | FR-AUTH-4 (partial), 5, 6 |
+| Onboarding | Three introduction screens before sign-in: "one clear picture", "track every income stream", "kill zombie leaks". They can be skipped | — |
+| First-run setup | After a new account's first sign-in, three steps: his monthly take-home salary (optional); which sources he earns from, each rated Steady / Varies / Highly volatile; his fixed monthly commitments (Rent pre-filled, quick-add Gym, Internet, Phone, Electricity). Saved to `users/{uid}.onboarding`; each commitment is also logged as this month's committed expense so Safe-to-Spend is right from day one. Can be skipped. **Not built:** a runway buffer | FR-AUTH-4, 5 (FR-AUTH-6 planned) |
 
 ---
 
@@ -49,7 +50,7 @@ Safe-to-Spend per day = (Income Basis − committed spent − goal saving this m
 | Accounts & Channels | His four accounts and their combined balance. The balance can be hidden with the eye icon | FR-ACC-2 |
 | Spending Freeze | Freezes an account for 14 days; it then shows as locked. A purchase from a frozen account shows "will delay your savings goal by ~N days" and offers **Log anyway**. The app never refuses to record it, and the break is counted ("N Freeze Breaks") | FR-ACC-3, 4, 5 |
 | Account number reveal | Account numbers show as `•••• 8472`. Revealing one needs `BiometricPrompt` (fingerprint or device PIN). Copying it for a freelance invoice clears the clipboard after 60 seconds. There is no card number or CVV anywhere in the app | FR-ACC-6, 7 |
-| Seasonal Peak warning | 30 days before Avurudu (14 Apr), Vesak (15 May), Poson (15 Jun), December (25 Dec), or one of his own peak months: "Peak in N days · Set aside LKR X". The amount is last year's excess over his monthly average, or a default buffer (35k / 20k / 15k / 45k) when unknown. **Not built:** a one-tap "set aside" action | FR-LK-4, FR-LK-5 (partial) |
+| Seasonal Peak warning | 30 days before Avurudu (14 Apr), Vesak (15 May), Poson (15 Jun), December (25 Dec), or one of his own peak months: "Peak in N days · Set aside LKR X". The amount is last year's excess over his monthly average, or a default buffer (35k / 20k / 15k / 45k) when unknown. One tap on **Set aside** holds the amount back from Safe-to-Spend until the peak day (an earmark, not an expense), with **Undo** | FR-LK-4, 5 |
 | Quick log | "Log it in one tap": presets from his own most-repeated spends in the last 60 days, topped up with starters (Coffee 850, PickMe 1,450, UberEats 2,400, Dialog Reload 1,000, Mobitel Data 950, Fiber Broadband 4,800, Rent 34,000) | FR-EXP-3, 4, NFR-1 |
 | Share a bank SMS | Sharing a bank SMS to PulseFinance (Commercial Bank, Sampath, HNB, Nations Trust formats) opens a draft expense with the amount, merchant and card last four digits filled in. Uses the share sheet; the app never asks for READ_SMS | FR-EXP-7 |
 | CSV export | Exports income, expenses and goals as CSV through the Android share sheet | FR-DATA-1 |
