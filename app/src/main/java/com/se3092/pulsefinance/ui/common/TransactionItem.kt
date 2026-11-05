@@ -1,5 +1,6 @@
 package com.se3092.pulsefinance.ui.common
 
+import java.util.Locale
 import com.se3092.pulsefinance.domain.model.Currency
 import com.se3092.pulsefinance.domain.model.Expense
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
@@ -46,7 +47,7 @@ fun IncomeStream.toTransactionItem() = TransactionItem(
     title = title,
     subtitle = "${source.displayName} · $clientOrPlatform",
     amountLkr = amountInLkr,
-    originalAmountLabel = if (currency != Currency.LKR) "${currency.name} ${"%,.2f".format(originalAmount)}" else null,
+    originalAmountLabel = if (currency != Currency.LKR) "${currency.name} ${"%,.2f".format(Locale.US, originalAmount)}" else null,
     timestamp = dateReceivedOrExpected,
     incomeSource = source
 )

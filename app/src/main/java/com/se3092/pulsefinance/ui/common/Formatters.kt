@@ -8,17 +8,17 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 
-fun lkr(amount: Double, decimals: Int = 0): String = "LKR ${"%,.${decimals}f".format(amount)}"
+fun lkr(amount: Double, decimals: Int = 0): String = "LKR ${"%,.${decimals}f".format(Locale.US, amount)}"
 
 /** "+ LKR 1,200" / "- LKR 850" for signed cash-flow amounts. */
 fun signedLkr(amount: Double): String = "${if (amount < 0) "-" else "+"} ${lkr(abs(amount))}"
 
 /** Compact amount for small badges: 850, 1.4k, 34k, 1.2M. */
 fun compactAmount(amount: Double): String = when {
-    abs(amount) >= 1_000_000 -> "%.1fM".format(amount / 1_000_000)
-    abs(amount) >= 10_000 -> "%.0fk".format(amount / 1_000)
-    abs(amount) >= 1_000 -> "%.1fk".format(amount / 1_000)
-    else -> "%.0f".format(amount)
+    abs(amount) >= 1_000_000 -> "%.1fM".format(Locale.US, amount / 1_000_000)
+    abs(amount) >= 10_000 -> "%.0fk".format(Locale.US, amount / 1_000)
+    abs(amount) >= 1_000 -> "%.1fk".format(Locale.US, amount / 1_000)
+    else -> "%.0f".format(Locale.US, amount)
 }
 
 fun formatDate(millis: Long, pattern: String = "dd MMM yyyy"): String =

@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import android.os.Build
 import android.Manifest
+import java.util.Locale
 import com.se3092.pulsefinance.ui.theme.pulseColors
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
@@ -505,13 +506,13 @@ fun IncomeScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        text = "${String.format("%.1f%%", state.realizedRatio * 100)} collected",
+                                        text = "${String.format(Locale.US, "%.1f%%", state.realizedRatio * 100)} collected",
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.Medium
                                     )
                                     Text(
-                                        text = "${String.format("%.1f%%", state.pendingRatio * 100)} still owed",
+                                        text = "${String.format(Locale.US, "%.1f%%", state.pendingRatio * 100)} still owed",
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.Medium
@@ -972,7 +973,7 @@ private fun IncomeRecordCard(
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = if (income.currency == Currency.LKR) lkr(income.amountInLkr, 2)
-                        else "${income.currency.name} ${"%,.2f".format(income.originalAmount)}",
+                        else "${income.currency.name} ${"%,.2f".format(Locale.US, income.originalAmount)}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = if (income.isLoss) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
@@ -1018,7 +1019,7 @@ private fun IncomeRecordCard(
                         )
                         Text(
                             text = if (income.currency == Currency.LKR) dateLine
-                            else "1 ${income.currency.name} = ${"%,.2f".format(income.exchangeRateToLkr)} LKR · $dateLine",
+                            else "1 ${income.currency.name} = ${"%,.2f".format(Locale.US, income.exchangeRateToLkr)} LKR · $dateLine",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
