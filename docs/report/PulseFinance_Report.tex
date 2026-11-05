@@ -208,7 +208,7 @@ PulseFinance is a native Android application that gives one person an honest mon
 \hline
 \textbf{Section} & \textbf{Content}\\
 \hline
-\ref{sec:requirements} Requirements analysis & Scenario analysis, failed-tool analysis, problem statements, 73 requirements with status, constraints, traceability\\
+\ref{sec:requirements} Requirements analysis & Scenario analysis, failed-tool analysis, problem statements, 82 requirements with status, constraints, traceability\\
 \ref{sec:architecture} Architecture & Layers, the MVVM diagram, offline-first data flow, dependency injection\\
 \ref{sec:schema} Firestore schema & Collections, fields with Kavindu's data as examples, rules, local cache, ER model\\
 \ref{sec:wireframes} Annotated wireframes & Four screens designed in Figma, each element annotated with the problem it answers\\
@@ -290,15 +290,18 @@ Priorities use MoSCoW (M, S, C). Status reflects the code on \code{main} at the 
 \textbf{ID} & \textbf{Requirement} & \textbf{Pri} & \textbf{Status}\\
 \hline
 \endhead
-\multicolumn{4}{@{}l}{\textbf{\textsf{Identity and onboarding}}}\\
+\multicolumn{4}{|l|}{\textbf{\textsf{Identity and onboarding}}}\\
 FR-AUTH-1 & Register and sign in with email and password (Firebase Authentication). & M & Done\\
 FR-AUTH-2 & Sign in with a Google account. & S & Done\\
 FR-AUTH-3 & Every record stored under the signed-in user's ID, so the same data appears on any device. & M & Done\\
 FR-AUTH-4 & First-run setup captures salary, active Income Sources and fixed monthly commitments (e.g.\ rent \lkr{34,000}) in three steps. & M & Done\\
 FR-AUTH-5 & Setup records each source's expected variability (steady, varies, highly volatile). & C & Done\\
-FR-AUTH-6 & Setup lets him set an emergency-runway buffer of 1--6 months of committed costs. & C & Planned\\
+FR-AUTH-6 & Setup lets him set an emergency-runway buffer of 1--6 months of committed costs. & C & Done\\
 FR-AUTH-7 & A debug-only demo drawer fills credentials for a pre-seeded account; credentials come from build configuration. & M & Done\\
-\multicolumn{4}{@{}l}{\textbf{\textsf{Income}}}\\
+FR-AUTH-8 & Reset a forgotten password by email, answering the same way whether or not the address has an account. & S & Done\\
+FR-AUTH-9 & Delete his account: after re-authenticating, every record, his sign-in and the on-device cache are erased (ADR-0002). & S & Done\\
+FR-AUTH-10 & A verification email is sent when an email account is created; verification is not required to use the app. & C & Done\\
+\multicolumn{4}{|l|}{\textbf{\textsf{Income}}}\\
 FR-INC-1 & Each entry records source, title, client or platform, original amount, currency (LKR, USD, USDT, ETH) and date. & M & Done\\
 FR-INC-2 & The exchange rate used is stored with the entry and never recomputed (ADR-0001). & M & Done\\
 FR-INC-3 & Freelance income can be a Pending Invoice with client and due date, marked received in one tap. & M & Done\\
@@ -308,7 +311,9 @@ FR-INC-6 & For a foreign-currency entry he can type the LKR his bank actually cr
 FR-INC-7 & A crypto trade is a Crypto Trading Result: positive for a profit, negative for a loss. & M & Done\\
 FR-INC-8 & The Crypto year-to-date net is shown. & M & Done\\
 FR-INC-9 & Realised income and pending/overdue amounts are shown separately for the month, by source. & M & Done\\
-\multicolumn{4}{@{}l}{\textbf{\textsf{Expenses}}}\\
+FR-INC-10 & A recorded income entry can be corrected, keeping its stored rate and date unless he changes them (ADR-0001). & S & Done\\
+FR-INC-11 & Monthly rupee income not yet recorded this month is offered as a one-tap suggestion; nothing is added without his tap. & C & Done\\
+\multicolumn{4}{|l|}{\textbf{\textsf{Expenses}}}\\
 FR-EXP-1 & Each expense records amount (LKR), category, committed/discretionary flag, account, time and note. & M & Done\\
 FR-EXP-2 & The category proposes committed or discretionary; he can flip it in one tap. & M & Done\\
 FR-EXP-3 & One-tap Sri Lankan presets (coffee, PickMe, UberEats, rent). & M & Done\\
@@ -316,14 +321,15 @@ FR-EXP-4 & Presets include Dialog and Mobitel reloads and data packages. & S & D
 FR-EXP-5 & Expenses can be attributed to any account, including cash and the secondary auto-debit account. & M & Done\\
 FR-EXP-6 & An expense saved offline appears immediately and syncs on reconnection. & M & Done\\
 FR-EXP-7 & A bank SMS shared through the share sheet becomes a draft expense (amount, merchant, card last four digits), without READ\_SMS. & S & Done\\
-\multicolumn{4}{@{}l}{\textbf{\textsf{Subscriptions}}}\\
+FR-EXP-8 & A logged expense's amount, title, category, date and account can be corrected from the Dashboard and the Analytics ledger. & S & Done\\
+\multicolumn{4}{|l|}{\textbf{\textsf{Subscriptions}}}\\
 FR-SUB-1 & Recurring subscriptions are detected by grouping subscription-category expenses by merchant over 120 days. & M & Done\\
 FR-SUB-2 & Each shows its monthly and annual cost and the account it is charged to. & M & Done\\
 FR-SUB-3 & He records Keep or Cancel; a charge after Cancel flags it as ``still charging''. & M & Done\\
 FR-SUB-4 & After a charge: ``Did you use this this month?''; two consecutive Nos set the risk to High. & S & Done\\
-FR-SUB-5 & For app-linked subscriptions (Netflix, Spotify), usage statistics show when the app was last opened and feed the risk. & S & Partial\\
+FR-SUB-5 & For app-linked subscriptions (Netflix, Spotify), usage statistics show when the app was last opened and feed the risk. & S & Done\\
 FR-SUB-6 & Results are grouped by account, with the secondary account highlighted. & S & Done\\
-\multicolumn{4}{@{}l}{\textbf{\textsf{Savings goal}}}\\
+\multicolumn{4}{|l|}{\textbf{\textsf{Savings goal}}}\\
 FR-GOAL-1 & Set a goal with title, LKR target and date (for Kavindu: MacBook Pro M4, \lkr{490,000}, 12 months). & M & Done\\
 FR-GOAL-2 & The required monthly and daily saving is calculated. & M & Done\\
 FR-GOAL-3 & The actual savings rate is calculated: realised income minus spending for each 30-day block of the last 90 days, averaged over the blocks that have records, so a logging gap is never counted as zero saving. & M & Done\\
@@ -331,21 +337,21 @@ FR-GOAL-4 & The arrival date is projected at the actual rate, stating whether he
 FR-GOAL-5 & Any amount can be translated into ``days of goal funded'' (opportunity cost). & S & Done\\
 FR-GOAL-6 & An optional USD reference price makes the LKR target follow the daily rate; the change is shown. & S & Done\\
 FR-GOAL-7 & Quick-add boosters (+\lkr{5,000} / 10,000 / 25,000) move a windfall into the goal. & C & Done\\
-\multicolumn{4}{@{}l}{\textbf{\textsf{Dashboard}}}\\
+\multicolumn{4}{|l|}{\textbf{\textsf{Dashboard}}}\\
 FR-DASH-1 & Safe-to-Spend Allowance per day for the rest of the month. & M & Done\\
 FR-DASH-2 & Pending and overdue invoices are never counted as spendable. & M & Done\\
 FR-DASH-3 & The three-month average in the Income Basis excludes crypto profits but keeps crypto losses. & M & Done\\
 FR-DASH-4 & The month's committed versus discretionary split as a bar with amounts. & M & Done\\
 FR-DASH-5 & An overdue-invoice banner with client and amount and one-tap ``mark received''. & M & Done\\
 FR-DASH-6 & Figures update in real time from Firestore listeners. & M & Done\\
-\multicolumn{4}{@{}l}{\textbf{\textsf{Analytics and data}}}\\
+\multicolumn{4}{|l|}{\textbf{\textsf{Analytics and data}}}\\
 FR-ANA-1 & Category donut for the period, discretionary distinguishable from committed. & M & Done\\
 FR-ANA-2 & Week and month periods. & M & Done\\
 FR-ANA-3 & Daily spending bars with the peak day highlighted. & S & Done\\
 FR-ANA-4 & Day and year periods. & C & Done\\
 FR-ANA-5 & Transactions searchable by keyword and filterable by account, category and date. & C & Done\\
 FR-DATA-1 & Export all income, expenses and goals to CSV. & S & Done\\
-\multicolumn{4}{@{}l}{\textbf{\textsf{Accounts and Spending Freeze}}}\\
+\multicolumn{4}{|l|}{\textbf{\textsf{Accounts and Spending Freeze}}}\\
 FR-ACC-1 & Accounts of type Primary Bank, Secondary Bank (auto-debit), Cash and Crypto Exchange. & M & Done\\
 FR-ACC-2 & Combined balance across his recorded accounts. & S & Done\\
 FR-ACC-3 & A Spending Freeze on an account until a chosen date; the account shows as locked. & S & Done\\
@@ -353,13 +359,17 @@ FR-ACC-4 & Spending from a frozen account shows the cost in goal days and offers
 FR-ACC-5 & Freeze Breaks are counted and shown. & S & Done\\
 FR-ACC-6 & Account numbers masked (\textbullet\textbullet\textbullet\textbullet{} 4521), revealed only after biometric or device-PIN authentication. & S & Done\\
 FR-ACC-7 & A revealed number can be copied for a freelance invoice; the clipboard is cleared after 60 seconds. & S & Done\\
-\multicolumn{4}{@{}l}{\textbf{\textsf{Sri Lankan context}}}\\
+FR-ACC-8 & Accounts can be added, renamed, retyped and deleted; deleting one keeps its expenses, and at least one account remains. & S & Done\\
+FR-ACC-9 & He sets what each account holds, as his own record; a balance may be negative for a card he owes on. & S & Done\\
+\multicolumn{4}{|l|}{\textbf{\textsf{Sri Lankan context}}}\\
 FR-LK-1 & Payslip: gross salary to employee EPF (8\%), APIT and take-home; all editable. & M & Done\\
 FR-LK-2 & APIT tax bands read from Firestore configuration, not compiled into the app. & M & Done\\
 FR-LK-3 & Accumulating EPF balance (employee 8\% + employer 12\%) shown as savings he owns. & S & Done\\
 FR-LK-4 & Seasonal Peaks (Avurudu, Vesak, Poson, December) plus, after 12 months, his own months $\geq$20\% above average. & S & Done\\
 FR-LK-5 & 30 days before a peak: a warning with last year's excess and a one-tap ``set aside''. & S & Done\\
 FR-LK-6 & Amounts in LKR with separators; foreign amounts show the original currency beside the LKR value. & M & Done\\
+\multicolumn{4}{|l|}{\textbf{\textsf{Notifications}}}\\
+FR-NTF-1 & At most one notification a day for an overdue invoice, naming the work, amount and lateness; off until he opts in, asked for only once an invoice is overdue (ADR-0003). & C & Done\\
 \hline
 \end{longtable}
 
@@ -374,17 +384,17 @@ FR-LK-6 & Amounts in LKR with separators; foreign amounts show the original curr
 \hline
 \endhead
 NFR-1 & Capture speed & Logging a preset expense is fast enough to do at the point of purchase. & $\leq$3 taps, $\leq$5 s & Done\\
-NFR-2 & Gap tolerance & Logging gaps are never shown as zero spending, broken streaks or failure; averages only over periods with data. & No penalty, streak reset or ``0 spent'' for unrecorded days & Partial\\
+NFR-2 & Gap tolerance & Logging gaps are never shown as zero spending, broken streaks or failure; averages only over periods with data. & No penalty, streak reset or ``0 spent'' for unrecorded days & Done\\
 NFR-3 & Offline & All screens work offline from cached data; offline writes sync on reconnection. & Sync $\leq$10 s after reconnection & Done\\
 NFR-4 & Real-time & Changes from another device appear without a refresh. & $\leq$2 s online & Done\\
 NFR-5 & Data isolation & Each user can access only \code{users/{uid}}, enforced by Firestore rules. & No cross-user access & Done\\
 NFR-6 & Financial accuracy & Original amount, currency and rate kept per income entry; totals derivable from stored records. & Totals unchanged after a rate change & Done\\
 NFR-7 & Compatibility & Installs and runs on Android 8.0+, starts quickly. & minSdk 26, targetSdk 34 & Done\\
-NFR-8 & Accessibility & Status never by colour alone; text usable at large font sizes. & Icon or label per status; 200\% font scale & Planned\\
+NFR-8 & Accessibility & Status never by colour alone; text usable at large font sizes. & Icon or label per status; 200\% font scale & Done\\
 NFR-9 & Robustness & No screen crashes or appears blank with no data, partial data or a network error. & Designed empty state everywhere & Done\\
 NFR-10 & Sensitive display & Account numbers masked by default, revealed only after a biometric check. & Clipboard cleared $\leq$60 s & Done\\
 NFR-11 & Portability & Data exportable in an open format. & CSV opens in Sheets/Excel & Done\\
-NFR-12 & Privacy & Minimum permissions; optional ones requested in context with an explanation. & No READ\_SMS; usage access in context & Partial\\
+NFR-12 & Privacy & Minimum permissions; optional ones requested in context with an explanation. & No READ\_SMS; usage access in context & Done\\
 \hline
 \end{longtable}
 
@@ -425,14 +435,14 @@ Sinhala/Tamil UI, ``lakhs'' formatting & Kavindu works in English and reads LKR 
 \textbf{Problem} & \textbf{Requirements that address it}\\
 \hline
 \prob{P1} Unknown real income & FR-INC-1, FR-INC-9, FR-DASH-1, FR-LK-1, FR-AUTH-4\\
-\prob{P2} Forgotten invoices & FR-INC-3, FR-INC-4, FR-DASH-5, FR-ANA-5, FR-ACC-7\\
+\prob{P2} Forgotten invoices & FR-INC-3, FR-INC-4, FR-DASH-5, FR-ANA-5, FR-ACC-7, FR-NTF-1\\
 \prob{P3} AdSense not recorded as received & FR-INC-2, FR-INC-5, FR-INC-6, NFR-6\\
 \prob{P4} No net crypto position & FR-INC-7, FR-INC-8, FR-DASH-3\\
-\prob{P5} Fragmented spending channels & FR-EXP-5, FR-EXP-7, FR-ACC-1, FR-ACC-2\\
+\prob{P5} Fragmented spending channels & FR-EXP-5, FR-EXP-7, FR-ACC-1, FR-ACC-2, FR-ACC-8, FR-ACC-9\\
 \prob{P6} Forgotten subscriptions & FR-SUB-1 to FR-SUB-6\\
 \prob{P7} No committed/discretionary view & FR-EXP-2, FR-DASH-4, FR-ANA-1, FR-ANA-2\\
 \prob{P8} Unknown required saving rate & FR-GOAL-2, FR-GOAL-3, FR-GOAL-4, FR-GOAL-6\\
-\prob{P9} Gaps cause abandonment & NFR-1, NFR-2, NFR-9, FR-DATA-1\\
+\prob{P9} Gaps cause abandonment & NFR-1, NFR-2, NFR-9, FR-DATA-1, FR-INC-10, FR-INC-11, FR-EXP-8\\
 \prob{P10} Payslip not understood & FR-LK-1, FR-LK-2, FR-LK-3\\
 \prob{P11} Impulsive spending & FR-ACC-3 to FR-ACC-5, FR-GOAL-5, FR-LK-4, FR-LK-5\\
 \hline
@@ -863,13 +873,15 @@ Each decision is stated with the part of Kavindu's scenario that forced it, the 
 \label{sec:status}
 
 \subsection{Requirement status}
+All 82 requirements are implemented on \code{main}: the 73 derived from the scenario, and nine added after an audit of the app on 5 November (account security \req{FR-AUTH-8} to \req{FR-AUTH-10}, correcting records \req{FR-INC-10}, \req{FR-EXP-8}, a monthly income suggestion \req{FR-INC-11}, managing accounts \req{FR-ACC-8}, \req{FR-ACC-9}, and the overdue-invoice reminder \req{FR-NTF-1}). Every one is closed on the project board by the pull request that delivered it.
+
 \begin{tabularx}{\textwidth}{|l|r|L|}
 \hline
-\textbf{Status} & \textbf{Count} & \textbf{Requirements}\\
+\textbf{Priority} & \textbf{Done} & \textbf{Notes}\\
 \hline
-Done & 68 & All requirements not listed below\\
-Partial & 3 & FR-SUB-5 and NFR-12 (usage access is not yet requested in context; app-usage risk works once access is granted in Settings); NFR-2 (gap tolerance verified for the savings rate and seasonal averages, not yet for every view)\\
-Planned & 2 & FR-AUTH-6 (emergency-runway buffer); NFR-8 (accessibility at 200\% font scale and colour-independent status not yet verified)\\
+Must & all & Including NFR-2 (gaps shown as no data, not zero) and NFR-12 (usage access asked for in context)\\
+Should & all & Including FR-SUB-5 (app last opened), NFR-8 (status labels and large-font layouts), FR-AUTH-8, FR-AUTH-9\\
+Could & all & Including FR-AUTH-6 (emergency-runway buffer), FR-AUTH-10, FR-NTF-1\\
 \hline
 \end{tabularx}
 
@@ -928,7 +940,9 @@ Pull requests & 38 & 32 merged & 23 close issues with \texttt{Closes \#N}; Hesar
 \subsection{Known limitations}
 \begin{itemize}
   \item The Room cache is protected by the app sandbox but not encrypted.
-  \item Accounts are the four created on first sign-in; they cannot yet be renamed, added or removed, and an account number cannot be entered in the app.
+  \item About 200 user-visible strings are written in the Kotlin code rather than \code{strings.xml}, which would block a Sinhala or Tamil translation.
+  \item The performance targets (\req{NFR-1}: a preset in 3 taps and 5 seconds) have not yet been measured on a physical device.
+  \item ViewModel tests cover Income and Dashboard; Setup, Goal and Auth have none yet.
   \item Google sign-in in release builds needs the release key's SHA-1 registered in Firebase.
 \end{itemize}
 
@@ -947,6 +961,6 @@ Shazaan & QA unit tests for goal pacing, opportunity cost and currency conversio
 
 % ============================================================================
 \section{Conclusion}
-Kavindu's problem was never a lack of discipline; it was that every tool he tried misrepresented his financial life -- one income, one currency, one card, fragile formulas -- until he stopped trusting it. PulseFinance answers each of those failures with a specific design decision: income recorded at what actually arrived and frozen there, unpaid invoices kept out of what he can spend, every channel his money leaves through in scope, subscriptions surfaced from his own charges, and a goal expressed as a daily pace compared with what he really saves. The architecture -- an offline-first MVVM app over a user-scoped Firestore schema -- exists to keep those numbers fast, private and trustworthy enough that he keeps opening the app. Sixty-eight of seventy-three requirements are implemented; the remaining five are known, small and tracked.
+Kavindu's problem was never a lack of discipline; it was that every tool he tried misrepresented his financial life -- one income, one currency, one card, fragile formulas -- until he stopped trusting it. PulseFinance answers each of those failures with a specific design decision: income recorded at what actually arrived and frozen there, unpaid invoices kept out of what he can spend, every channel his money leaves through in scope, subscriptions surfaced from his own charges, and a goal expressed as a daily pace compared with what he really saves. The architecture -- an offline-first MVVM app over a user-scoped Firestore schema -- exists to keep those numbers fast, private and trustworthy enough that he keeps opening the app. All eighty-two requirements are implemented, including the nine added after an audit of the app on 5 November.
 
 \end{document}
