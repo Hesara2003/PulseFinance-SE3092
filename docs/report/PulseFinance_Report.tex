@@ -6,9 +6,12 @@
 
 % ---- Fill these in before submitting ----------------------------------------
 \newcommand{\IDHesara}{IT\,XXXXXXXX}
-\newcommand{\IDSandali}{IT\,XXXXXXXX}
+\newcommand{\IDSandali}{IT23651456}
 \newcommand{\IDShazaan}{IT\,XXXXXXXX}
 \newcommand{\SubmissionDate}{November 2026}
+\newcommand{\NameHesara}{Hesara Perera}
+\newcommand{\NameSandali}{Sandali J.S}
+\newcommand{\NameShazaan}{Shazaan}
 % -----------------------------------------------------------------------------
 
 \usepackage[T1]{fontenc}
@@ -144,40 +147,32 @@
 % ---- Title page -------------------------------------------------------------
 \begin{titlepage}
 \thispagestyle{empty}
-\begin{tikzpicture}[remember picture,overlay]
-  \fill[pfgreen] (current page.north west) rectangle ([yshift=-7.2cm]current page.north east);
-  \fill[pfgreendark] ([yshift=-7.2cm]current page.north west) rectangle ([yshift=-7.5cm]current page.north east);
-\end{tikzpicture}
-
-\vspace*{0.4cm}
-{\color{white}\sffamily
-{\large SE3092 Platform Based Development \textperiodcentered{} Assignment 01}\\[1.2cm]
-{\fontsize{38}{42}\selectfont\bfseries PulseFinance}\\[0.4cm]
-{\Large A personal finance app for one person's real financial life}\par}
-
-\vspace{2.6cm}
-{\sffamily\large\bfseries\color{pftext} Technical Report}\\[0.2cm]
-{\sffamily\color{pfmuted} Requirements analysis \textperiodcentered{} Firestore schema \textperiodcentered{} MVVM architecture \textperiodcentered{} Annotated wireframes \textperiodcentered{} Design decisions}
-
+\centering\sffamily
+\vspace*{0.6cm}
+\includegraphics[width=4.6cm]{figures/sliit-logo.png}\par
 \vspace{1.4cm}
-\begin{tabular}{@{}p{4.2cm}p{4cm}@{}}
+{\Large\bfseries BSc (Hons) in Computer Science\par}
+\vspace{0.25cm}
+{\Large\bfseries Year 3, Semester 2\par}
+\vspace{1.0cm}
+{\Large\bfseries SE3092 : Platform Based Development\par}
+\vspace{0.35cm}
+{\large Assignment 01 \textendash{} Technical Report\par}
+\vspace{1.2cm}
+{\fontsize{30}{36}\selectfont\bfseries PulseFinance\par}
+\vspace{1.6cm}
+{\large
+\begin{tabular}{ll}
 \toprule
-\sffamily\bfseries Team member & \sffamily\bfseries Student ID\\
+\textbf{Name} & \textbf{Registration number}\\
 \midrule
-Hesara Perera & \IDHesara\\
-Sandali & \IDSandali\\
-Shazaan & \IDShazaan\\
+\NameHesara & \IDHesara\\
+\NameSandali & \IDSandali\\
+\NameShazaan & \IDShazaan\\
 \bottomrule
-\end{tabular}
-
+\end{tabular}\par}
 \vfill
-\begin{tabularx}{\textwidth}{@{}lL@{}}
-\sffamily\bfseries Built for & Kavindu Silva, 25, junior software engineer, Colombo\\
-\sffamily\bfseries Platform & Android 8.0+ (minSdk 26, targetSdk 34), Kotlin, Jetpack Compose\\
-\sffamily\bfseries Backend & Firebase Authentication, Cloud Firestore (\code{finance-app-se3092})\\
-\sffamily\bfseries Repository & \code{github.com/Hesara2003/PulseFinance-SE3092}\\
-\sffamily\bfseries Date & \SubmissionDate\\
-\end{tabularx}
+{\large \SubmissionDate\par}
 \end{titlepage}
 
 % ---- Summary + contents -----------------------------------------------------
