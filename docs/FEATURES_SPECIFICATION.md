@@ -94,7 +94,7 @@ Safe-to-Spend per day = (Income Basis − committed spent − goal saving this m
 |---|---|---|
 | Set the goal | Title, LKR target, saved so far, deadline in months, optional USD reference price. The editor pre-fills a 12-month deadline and a USD 1,599 price; for Kavindu that is the MacBook Pro M4 at LKR 490,000 | FR-GOAL-1 |
 | Required pace | From LKR 11,200 saved: LKR 478,800 left over 12 months ≈ **LKR 39,900/month, LKR 1,330/day** | FR-GOAL-2 |
-| Actual savings rate | "Received income minus spending, averaged over your last 90 days", or since his first record if that is shorter | FR-GOAL-3, NFR-2 |
+| Actual savings rate | Received income minus spending for each 30-day block of the last 90 days, averaged over the blocks that have records. A block with nothing logged is a Logging Gap and is skipped, not counted as zero | FR-GOAL-3, NFR-2 |
 | Arrival projection | Projected arrival date at his actual rate, and whether he is on pace or behind, by how much | FR-GOAL-4 |
 | Opportunity Cost Translator | His top three discretionary categories from the last 30 days, each trimmed by a quarter, shown as "+N days" of MacBook pace | FR-GOAL-5 |
 | Frozen-account reminder | Spending from a frozen account is priced in goal days (see §2) | FR-ACC-4 |
