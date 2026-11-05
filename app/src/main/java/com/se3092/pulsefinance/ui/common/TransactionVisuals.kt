@@ -3,11 +3,6 @@ package com.se3092.pulsefinance.ui.common
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CorporateFare
-import androidx.compose.material.icons.filled.DeliveryDining
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.LocalCafe
-import androidx.compose.material.icons.filled.LocalGroceryStore
-import androidx.compose.material.icons.filled.LocalTaxi
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LaptopMac
@@ -19,8 +14,10 @@ import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material.icons.filled.Subscriptions
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Token
+import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.se3092.pulsefinance.R
 import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.IncomeSource
 import com.se3092.pulsefinance.ui.theme.FoodColor
@@ -57,19 +54,48 @@ fun transactionVisual(item: TransactionItem): TransactionVisual =
         ?: TransactionVisual(Icons.Default.Payments, NeoCardLow, NeoTextSecondary)
 
 /**
- * Icon for a one-tap preset: the merchant's own glyph when the title makes it obvious
- * (a cup for coffee, a taxi for PickMe), otherwise the category's icon.
+ * Illustrated icon for a one-tap preset, drawn in the style of the Storyset illustrations:
+ * the merchant's own picture when the title makes it obvious (a cup for coffee, a taxi for
+ * PickMe), otherwise the category's.
  */
-fun presetVisual(title: String, category: ExpenseCategory): TransactionVisual {
-    val base = expenseCategoryVisual(category)
+@DrawableRes
+fun presetIllustration(title: String, category: ExpenseCategory): Int {
     val t = title.lowercase()
-    val icon = when {
-        listOf("coffee", "latte", "cafe", "café", "tea").any { it in t } -> Icons.Default.LocalCafe
-        listOf("ubereats", "uber eats", "pickme food", "delivery").any { it in t } -> Icons.Default.DeliveryDining
-        listOf("pickme", "uber", "taxi", "tuk", "ride").any { it in t } -> Icons.Default.LocalTaxi
-        listOf("grocer", "keells", "cargills", "supermarket").any { it in t } -> Icons.Default.LocalGroceryStore
-        listOf("gym", "fitness").any { it in t } -> Icons.Default.FitnessCenter
-        else -> base.icon
+    fun has(vararg words: String) = words.any { it in t }
+    return when {
+        has("coffee", "latte", "cafe", "café", "tea") -> R.drawable.ic_preset_coffee
+        has("ubereats", "uber eats", "pickme food", "delivery") -> R.drawable.ic_preset_delivery
+        has("pickme", "uber", "taxi", "tuk", "ride", "bus", "train") -> R.drawable.ic_preset_ride
+        has("grocer", "keells", "cargills", "supermarket", "arpico") -> R.drawable.ic_preset_groceries
+        has("gym", "fitness") -> R.drawable.ic_preset_gym
+        has("broadband", "fiber", "fibre", "wifi", "internet", "slt") -> R.drawable.ic_preset_wifi
+        has("dialog", "mobitel", "airtel", "hutch", "reload", "data", "phone", "mobile") -> R.drawable.ic_preset_phone
+        has("netflix", "spotify", "youtube", "prime", "disney") -> R.drawable.ic_preset_subscription
+        has("rent", "boarding", "annex") -> R.drawable.ic_preset_house
+        else -> when (category) {
+            ExpenseCategory.RENT -> R.drawable.ic_preset_house
+            ExpenseCategory.UTILITIES -> R.drawable.ic_preset_bills
+            ExpenseCategory.SUBSCRIPTION -> R.drawable.ic_preset_subscription
+            ExpenseCategory.FOOD_DINING -> R.drawable.ic_preset_food
+            ExpenseCategory.TRANSPORT -> R.drawable.ic_preset_ride
+            ExpenseCategory.TECH_HARDWARE -> R.drawable.ic_preset_tech
+            ExpenseCategory.ENTERTAINMENT -> R.drawable.ic_preset_fun
+            ExpenseCategory.OTHER -> R.drawable.ic_preset_shopping
+        }
     }
-    return base.copy(icon = icon)
 }
+
+/** Illustrated icon for an income source, in the same style as [presetIllustration]. */
+@DrawableRes
+fun incomeSourceIllustration(source: IncomeSource): Int = when (source) {
+    IncomeSource.SALARY -> R.drawable.ic_preset_salary
+    IncomeSource.FREELANCE -> R.drawable.ic_preset_tech
+    IncomeSource.ADSENSE -> R.drawable.ic_preset_adsense
+    IncomeSource.CRYPTO -> R.drawable.ic_preset_crypto
+}
+
+/** Illustrated icon for a ledger row: the income source's, or the expense's as for presets. */
+@DrawableRes
+fun transactionIllustration(item: TransactionItem): Int =
+    item.incomeSource?.let(::incomeSourceIllustration)
+        ?: presetIllustration(item.title, item.expenseCategory ?: ExpenseCategory.OTHER)

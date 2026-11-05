@@ -1,7 +1,8 @@
 package com.se3092.pulsefinance.ui.screens.dashboard
 
-import com.se3092.pulsefinance.ui.common.presetVisual
-import com.se3092.pulsefinance.ui.common.TransactionVisual
+import com.se3092.pulsefinance.ui.common.presetIllustration
+import com.se3092.pulsefinance.ui.common.transactionIllustration
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -89,7 +90,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.se3092.pulsefinance.ui.common.compactAmount
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.signedLkr
-import com.se3092.pulsefinance.ui.common.transactionVisual
 import com.se3092.pulsefinance.ui.components.CommittedVsDiscretionaryBar
 import com.se3092.pulsefinance.ui.components.ExpenseItemCard
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
@@ -445,7 +445,8 @@ fun DashboardScreen(
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        // Top, so the shorter "Add" tile (no amount line) lines up with the presets
+                        verticalAlignment = Alignment.Top
                     ) {
                         // "+ Add" circular button
                         Column(
@@ -478,7 +479,7 @@ fun DashboardScreen(
                         // The user's own repeated spends (starter templates until habits emerge)
                         state.presets.forEach { preset ->
                             QuickPresetBadge(
-                                visual = presetVisual(preset.title, preset.category),
+                                illustration = presetIllustration(preset.title, preset.category),
                                 label = preset.title,
                                 amount = compactAmount(preset.amountLkr)
                             ) {
@@ -533,15 +534,12 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             state.recentTransactions.forEach { tx ->
-                                val visual = transactionVisual(tx)
                                 TransactionSquareCard(
                                     currency = tx.originalAmountLabel?.substringBefore(' ') ?: "LKR",
                                     amount = tx.originalAmountLabel?.substringAfter(' ')
                                         ?: "%,.0f".format(kotlin.math.abs(tx.amountLkr)),
                                     title = tx.title,
-                                    icon = visual.icon,
-                                    iconContainerColor = visual.container,
-                                    iconColor = visual.tint,
+                                    illustration = transactionIllustration(tx),
                                     isIncoming = tx.isIncoming
                                 )
                             }
@@ -864,7 +862,7 @@ private fun SetGoalPromptCard(onClick: () -> Unit) {
 
 @Composable
 fun QuickPresetBadge(
-    visual: TransactionVisual,
+    @DrawableRes illustration: Int,
     label: String,
     amount: String,
     onClick: () -> Unit
@@ -879,19 +877,14 @@ fun QuickPresetBadge(
             modifier = Modifier
                 .size(56.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(visual.container)
+                .background(NeoCardLow),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = visual.icon,
-                    contentDescription = null,
-                    tint = visual.tint,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            Image(
+                painter = painterResource(illustration),
+                contentDescription = null,
+                modifier = Modifier.size(46.dp)
+            )
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -917,9 +910,7 @@ fun TransactionSquareCard(
     currency: String,
     amount: String,
     title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    iconContainerColor: Color,
-    iconColor: Color,
+    @DrawableRes illustration: Int,
     isIncoming: Boolean
 ) {
     Surface(
@@ -986,20 +977,11 @@ fun TransactionSquareCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clip(CircleShape)
-                        .background(iconContainerColor),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = iconColor,
-                        modifier = Modifier.size(13.dp)
-                    )
-                }
+                Image(
+                    painter = painterResource(illustration),
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                )
                 Text(
                     text = title,
                     fontSize = 11.5.sp,
