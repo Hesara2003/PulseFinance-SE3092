@@ -41,7 +41,7 @@ There is no `profile` subcollection. Small per-user settings live as fields on t
 |---|---|---|
 | `subscriptionReviews.<key>` | Keep / Cancel decision per detected subscription | Subscription audit (FR-SUB-3) |
 | `seasonalReserves.<peakKey>` | `amountLkr`, `setAsideAt`, `peakDateMillis` for each "Set aside" | Seasonal Peak warning (FR-LK-5) |
-| `onboarding` | `monthlySalaryLkr`, `incomeSources` (source → `LOW` / `MODERATE` / `VOLATILE`), `fixedCommitments`, `completedAt` | First-run setup (FR-AUTH-4, 5) |
+| `onboarding` | `monthlySalaryLkr`, `incomeSources` (source → `LOW` / `MODERATE` / `VOLATILE`), `fixedCommitments`, `completedAt`, `runwayMonths` (1 to 6; absent until chosen), `runwaySavedLkr` | First-run setup (FR-AUTH-4, 5, 6); the Today safety buffer card updates only the two runway fields with a merge write (FR-AUTH-6) |
 
 ### 2.1 `users/{uid}/accounts/{accountId}`: `AccountDto`
 
