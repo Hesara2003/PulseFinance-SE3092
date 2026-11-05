@@ -7,6 +7,8 @@ import com.se3092.pulsefinance.ui.common.shareCsv
 import androidx.compose.foundation.ExperimentalFoundationApi
 import com.se3092.pulsefinance.ui.components.DeleteTransactionDialog
 import com.se3092.pulsefinance.ui.screens.auth.GoogleIdTokenRequester
+import com.se3092.pulsefinance.ui.components.ExpenseActionsDialog
+import com.se3092.pulsefinance.ui.screens.expense.ExpenseEditorSheet
 import com.se3092.pulsefinance.ui.common.TransactionItem
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -32,6 +34,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.NorthEast
@@ -103,8 +106,11 @@ fun DashboardScreen(
     onSignOut: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val accountEditor by viewModel.accountEditor.collectAsStateWithLifecycle()
     var isBalanceMasked by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<TransactionItem?>(null) }
+    var pendingActions by remember { mutableStateOf<TransactionItem?>(null) }
+    val expenseEditor by viewModel.editingExpense.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val security by viewModel.accountSecurity.collectAsStateWithLifecycle()
@@ -236,7 +242,9 @@ fun DashboardScreen(
                     onToggleFreeze = { account ->
                         if (account.isFrozen) viewModel.unfreezeAccount(account)
                         else viewModel.freezeAccount(account, 14)
-                    }
+                    },
+                    onAddAccount = { viewModel.openAccountEditor() },
+                    onEditAccount = viewModel::openAccountEditor
                 )
             }
 
@@ -278,7 +286,7 @@ fun DashboardScreen(
                 LatelySection(
                     transactions = state.recentTransactions,
                     onViewAll = onNavigateToAnalytics,
-                    onLongPressExpense = { tx -> pendingDelete = tx }
+                    onLongPressExpense = { tx -> pendingActions = tx }
                 )
             }
 
@@ -336,6 +344,31 @@ fun DashboardScreen(
             )
         }
 
+        pendingActions?.let { tx ->
+            ExpenseActionsDialog(
+                transaction = tx,
+                onEdit = {
+                    tx.expenseId?.let(viewModel::startEditExpense)
+                    pendingActions = null
+                },
+                onDelete = {
+                    pendingDelete = tx
+                    pendingActions = null
+                },
+                onDismiss = { pendingActions = null }
+            )
+        }
+
+        expenseEditor?.let { editor ->
+            ExpenseEditorSheet(
+                state = editor,
+                accounts = state.accounts,
+                onChange = viewModel::onExpenseEditChange,
+                onSave = viewModel::saveExpenseEdit,
+                onDismiss = viewModel::dismissExpenseEdit
+            )
+        }
+
         pendingDelete?.let { tx ->
             DeleteTransactionDialog(
                 transaction = tx,
@@ -344,6 +377,17 @@ fun DashboardScreen(
                     pendingDelete = null
                 },
                 onDismiss = { pendingDelete = null }
+            )
+        }
+
+        accountEditor?.let { editor ->
+            AccountEditorSheet(
+                state = editor,
+                onChange = viewModel::onAccountEditorChange,
+                onSave = viewModel::saveAccountEditor,
+                onRequestDelete = viewModel::requestDeleteAccount,
+                onConfirmDelete = viewModel::confirmDeleteAccount,
+                onDismiss = viewModel::dismissAccountEditor
             )
         }
 
@@ -586,7 +630,7 @@ fun TransactionSquareCard(
             .then(
                 if (onLongClick != null) Modifier.combinedClickable(
                     onClickLabel = null,
-                    onLongClickLabel = "Delete $title",
+                    onLongClickLabel = "Edit or delete $title",
                     onClick = {},
                     onLongClick = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -825,7 +869,8 @@ internal fun AccountCardItem(
     isRevealed: Boolean,
     onRevealClick: () -> Unit,
     onCopyClick: () -> Unit,
-    onFreezeToggle: () -> Unit
+    onFreezeToggle: () -> Unit,
+    onEditClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier
@@ -896,6 +941,14 @@ internal fun AccountCardItem(
                     }
                 }
 
+                IconButton(onClick = onEditClick, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit ${account.name}",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
                 Surface(
                     shape = CircleShape,
                     color = if (account.isFrozen) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceContainer,

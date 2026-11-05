@@ -550,6 +550,15 @@ fun IncomeScreen(
                     CryptoNetCard(state.cryptoNetYtdLkr, state.cryptoEntriesYtd)
                 }
 
+                // Monthly income that hasn't landed this month yet — one tap to add it (FR-INC-11)
+                items(state.recurringDue, key = { "recurring_${it.id}" }) { income ->
+                    RecurringIncomeCard(
+                        income = income,
+                        onAdd = { viewModel.addRecurring(income) },
+                        onDismiss = { viewModel.dismissRecurring(income) }
+                    )
+                }
+
                 // 6. Income records
                 if (!state.isLoading && state.incomes.isEmpty()) item {
                     EmptyStateView(
@@ -568,6 +577,7 @@ fun IncomeScreen(
                     IncomeRecordCard(
                         income = income,
                         onMarkReceived = { viewModel.markReceived(income) },
+                        onEdit = { viewModel.showEditSheet(income) },
                         onDelete = { viewModel.deleteIncome(income) }
                     )
                 }
@@ -767,10 +777,57 @@ private fun CryptoNetCard(netLkr: Double, entries: Int) {
     }
 }
 
+/** "Add this month's salary": suggested from what he received before, never added on its own. */
+@Composable
+private fun RecurringIncomeCard(
+    income: IncomeStream,
+    onAdd: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Default.Autorenew, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Text(
+                    text = "Add this month's ${income.title}?",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "${lkr(income.amountInLkr)} last time, on ${formatDate(income.dateReceivedOrExpected)}. Add it once it has landed.",
+                fontSize = 12.5.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    onClick = onAdd,
+                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) { Text("Add ${lkr(income.amountInLkr)}", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                TextButton(onClick = onDismiss) {
+                    Text("Not yet", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun IncomeRecordCard(
     income: IncomeStream,
     onMarkReceived: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     val status = income.effectiveStatus()
@@ -918,8 +975,13 @@ private fun IncomeRecordCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onDelete) {
-                    Text(text = "Delete", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onEdit) {
+                        Text(text = "Edit", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                    }
+                    TextButton(onClick = onDelete) {
+                        Text(text = "Delete", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
                 if (status != InvoiceStatus.RECEIVED) {
                     Button(

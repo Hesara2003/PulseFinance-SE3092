@@ -35,6 +35,11 @@ class AccountRepositoryImpl @Inject constructor(
         firestoreDataSource.saveAccount(prepared.userId, AccountDto.fromDomain(prepared))
     }
 
+    override suspend fun deleteAccount(userId: String, accountId: String): Result<Unit> = runCatching {
+        accountDao.deleteAccount(accountId, userId)
+        firestoreDataSource.deleteAccount(userId, accountId)
+    }
+
     override suspend fun freezeAccount(account: Account, untilMillis: Long): Result<Unit> {
         val updated = account.copy(
             isFrozen = true,

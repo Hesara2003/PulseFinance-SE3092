@@ -416,7 +416,9 @@ internal fun AccountsSection(
     isBalanceMasked: Boolean,
     onRevealAccount: (Account) -> Unit,
     onCopyAccountNumber: (Account) -> Unit,
-    onToggleFreeze: (Account) -> Unit
+    onToggleFreeze: (Account) -> Unit,
+    onAddAccount: () -> Unit,
+    onEditAccount: (Account) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
@@ -440,19 +442,29 @@ internal fun AccountsSection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            if (totalFreezeBreaks > 0) {
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.errorContainer)
-                        .padding(horizontal = 9.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = "${totalFreezeBreaks} Freeze Break${if (totalFreezeBreaks > 1) "s" else ""}",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.error
-                    )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                if (totalFreezeBreaks > 0) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .padding(horizontal = 9.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "${totalFreezeBreaks} Freeze Break${if (totalFreezeBreaks > 1) "s" else ""}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+                TextButton(onClick = onAddAccount) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Add", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
         }
@@ -470,7 +482,8 @@ internal fun AccountsSection(
                     isRevealed = account.id in revealedAccountIds,
                     onRevealClick = { onRevealAccount(account) },
                     onCopyClick = { onCopyAccountNumber(account) },
-                    onFreezeToggle = { onToggleFreeze(account) }
+                    onFreezeToggle = { onToggleFreeze(account) },
+                    onEditClick = { onEditAccount(account) }
                 )
             }
         }

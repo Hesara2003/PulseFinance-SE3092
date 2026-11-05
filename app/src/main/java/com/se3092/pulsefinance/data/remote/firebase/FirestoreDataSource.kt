@@ -169,6 +169,12 @@ class FirestoreDataSource @Inject constructor(
             .logFailure("saveAccount")
     }
 
+    fun deleteAccount(userId: String, accountId: String) {
+        userDoc(userId).collection("accounts").document(accountId)
+            .delete()
+            .logFailure("deleteAccount")
+    }
+
     // ---------------- Subscription audit decisions ----------------
     // Stored as a map on the user document: subscriptionReviews.<key> = {decision, decidedAt}
     fun observeSubscriptionReviews(userId: String): Flow<Map<String, SubscriptionReview>> = callbackFlow {

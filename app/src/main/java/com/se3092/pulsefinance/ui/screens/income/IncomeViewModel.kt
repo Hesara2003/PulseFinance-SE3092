@@ -14,6 +14,8 @@ import com.se3092.pulsefinance.domain.repository.AuthRepository
 import com.se3092.pulsefinance.domain.repository.IncomeRepository
 import com.se3092.pulsefinance.domain.repository.TaxConfigRepository
 import com.se3092.pulsefinance.domain.usecase.ConvertCurrencyUseCase
+import com.se3092.pulsefinance.domain.usecase.asThisMonth
+import com.se3092.pulsefinance.domain.usecase.recurringIncomeDue
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.lkr
 import com.se3092.pulsefinance.ui.common.signedLkr
@@ -52,8 +54,45 @@ data class IncomeFormState(
     val isCryptoLoss: Boolean = false,
     val isRecurringMonthly: Boolean = false,
     val isSubmitting: Boolean = false,
-    val errorMessage: String? = null
-)
+    val errorMessage: String? = null,
+    /** The record being edited (FR-INC-10); null when adding a new one. */
+    val editing: IncomeStream? = null,
+    /** False while editing means the stored date is kept; picking a date chip changes it. */
+    val dateChanged: Boolean = false
+) {
+    val isEditing: Boolean get() = editing != null
+    val usesOriginalDate: Boolean get() = editing != null && !dateChanged
+
+    /** The date to save: the stored one while editing untouched, otherwise today plus [dayOffset]. */
+    fun dateMillis(now: Long): Long =
+        if (usesOriginalDate) editing!!.dateReceivedOrExpected else now + dayOffset * DAY_MILLIS
+
+    companion object {
+        /**
+         * A form pre-filled from [income]. The rate is the one stored with the record, never today's
+         * (ADR-0001: the rate received is frozen per entry), and a loss shows as a positive amount
+         * with the loss toggle on.
+         */
+        fun editing(income: IncomeStream) = IncomeFormState(
+            isVisible = true,
+            titleInput = income.title,
+            clientInput = income.clientOrPlatform,
+            amountInput = formatInputNumber(kotlin.math.abs(income.originalAmount)),
+            selectedSource = income.source,
+            selectedCurrency = income.currency,
+            exchangeRateInput = formatInputNumber(income.exchangeRateToLkr),
+            rateSourceInfo = if (income.currency == Currency.LKR) "" else "Rate you recorded: ${formatInputNumber(income.exchangeRateToLkr)} LKR/${income.currency.name}",
+            selectedStatus = if (income.status == InvoiceStatus.OVERDUE) InvoiceStatus.PENDING_INVOICE else income.status,
+            isCryptoLoss = income.source == IncomeSource.CRYPTO && income.originalAmount < 0,
+            isRecurringMonthly = income.isRecurringMonthly,
+            editing = income
+        )
+    }
+}
+
+/** A number as he would type it: no trailing ".0", no grouping. */
+internal fun formatInputNumber(value: Double): String =
+    if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
 
 data class IncomeScreenUiState(
     val initials: String = "",
@@ -63,6 +102,8 @@ data class IncomeScreenUiState(
     /** Only income paid in a foreign currency (USD AdSense, USDT trades…); combines with [filterSource]. */
     val foreignCurrencyOnly: Boolean = false,
     val incomes: List<IncomeStream> = emptyList(),
+    /** Monthly income not yet recorded this month; he taps to add it (FR-INC-11). */
+    val recurringDue: List<IncomeStream> = emptyList(),
     val totalCount: Int = 0,
     val foreignCurrencyCount: Int = 0,
     val countBySource: Map<IncomeSource, Int> = emptyMap(),
@@ -107,6 +148,8 @@ class IncomeViewModel @Inject constructor(
     private val form = MutableStateFlow(IncomeFormState())
     private val isPayslipVisible = MutableStateFlow(false)
     private val toast = MutableStateFlow<UiNotice?>(null)
+    /** Suggestions he waved off this session; they come back next time the screen is opened. */
+    private val dismissedRecurring = MutableStateFlow<Set<String>>(emptySet())
 
     private val incomes = authRepository.whenSignedIn<List<IncomeStream>?>(signedOut = null) { userId ->
         incomeRepository.getIncomeStreams(userId)
@@ -116,6 +159,8 @@ class IncomeViewModel @Inject constructor(
 
     val uiState: StateFlow<IncomeScreenUiState> = combine(incomes, filter, form, isPayslipVisible, toast) { incomes, filter, form, isPayslip, toast ->
         buildState(incomes, filter, form, isPayslip, toast)
+    }.combine(dismissedRecurring) { state, dismissed ->
+        state.copy(recurringDue = state.recurringDue.filter { it.id !in dismissed })
     }.map { it.copy(initials = initials) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -168,6 +213,7 @@ class IncomeViewModel @Inject constructor(
                 (filter.source == null || income.source == filter.source) &&
                     (!filter.foreignCurrencyOnly || income.currency != Currency.LKR)
             },
+            recurringDue = recurringIncomeDue(incomes, now),
             totalCount = incomes.size,
             foreignCurrencyCount = incomes.count { it.currency != Currency.LKR },
             countBySource = incomes.groupingBy { it.source }.eachCount(),
@@ -234,6 +280,19 @@ class IncomeViewModel @Inject constructor(
         }
     }
 
+    /** Adds this month's copy of a recurring entry (FR-INC-11). Only ever called from his tap. */
+    fun addRecurring(income: IncomeStream) {
+        val userId = authRepository.currentUserId ?: return
+        val entry = income.asThisMonth(System.currentTimeMillis()).copy(userId = userId)
+        viewModelScope.launch {
+            incomeRepository.saveIncomeStream(entry)
+                .onSuccess { toast.value = UiNotice("Income recorded", "+${lkr(entry.amountInLkr)} · ${entry.title}", illustration = incomeSourceIllustration(entry.source)) }
+                .onFailure { toast.value = UiNotice("Couldn't save", it.localizedMessage ?: "Try again", NoticeTone.ERROR) }
+        }
+    }
+
+    fun dismissRecurring(income: IncomeStream) = dismissedRecurring.update { it + income.id }
+
     fun deleteIncome(income: IncomeStream) {
         val userId = authRepository.currentUserId ?: return
         viewModelScope.launch {
@@ -259,6 +318,7 @@ class IncomeViewModel @Inject constructor(
         val rateInfo = convertCurrencyUseCase.getSuggestedRateInfo(Currency.LKR)
         form.update { IncomeFormState(isVisible = true, rateSourceInfo = rateInfo.sourceDescription) }
     }
+    fun showEditSheet(income: IncomeStream) = form.update { IncomeFormState.editing(income) }
     fun hideAddSheet() = form.update { it.copy(isVisible = false, errorMessage = null) }
 
     fun onTitleChanged(title: String) = form.update { it.copy(titleInput = title) }
@@ -283,16 +343,19 @@ class IncomeViewModel @Inject constructor(
     fun onToggleCreditedLkrMode(useCreditedLkr: Boolean) = form.update {
         it.copy(isCreditedLkrMode = useCreditedLkr)
     }
-    fun onDayOffsetChanged(offset: Int) = form.update { it.copy(dayOffset = offset) }
+    fun onDayOffsetChanged(offset: Int) = form.update { it.copy(dayOffset = offset, dateChanged = true) }
     fun onCryptoLossToggled(isLoss: Boolean) = form.update { it.copy(isCryptoLoss = isLoss) }
     fun onRecurringToggled(isRecurring: Boolean) = form.update { it.copy(isRecurringMonthly = isRecurring) }
 
     fun onStatusChanged(status: InvoiceStatus) = form.update {
         // Received income is dated in the past; an invoice is due in the future.
-        it.copy(selectedStatus = status, dayOffset = if (status == InvoiceStatus.RECEIVED) 0 else 14)
+        if (it.selectedStatus == status) it
+        else it.copy(selectedStatus = status, dayOffset = if (status == InvoiceStatus.RECEIVED) 0 else 14, dateChanged = true)
     }
 
     fun onSourceChanged(source: IncomeSource) {
+        // Tapping the source it already has must not swap the stored rate for today's (ADR-0001).
+        if (form.value.isEditing && form.value.selectedSource == source) return
         val currency = when (source) {
             IncomeSource.ADSENSE -> Currency.USD
             IncomeSource.CRYPTO -> Currency.USDT
@@ -312,6 +375,7 @@ class IncomeViewModel @Inject constructor(
     }
 
     fun onCurrencyChanged(currency: Currency) {
+        if (form.value.isEditing && form.value.selectedCurrency == currency) return
         val rateInfo = convertCurrencyUseCase.getSuggestedRateInfo(currency)
         form.update {
             it.copy(
@@ -343,29 +407,32 @@ class IncomeViewModel @Inject constructor(
         val amountInLkr = convertCurrencyUseCase.toLkr(signedAmount, current.selectedCurrency, rate)
         val title = current.titleInput.trim().ifBlank { "${current.selectedSource.displayName} ${if (signedAmount < 0) "loss" else "income"}" }
         val client = current.clientInput.trim().ifBlank { current.selectedSource.displayName }
-        val date = System.currentTimeMillis() + current.dayOffset * DAY_MILLIS
+        val date = current.dateMillis(System.currentTimeMillis())
+
+        // Editing keeps the id (so it replaces the record), the notes and the owner.
+        val record = (current.editing ?: IncomeStream(userId = userId, source = current.selectedSource, title = title, clientOrPlatform = client, originalAmount = signedAmount, currency = current.selectedCurrency))
+            .copy(
+                userId = userId,
+                source = current.selectedSource,
+                title = title,
+                clientOrPlatform = client,
+                originalAmount = signedAmount,
+                currency = current.selectedCurrency,
+                exchangeRateToLkr = rate,
+                amountInLkr = amountInLkr,
+                status = current.selectedStatus,
+                dateReceivedOrExpected = date,
+                isRecurringMonthly = current.isRecurringMonthly
+            )
 
         viewModelScope.launch {
             form.update { it.copy(isSubmitting = true) }
-            incomeRepository.saveIncomeStream(
-                IncomeStream(
-                    userId = userId,
-                    source = current.selectedSource,
-                    title = title,
-                    clientOrPlatform = client,
-                    originalAmount = signedAmount,
-                    currency = current.selectedCurrency,
-                    exchangeRateToLkr = rate,
-                    amountInLkr = amountInLkr,
-                    status = current.selectedStatus,
-                    dateReceivedOrExpected = date,
-                    isRecurringMonthly = current.isRecurringMonthly
-                )
-            ).fold(
+            incomeRepository.saveIncomeStream(record).fold(
                 onSuccess = {
                     form.value = IncomeFormState()
                     toast.value = UiNotice(
-                        if (current.selectedStatus == InvoiceStatus.RECEIVED) "Income recorded" else "Invoice tracked",
+                        if (current.isEditing) "Income updated"
+                        else if (current.selectedStatus == InvoiceStatus.RECEIVED) "Income recorded" else "Invoice tracked",
                         "${signedLkr(amountInLkr)} · $title",
                         illustration = incomeSourceIllustration(current.selectedSource)
                     )
@@ -377,6 +444,5 @@ class IncomeViewModel @Inject constructor(
         }
     }
 
-    private fun formatRate(rate: Double): String =
-        if (rate == rate.toLong().toDouble()) rate.toLong().toString() else rate.toString()
+    private fun formatRate(rate: Double): String = formatInputNumber(rate)
 }

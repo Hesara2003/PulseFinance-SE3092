@@ -8,6 +8,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Edit
+import com.se3092.pulsefinance.ui.screens.expense.ExpenseEditorSheet
 import androidx.compose.material.icons.filled.MoreVert
 import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
@@ -111,6 +113,17 @@ fun AnalyticsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showDateRangePicker by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<TransactionItem?>(null) }
+    val expenseEditor by viewModel.editingExpense.collectAsStateWithLifecycle()
+
+    expenseEditor?.let { editor ->
+        ExpenseEditorSheet(
+            state = editor,
+            accounts = state.accounts,
+            onChange = viewModel::onExpenseEditChange,
+            onSave = viewModel::saveExpenseEdit,
+            onDismiss = viewModel::dismissExpenseEdit
+        )
+    }
 
     pendingDelete?.let { tx ->
         DeleteTransactionDialog(
@@ -702,7 +715,8 @@ fun AnalyticsScreen(
                 items(visibleTransactions, key = { it.id }) { tx ->
                     TransactionLedgerCard(
                         tx = tx,
-                        // Only expenses can be deleted here; income is managed on the Income screen.
+                        // Only expenses can be edited or deleted here; income is managed on the Income screen.
+                        onEdit = tx.expenseId?.let { { viewModel.startEditExpense(tx) } },
                         onDelete = tx.expenseId?.let { { pendingDelete = tx } }
                     )
                 }
@@ -843,7 +857,7 @@ private fun CategoryBreakdownCard(totals: List<CategoryTotal>) {
 }
 
 @Composable
-private fun TransactionLedgerCard(tx: TransactionItem, onDelete: (() -> Unit)? = null) {
+private fun TransactionLedgerCard(tx: TransactionItem, onEdit: (() -> Unit)? = null, onDelete: (() -> Unit)? = null) {
     var menuOpen by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier
@@ -939,6 +953,16 @@ private fun TransactionLedgerCard(tx: TransactionItem, onDelete: (() -> Unit)? =
                         containerColor = MaterialTheme.colorScheme.surface,
                         shape = RoundedCornerShape(14.dp)
                     ) {
+                        if (onEdit != null) {
+                            DropdownMenuItem(
+                                text = { Text("Edit", fontWeight = FontWeight.SemiBold) },
+                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    onEdit()
+                                }
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold) },
                             leadingIcon = { Icon(Icons.Default.DeleteOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
