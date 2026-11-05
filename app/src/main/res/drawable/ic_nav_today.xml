@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bottom-dock icon in the style of the illustrated preset icons (no blob: the dock draws it for the selected tab). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path android:pathData="M9,9h13a2,2 0 0 1 2,2v11a2,2 0 0 1 -2,2h-13a2,2 0 0 1 -2,-2v-11a2,2 0 0 1 2,-2z" android:fillColor="#FF2FBF4A" android:strokeColor="#FF1E2A22" android:strokeWidth="1.8" android:strokeLineJoin="round" />
+    <path android:pathData="M28,9h11a2,2 0 0 1 2,2v6a2,2 0 0 1 -2,2h-11a2,2 0 0 1 -2,-2v-6a2,2 0 0 1 2,-2z" android:fillColor="#FFF5B82E" android:strokeColor="#FF1E2A22" android:strokeWidth="1.8" android:strokeLineJoin="round" />
+    <path android:pathData="M28,23h11a2,2 0 0 1 2,2v12a2,2 0 0 1 -2,2h-11a2,2 0 0 1 -2,-2v-12a2,2 0 0 1 2,-2z" android:fillColor="#FFFFFFFF" android:strokeColor="#FF1E2A22" android:strokeWidth="1.8" android:strokeLineJoin="round" />
+    <path android:pathData="M9,28h13a2,2 0 0 1 2,2v7a2,2 0 0 1 -2,2h-13a2,2 0 0 1 -2,-2v-7a2,2 0 0 1 2,-2z" android:fillColor="#FFFFFFFF" android:strokeColor="#FF1E2A22" android:strokeWidth="1.8" android:strokeLineJoin="round" />
+    <path android:pathData="M11,18.5l4,-3.5l3,2.5l3,-3" android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.8" android:strokeLineCap="round" android:strokeLineJoin="round" />
+</vector>
