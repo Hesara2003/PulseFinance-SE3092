@@ -28,7 +28,7 @@ class AuthViewModel @Inject constructor(
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     fun onEmailChanged(email: String) {
-        _uiState.update { it.copy(email = email, errorMessage = null) }
+        _uiState.update { it.copy(email = email, errorMessage = null, infoMessage = null) }
     }
 
     fun onPasswordChanged(password: String) {
@@ -36,7 +36,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun toggleAuthMode() {
-        _uiState.update { it.copy(isLoginMode = !it.isLoginMode, errorMessage = null) }
+        _uiState.update { it.copy(isLoginMode = !it.isLoginMode, errorMessage = null, infoMessage = null) }
     }
 
     fun setLoginMode(isLogin: Boolean) {
@@ -63,7 +63,31 @@ class AuthViewModel @Inject constructor(
 
         authenticate {
             if (_uiState.value.isLoginMode) authRepository.signInWithEmail(email, password)
-            else authRepository.signUpWithEmail(email, password)
+            else authRepository.signUpWithEmail(email, password).also { result ->
+                // FR-AUTH-10: ask him to confirm the address. Best effort, and not required to use the app.
+                if (result.isSuccess) authRepository.sendEmailVerification()
+            }
+        }
+    }
+
+    /** FR-AUTH-8: emails a reset link to the address typed above. */
+    fun sendPasswordReset() {
+        val email = _uiState.value.email.trim()
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _uiState.update { it.copy(errorMessage = "Type your email address first, then tap Forgot password", infoMessage = null) }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, infoMessage = null) }
+            val neutral = "If an account exists for $email, a reset link is on its way. Check your inbox and spam folder."
+            authRepository.sendPasswordReset(email).fold(
+                onSuccess = { _uiState.update { it.copy(isLoading = false, infoMessage = neutral) } },
+                // Don't reveal whether an address has an account.
+                onFailure = { error ->
+                    if (error is FirebaseAuthInvalidUserException) _uiState.update { it.copy(isLoading = false, infoMessage = neutral) }
+                    else _uiState.update { it.copy(isLoading = false, errorMessage = friendlyMessage(error)) }
+                }
+            )
         }
     }
 
