@@ -21,3 +21,4 @@ local.properties
 # Local tooling config (kept on each machine, not in the repo)
 CLAUDE.md
 .claude/
+firestore-debug.log
