@@ -1,118 +1,110 @@
-# Setup, Build & Developer Guide
+# Setup & Contribution Guide
 
-## 1. Prerequisites & Tooling
-
-To build, run, and test PulseFinance, ensure your workstation meets the following requirements:
-
-| Component | Minimum Version | Recommended / Tested |
-| :--- | :--- | :--- |
-| **Operating System** | macOS 13+ (Ventura/Sonoma/Sequoia), Linux (Ubuntu 22.04+), or Windows 11 | macOS 14+ on Apple Silicon (M-Series) |
-| **Java Development Kit** | JDK 17 | **JDK 21** (Eclipse Adoptium Temurin 21.0.7) |
-| **Android Studio** | Android Studio Hedgehog (2023.1.1) | **Android Studio Ladybug (2024.2+)** |
-| **Android SDK Tools** | API 26 (Android 8.0 Oreo) | API 34+ (Android 14 Upside Down Cake) |
-| **Build System** | Gradle 8.5+ | Gradle 8.9 (via bundled `./gradlew`) |
-| **Android NDK / CMake** | Not required (100% Kotlin codebase) | — |
+How to build, run and test PulseFinance, and how the three of us (Hesara, Sandali, Shazaan) work on it.
 
 ---
 
-## 2. Step-by-Step Installation & Project Setup
+## 1. Tools
 
-### 2.1. Clone Repository
-```bash
-git clone https://github.com/Hesara2003/PulseFinance.git
-cd PulseFinance
-```
+| Tool | Version |
+|---|---|
+| Android Studio | 2024 or newer |
+| Android SDK | Platform 34 (minSdk 26) |
+| JDK for Gradle | **17 or 21.** Gradle 8.9 does not run on Java 25, which recent Android Studio versions bundle as their JBR |
+| Gradle | 8.9, through `./gradlew` |
 
-### 2.2. Configure JDK Environment
-Ensure your terminal environment points `JAVA_HOME` to JDK 17 or JDK 21:
-```bash
-# macOS Example:
-export JAVA_HOME="/Users/hesaraperera/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.7+6/Contents/Home"
-export PATH="$JAVA_HOME/bin:$PATH"
+---
 
-# Verify:
-java -version
-```
+## 2. First-time setup
 
-### 2.3. Configure Android SDK (`local.properties`)
-Create or verify `local.properties` in the project root:
-```properties
-sdk.dir=/Users/<your-username>/Library/Android/sdk
-```
-
-### 2.4. Firebase Configuration
-1. Create a Firebase project named `pulse-finance` on the [Firebase Console](https://console.firebase.google.com/).
-2. Add an Android app with package name:
+1. **Clone:**
+   ```bash
+   git clone https://github.com/Hesara2003/PulseFinance-SE3092.git
+   cd PulseFinance-SE3092
    ```
-   com.se3092.pulsefinance
+2. **SDK path:** Android Studio creates `local.properties` on first sync (`sdk.dir=…`). It is gitignored, so each machine has its own.
+3. **JDK (terminal builds only):** if `./gradlew` fails with an unsupported Java version, point `JAVA_HOME` at a JDK 17 or 21. For example, use the JDK 21 that Gradle downloads into `~/.gradle/jdks/`:
+   ```bash
+   export JAVA_HOME=$(ls -d ~/.gradle/jdks/*21*/*/Contents/Home | head -1)   # macOS
+   java -version
    ```
-3. Download `google-services.json` and save it to [app/google-services.json](file:///Users/hesaraperera/Desktop/PulseFinance/app/google-services.json).
-4. Enable **Email/Password** under Firebase Authentication.
-5. Enable **Cloud Firestore** and deploy rules from [firestore.rules](file:///Users/hesaraperera/Desktop/PulseFinance/firestore.rules).
+4. **Firebase:** `app/google-services.json` for the team project `finance-app-se3092` is committed, so nothing else is needed to build.
+   - To use your own Firebase project, follow [README §4](../README.md#4-setting-up-firebase).
+   - Google sign-in only works from a keystore whose SHA-1 is registered in that project. Ask Hesara to add your debug SHA-1 (`./gradlew signingReport`).
 
 ---
 
-## 3. Building & Running the Application
-
-### 3.1. Command Line Interface (CLI)
+## 3. Build, run, test
 
 ```bash
-# Clean previous build artifacts
-./gradlew clean
-
-# Build Debug APK
-./gradlew assembleDebug
-
-# Install on connected emulator or device
-./gradlew installDebug
-```
-The output APK is generated at:
-```
-app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
+./gradlew installDebug         # onto a connected device or emulator
+./gradlew testDebugUnitTest    # JVM unit tests
+./gradlew lintDebug
 ```
 
-### 3.2. Android Studio IDE
-1. Launch Android Studio.
-2. Select **Open** and navigate to the project directory `/Users/hesaraperera/Desktop/PulseFinance`.
-3. Allow Gradle to sync project dependencies.
-4. Select a virtual device (Pixel 8 / API 34 recommended) or connected physical Android device.
-5. Click the green **Run** button (`Shift + F10`).
+**From Android Studio:** open the folder, let Gradle sync, choose an emulator or device on Android 8.0+, then press **Run**.
+
+**Signing in during development:**
+- **Demo account:** debug builds show a demo drawer on the sign-in screen. **Auto Fill** signs in to the shared, pre-seeded demo account. The credentials come from `BuildConfig` in debug builds only; don't copy them into docs, screenshots or commits (FR-AUTH-7).
+- **New account:** a fresh account starts with four empty accounts and nothing else. Record your own test data, or use the demo account to see a populated app.
+
+**Unit tests** live in `app/src/test/`. They cover:
+- the Safe-to-Spend summary;
+- goal velocity and the USD-linked target;
+- savings rate;
+- the payslip and APIT bands, including the Firestore config fallback;
+- subscription detection;
+- Seasonal Peaks;
+- the bank SMS parser;
+- CSV export.
+
+New domain logic gets a test in the same PR.
 
 ---
 
-## 4. Test Persona & Demo Verification
+## 4. Working on the code
 
-To evaluate the app against the assigned academic / client scenario, use the pre-configured credentials:
+Package layout (`com.se3092.pulsefinance`):
 
-### Evaluation Credentials
-- **Email:** `kavindu.silva@pulsemail.io`
-- **Password:** `ColomboDev2026!`
-- *(Or tap the **"Fill Demo Persona"** pill on the Auth screen to auto-populate)*
+```
+ui/          Compose screens, ViewModels, components, theme, navigation
+domain/      models, use cases, repository interfaces
+data/        Room (local/), Firebase and rate APIs (remote/), repository implementations
+di/          Hilt modules
+```
 
-### Initial Preloaded Dataset
-Upon launch or login, the app automatically initializes:
-1. **Accounts**:
-   - Commercial Bank Primary Checking: `LKR 185,500`
-   - Secondary Savings Account: `LKR 42,000`
-   - Physical Cash Wallet: `LKR 8,000`
-   - Binance Crypto Custody: `USDT 270.00 (LKR 83,000)`
-2. **MacBook Pro M4 Savings Goal**:
-   - Target: `LKR 490,000`
-   - Initial Saved: `LKR 11,200`
-   - Target Date: October 2026
-3. **Overdue Freelance Invoice**:
-   - SME Web Development Milestone: `$600 USD (LKR 185,000)` — 4 Days Overdue.
-4. **Zombie Subscriptions**:
-   - Fitness Gym Membership: `LKR 8,500/mo` (Unused 68 days on secondary bank card).
-   - Unused Cloud Dev VPS: `LKR 6,200/mo` (Abandoned dev server).
+Conventions the codebase already follows:
+- **Screens hold no business logic.** A calculation that answers one of Kavindu's questions belongs in a use case in `domain/usecase/` with a unit test.
+- **ViewModels expose one `StateFlow<…UiState>`** built with `stateIn(viewModelScope, WhileSubscribed(5000), …)`.
+- **New stored data:**
+  1. Add a domain model, a DTO with `toDomain`/`fromDomain`, and a Room entity if it is cached.
+  2. Bump `AppDatabase.version`.
+  3. Document the collection in [DATA_MODELS_AND_STORAGE.md](DATA_MODELS_AND_STORAGE.md).
+  4. Add a rule to `firestore.rules`.
+- **Money:** every income entry keeps its original amount, currency and the rate used. Never recompute stored LKR values (ADR-0001).
+- **Domain terms** follow [GLOSSARY.md](../GLOSSARY.md), for example "Safe-to-Spend Allowance", "Pending Invoice" and "Freeze Break".
 
 ---
 
-## 5. Coding Standards & Git Workflow
+## 5. Git workflow
 
-- **Architecture Boundary**: ViewModels must never import Android `View` or `Context` classes.
-- **Compose Stability**: All UI models passed into Composables should be marked `@Immutable` or `@Stable`.
-- **Commit Messages**: Follow standard Conventional Commits:
-  - `feat: implement opportunity cost slider on GoalScreen`
-  - `fix: correct USD to LKR exchange normalization formula`
-  - `docs: update setup and architecture specifications`
+**PulseFinance-SE3092** is the repository we all work in. `Hesara2003/PulseFinance` is a mirror of it.
+
+1. Update `main` and branch from it:
+   ```bash
+   git switch main && git pull
+   git switch -c feat/fr-auth-4-onboarding-capture
+   ```
+   Branch prefixes: `feat/`, `fix/`, `test/`, `docs/`, `chore/`. Put the requirement ID in the name when there is one.
+2. **Commit as you go,** from your own machine and your own Git identity, using Conventional Commits:
+   ```
+   feat(onboarding): capture gross salary in step 1
+   fix(seasonal): average over months with records instead of a fixed 12
+   docs(srs): mark FR-AUTH-4 Done
+   ```
+3. **Open a PR against `main`** and request review from a teammate. Nobody merges their own unreviewed work.
+4. **Merge with "Create a merge commit".** Never squash or rebase-merge, and never force-push `main`. The commit history records who did what.
+5. **When a requirement is finished,** update its status in [SRS.md](SRS.md) in the same PR.
+
+**CI:** `ci.yml` runs on PRs and pushes to `main` (unit tests, lint, debug build). A push to `main` also triggers `release-apk-to-drive.yml`, which uploads the release APK and AAB to Google Drive ([RELEASE_WORKFLOW_AND_GDRIVE.md](RELEASE_WORKFLOW_AND_GDRIVE.md)).
