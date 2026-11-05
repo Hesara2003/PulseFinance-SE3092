@@ -4,8 +4,6 @@ import com.se3092.pulsefinance.ui.components.ProfileAvatar
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import com.se3092.pulsefinance.R
-import com.se3092.pulsefinance.domain.model.ExpenseCategory
-import com.se3092.pulsefinance.ui.common.presetIllustration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.RepeatMode
@@ -19,10 +17,12 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,14 +39,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.HistoryToggleOff
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SmartToy
@@ -79,10 +82,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.se3092.pulsefinance.domain.model.DetectedSubscription
+import com.se3092.pulsefinance.domain.model.ExpenseCategory
 import com.se3092.pulsefinance.domain.model.SubscriptionRisk
 import com.se3092.pulsefinance.domain.model.SubscriptionStatus
 import com.se3092.pulsefinance.ui.common.formatDate
 import com.se3092.pulsefinance.ui.common.lkr
+import com.se3092.pulsefinance.ui.common.presetIllustration
 import com.se3092.pulsefinance.ui.components.EmptyStateView
 import com.se3092.pulsefinance.ui.theme.OnAccent
 import com.se3092.pulsefinance.ui.theme.NeoBorder
@@ -131,7 +136,7 @@ fun ExpenseScreen(
                 .padding(horizontal = 20.dp)
         ) {
             // =========================================================================
-            // Top Navigation & Branding Header (Exact HTML replica)
+            // Top Navigation & Branding Header
             // =========================================================================
             Spacer(modifier = Modifier.height(10.dp))
             Row(
@@ -156,40 +161,24 @@ fun ExpenseScreen(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = NeoTextPrimary,
-                        fontSize = 17.sp,
+                        fontSize = 18.sp,
                         letterSpacing = (-0.2).sp
                     )
                 }
 
-                // Zombie Subscription Audit label & User Profile Avatar
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                // Profile Avatar Circle
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(NeoContainer),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Zombie Subscription Audit",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = NeoTextSecondary,
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    // Profile Avatar Circle
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(NeoContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        ProfileAvatar(initials = state.initials, size = 34.dp)
-                    }
+                    ProfileAvatar(initials = state.initials, size = 36.dp)
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // =========================================================================
             // Main Content Scrollable
@@ -212,17 +201,18 @@ fun ExpenseScreen(
                                 color = NeoGreenDark,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
-                                letterSpacing = 1.sp
+                                letterSpacing = 1.2.sp
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Spacer(modifier = Modifier.height(3.dp))
                             Text(
                                 text = "Zombie Subscriptions",
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = NeoTextPrimary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 22.sp
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 23.sp,
+                                letterSpacing = (-0.3).sp
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Spacer(modifier = Modifier.height(3.dp))
                             Text(
                                 text = "Recurring auto-debits you've logged",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -232,36 +222,40 @@ fun ExpenseScreen(
                         }
 
                         // Auto Mode Glyph Container
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(NeoContainer),
-                            contentAlignment = Alignment.Center
+                        Surface(
+                            modifier = Modifier.size(42.dp),
+                            shape = CircleShape,
+                            color = NeoCard,
+                            border = BorderStroke(1.dp, NeoBorder),
+                            shadowElevation = 2.dp
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.AutoMode,
-                                contentDescription = "Audit Engine",
-                                tint = NeoTextPrimary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoMode,
+                                    contentDescription = "Audit Engine",
+                                    tint = NeoTextPrimary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
                 }
 
-                // 2. Red Alert Warning Banner
+                // 2. High-Impact Leak Alert Card
                 if (state.flaggedCount > 0) item {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        color = NeoErrorContainer
+                        shape = RoundedCornerShape(22.dp),
+                        color = Color(0xFFFFF1F2),
+                        border = BorderStroke(1.dp, Color(0xFFFFCCD5)),
+                        shadowElevation = 2.dp
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
                             verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             // Pulsing Warning Icon Container
                             val infiniteTransition = rememberInfiniteTransition(label = "pingWarning")
@@ -275,19 +269,19 @@ fun ExpenseScreen(
                                 label = "scale"
                             )
 
-                            Box(modifier = Modifier.size(36.dp)) {
+                            Box(modifier = Modifier.size(38.dp)) {
                                 Box(
                                     modifier = Modifier
-                                        .size(32.dp)
+                                        .size(34.dp)
                                         .align(Alignment.Center)
                                         .clip(CircleShape)
-                                        .background(NeoRose),
+                                        .background(Color(0xFFE11D48)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Warning,
                                         contentDescription = "Warning",
-                                        tint = OnAccent,
+                                        tint = Color.White,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -297,7 +291,7 @@ fun ExpenseScreen(
                                         .scale(pingScale)
                                         .align(Alignment.TopEnd)
                                         .clip(CircleShape)
-                                        .background(NeoRose)
+                                        .background(Color(0xFFE11D48))
                                 )
                             }
 
@@ -306,20 +300,20 @@ fun ExpenseScreen(
                                     text = "${state.flaggedCount} subscription${if (state.flaggedCount > 1) "s" else ""} to review",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = NeoRose,
+                                    color = Color(0xFF9F1239),
                                     fontSize = 16.sp
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = buildAnnotatedString {
                                         append("Still charging ")
-                                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = Color(0xFF9F1239))) {
                                             append("${lkr(state.flaggedMonthlyLkr)} / month")
                                         }
                                         append(". Keep the ones you use; cancel the rest with the provider.")
                                     },
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = NeoRose.copy(alpha = 0.9f),
+                                    color = Color(0xFF881337),
                                     fontSize = 13.sp,
                                     lineHeight = 18.sp
                                 )
@@ -339,40 +333,50 @@ fun ExpenseScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .shadow(
-                                    elevation = 6.dp,
-                                    shape = RoundedCornerShape(20.dp),
+                                    elevation = 4.dp,
+                                    shape = RoundedCornerShape(22.dp),
                                     ambientColor = Color(0x060F172A),
                                     spotColor = Color(0x060F172A)
                                 ),
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(22.dp),
                             color = NeoCard,
                             border = BorderStroke(1.dp, NeoBorder)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.TrendingDown,
-                                        contentDescription = null,
-                                        tint = NeoRose,
-                                        modifier = Modifier.size(16.dp)
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFFFE4E6)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.TrendingDown,
+                                            contentDescription = null,
+                                            tint = Color(0xFFE11D48),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
                                     Text(
-                                        text = "TOTAL ANNUAL DRAIN",
+                                        text = "ANNUAL DRAIN",
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = NeoTextSecondary
+                                        color = NeoTextSecondary,
+                                        letterSpacing = 0.6.sp
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Spacer(modifier = Modifier.height(10.dp))
                                 Text(
                                     text = lkr(state.flaggedAnnualLkr),
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = NeoTextPrimary,
-                                    fontSize = 20.sp
+                                    fontSize = 20.sp,
+                                    letterSpacing = (-0.5).sp
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
@@ -389,45 +393,56 @@ fun ExpenseScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .shadow(
-                                    elevation = 6.dp,
-                                    shape = RoundedCornerShape(20.dp),
+                                    elevation = 4.dp,
+                                    shape = RoundedCornerShape(22.dp),
                                     ambientColor = Color(0x060F172A),
                                     spotColor = Color(0x060F172A)
                                 ),
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(22.dp),
                             color = NeoCard,
                             border = BorderStroke(1.dp, NeoBorder)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.RocketLaunch,
-                                        contentDescription = null,
-                                        tint = NeoGreenDark,
-                                        modifier = Modifier.size(16.dp)
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFDCFCE7)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.RocketLaunch,
+                                            contentDescription = null,
+                                            tint = NeoGreenDark,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
                                     Text(
                                         text = "POTENTIAL SAVINGS",
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = NeoTextSecondary
+                                        color = NeoTextSecondary,
+                                        letterSpacing = 0.6.sp
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Spacer(modifier = Modifier.height(10.dp))
                                 Text(
                                     text = state.shareOfGoalRemainingPct?.let { "%.1f%%".format(it) } ?: "—",
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = NeoGreenDark,
-                                    fontSize = 20.sp
+                                    fontSize = 20.sp,
+                                    letterSpacing = (-0.5).sp
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = state.goalTitle?.let { "of what's left for $it" } ?: "Set a goal to compare",
-                                    maxLines = 2,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                     style = MaterialTheme.typography.labelSmall,
                                     color = NeoTextSecondary,
                                     fontSize = 11.sp
@@ -440,29 +455,31 @@ fun ExpenseScreen(
                 // 4. Detected Outflows Section Header
                 item {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = "Detected Subscriptions",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             color = NeoTextPrimary,
-                            fontSize = 17.sp
+                            fontSize = 18.sp
                         )
 
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(NeoContainerHigh)
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        Surface(
+                            shape = CircleShape,
+                            color = NeoCardLow,
+                            border = BorderStroke(1.dp, NeoBorder)
                         ) {
                             Text(
                                 text = "Flagged first",
                                 fontSize = 11.sp,
                                 color = NeoTextSecondary,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
                     }
@@ -484,7 +501,7 @@ fun ExpenseScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 16.dp, bottom = 8.dp),
+                                .padding(top = 12.dp, bottom = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -492,30 +509,39 @@ fun ExpenseScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Image(
-                                    painter = painterResource(R.drawable.ic_preset_bank),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp)
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFECFDF5)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountBalance,
+                                        contentDescription = null,
+                                        tint = NeoGreenDark,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                }
                                 Text(
                                     text = accountName,
-                                    fontSize = 13.sp,
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = NeoTextPrimary
                                 )
                             }
                             if (subs.any { it.isSecondaryAccount }) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(NeoGreenFixed)
-                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                Surface(
+                                    shape = CircleShape,
+                                    color = Color(0xFFECFDF5),
+                                    border = BorderStroke(1.dp, Color(0xFFA7F3D0))
                                 ) {
                                     Text(
                                         text = "⚡ Secondary Account (Auto-Debit)",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = NeoOnPrimaryFixed
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF047857),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                     )
                                 }
                             }
@@ -542,9 +568,9 @@ fun ExpenseScreen(
                         enabled = !allClear,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
+                            .height(54.dp)
                             .shadow(
-                                elevation = 12.dp,
+                                elevation = 8.dp,
                                 shape = CircleShape,
                                 spotColor = Color(0x30000000)
                             ),
@@ -646,39 +672,56 @@ private fun ZombieCardItem(
     onKeep: () -> Unit,
     onUsageAnswer: (Boolean) -> Unit
 ) {
-    val (statusLabel, statusBg, statusText) = when (sub.status) {
-        SubscriptionStatus.NEEDS_REVIEW -> Triple("Needs review", NeoErrorContainer, NeoRose)
-        SubscriptionStatus.STILL_CHARGING -> Triple("Still charging", NeoErrorContainer, NeoRose)
-        SubscriptionStatus.KEPT -> Triple("Kept", NeoGreenFixed, NeoOnPrimaryFixed)
-        SubscriptionStatus.CANCELLED -> Triple("Cancelled", NeoSecondaryContainer, NeoOnSecondaryFixed)
+    val (statusLabel, statusBg, statusBorder, statusText) = when (sub.status) {
+        SubscriptionStatus.NEEDS_REVIEW -> Quadruple(
+            "Needs review",
+            Color(0xFFFFF7ED),
+            Color(0xFFFED7AA),
+            Color(0xFFC2410C)
+        )
+        SubscriptionStatus.STILL_CHARGING -> Quadruple(
+            "Still charging",
+            Color(0xFFFFF1F2),
+            Color(0xFFFFCCD5),
+            Color(0xFFBE123C)
+        )
+        SubscriptionStatus.KEPT -> Quadruple(
+            "Active · Kept",
+            Color(0xFFECFDF5),
+            Color(0xFFA7F3D0),
+            Color(0xFF047857)
+        )
+        SubscriptionStatus.CANCELLED -> Quadruple(
+            "Cancelled",
+            NeoCardLow,
+            NeoBorder,
+            NeoTextSecondary
+        )
     }
 
-    val riskBorderColor = when (sub.risk) {
-        SubscriptionRisk.HIGH -> NeoRose.copy(alpha = 0.5f)
-        SubscriptionRisk.MEDIUM -> Color(0xFFF59E0B).copy(alpha = 0.4f)
-        SubscriptionRisk.LOW -> NeoBorder
-    }
+    val isAlert = sub.isFlagged || sub.risk == SubscriptionRisk.HIGH
+    val cardBorderColor = if (isAlert) Color(0xFFFFCCD5) else NeoBorder
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 6.dp,
+                elevation = 4.dp,
                 shape = RoundedCornerShape(22.dp),
-                ambientColor = Color(0x080F172A),
-                spotColor = Color(0x080F172A)
+                ambientColor = Color(0x060F172A),
+                spotColor = Color(0x060F172A)
             )
             .animateContentSize(),
         shape = RoundedCornerShape(22.dp),
         color = NeoCard,
-        border = BorderStroke(1.dp, riskBorderColor)
+        border = BorderStroke(1.dp, cardBorderColor)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(18.dp)
         ) {
-            // Header Row: Icon, Title/Account, and Status + Risk Badges
+            // Header Row: Illustrated Icon, Title/Account, and Status + Risk Badges
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -689,12 +732,20 @@ private fun ZombieCardItem(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    // What it is; the status tag and the card border already say how it's doing
-                    Image(
-                        painter = painterResource(presetIllustration(sub.title, ExpenseCategory.SUBSCRIPTION)),
-                        contentDescription = null,
-                        modifier = Modifier.size(46.dp)
-                    )
+                    // Illustrated Preset Icon
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(NeoCardLow),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(presetIllustration(sub.title, ExpenseCategory.SUBSCRIPTION)),
+                            contentDescription = sub.title,
+                            modifier = Modifier.size(34.dp)
+                        )
+                    }
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
@@ -718,42 +769,45 @@ private fun ZombieCardItem(
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     if (sub.risk == SubscriptionRisk.HIGH) {
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(NeoRose)
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFFFFF1F2),
+                            border = BorderStroke(1.dp, Color(0xFFFFCCD5))
                         ) {
                             Text(
                                 text = "High Risk ⚠️",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = OnAccent
+                                color = Color(0xFFE11D48),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
                         }
                     }
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(statusBg)
-                            .padding(horizontal = 9.dp, vertical = 4.dp)
+                    Surface(
+                        shape = CircleShape,
+                        color = statusBg,
+                        border = BorderStroke(1.dp, statusBorder)
                     ) {
                         Text(
                             text = statusLabel,
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = statusText
+                            color = statusText,
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.5.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // Charge history & App Activity Pills (FR-SUB-5)
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = NeoCardLow,
@@ -767,10 +821,10 @@ private fun ZombieCardItem(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Speed,
+                            imageVector = Icons.Default.HistoryToggleOff,
                             contentDescription = null,
                             tint = NeoTextSecondary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                         Text(
                             text = buildAnnotatedString {
@@ -787,9 +841,11 @@ private fun ZombieCardItem(
                 }
 
                 if (sub.lastAppOpenedDaysAgo != null) {
+                    val unusedLong = sub.lastAppOpenedDaysAgo >= 30
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = if (sub.lastAppOpenedDaysAgo >= 30) NeoErrorContainer.copy(alpha = 0.5f) else NeoCardLow,
+                        color = if (unusedLong) Color(0xFFFFF1F2) else NeoCardLow,
+                        border = if (unusedLong) BorderStroke(1.dp, Color(0xFFFFCCD5)) else null,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -802,18 +858,18 @@ private fun ZombieCardItem(
                             Icon(
                                 imageVector = Icons.Default.PhoneAndroid,
                                 contentDescription = null,
-                                tint = if (sub.lastAppOpenedDaysAgo >= 30) NeoRose else NeoGreenDark,
-                                modifier = Modifier.size(16.dp)
+                                tint = if (unusedLong) Color(0xFFE11D48) else NeoGreenDark,
+                                modifier = Modifier.size(15.dp)
                             )
                             Text(
-                                text = if (sub.lastAppOpenedDaysAgo >= 30) {
+                                text = if (unusedLong) {
                                     "App unused for ${sub.lastAppOpenedDaysAgo} days (Usage stats)"
                                 } else {
                                     "Linked app active ${sub.lastAppOpenedDaysAgo} days ago"
                                 },
                                 fontSize = 12.sp,
-                                fontWeight = if (sub.lastAppOpenedDaysAgo >= 30) FontWeight.Bold else FontWeight.Normal,
-                                color = if (sub.lastAppOpenedDaysAgo >= 30) NeoRose else NeoTextSecondary
+                                fontWeight = if (unusedLong) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (unusedLong) Color(0xFFBE123C) else NeoTextSecondary
                             )
                         }
                     }
@@ -822,10 +878,11 @@ private fun ZombieCardItem(
 
             // Consecutive Unused Months Banner (FR-SUB-4)
             if (sub.consecutiveUnusedMonths >= 2) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = NeoErrorContainer.copy(alpha = 0.7f),
+                    color = Color(0xFFFFF1F2),
+                    border = BorderStroke(1.dp, Color(0xFFFFCCD5)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -836,14 +893,14 @@ private fun ZombieCardItem(
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = null,
-                            tint = NeoRose,
-                            modifier = Modifier.size(18.dp)
+                            tint = Color(0xFFE11D48),
+                            modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = "Unused for ${sub.consecutiveUnusedMonths} consecutive months! Cancellation recommended.",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = NeoRose
+                            color = Color(0xFF9F1239)
                         )
                     }
                 }
@@ -854,7 +911,7 @@ private fun ZombieCardItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(NeoCardLow)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -863,34 +920,36 @@ private fun ZombieCardItem(
                 Text(
                     text = "Did you use this this month?",
                     fontSize = 12.sp,
-                    color = NeoTextSecondary,
+                    color = NeoTextPrimary,
                     fontWeight = FontWeight.Medium
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(
                         shape = CircleShape,
-                        color = NeoGreenFixed,
+                        color = Color(0xFFDCFCE7),
+                        border = BorderStroke(1.dp, Color(0xFF86EFAC)),
                         modifier = Modifier.clickable { onUsageAnswer(true) }
                     ) {
                         Text(
                             text = "Yes 👍",
-                            fontSize = 11.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = NeoOnPrimaryFixed,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            color = Color(0xFF15803D),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
                         )
                     }
                     Surface(
                         shape = CircleShape,
-                        color = NeoErrorContainer,
+                        color = Color(0xFFFFE4E6),
+                        border = BorderStroke(1.dp, Color(0xFFFDA4AF)),
                         modifier = Modifier.clickable { onUsageAnswer(false) }
                     ) {
                         Text(
                             text = "No 👎",
-                            fontSize = 11.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = NeoRose,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            color = Color(0xFFBE123C),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
                         )
                     }
                 }
@@ -910,12 +969,12 @@ private fun ZombieCardItem(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeoTextSecondary,
-                        letterSpacing = 0.5.sp
+                        letterSpacing = 0.6.sp
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = buildAnnotatedString {
-                            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = NeoTextPrimary, fontSize = 16.sp)) {
+                            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = NeoTextPrimary, fontSize = 17.sp)) {
                                 append(lkr(sub.monthlyCostLkr))
                             }
                             withStyle(SpanStyle(color = NeoTextSecondary, fontSize = 12.sp)) {
@@ -926,27 +985,42 @@ private fun ZombieCardItem(
                 }
 
                 if (sub.isFlagged || sub.risk == SubscriptionRisk.HIGH) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        TextButton(onClick = onKeep) {
-                            Text(text = "Keep", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = NeoTextSecondary)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = NeoCardLow,
+                            border = BorderStroke(1.dp, NeoBorder),
+                            modifier = Modifier.clickable { onKeep() }
+                        ) {
+                            Text(
+                                text = "Keep",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = NeoTextPrimary,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                            )
                         }
                         Button(
                             onClick = onCancel,
                             shape = CircleShape,
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = NeoRose,
-                                contentColor = OnAccent
+                                containerColor = Color(0xFFE11D48),
+                                contentColor = Color.White
                             ),
-                            modifier = Modifier.height(40.dp)
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
+                            modifier = Modifier.height(38.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Cancel,
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(15.dp)
                                 )
                                 Text(
                                     text = "I cancelled it",
@@ -957,14 +1031,28 @@ private fun ZombieCardItem(
                         }
                     }
                 } else {
-                    Text(
-                        text = "${lkr(sub.annualCostLkr)} / yr",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = NeoTextSecondary
-                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = NeoCardLow,
+                        border = BorderStroke(1.dp, NeoBorder)
+                    ) {
+                        Text(
+                            text = "${lkr(sub.annualCostLkr)} / yr",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = NeoTextSecondary,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+private data class Quadruple<A, B, C, D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D
+)
