@@ -480,13 +480,13 @@ Status as of 28/10/2026, checked against the code on `main`.
 
 ## Appendix A — Corrections needed in `docs/`
 
-The documents in `docs/` describe planned features. These statements conflict with this SRS and should be updated:
+These statements in `docs/` conflicted with this SRS. All of them were corrected on 05/11/2026, when the documents were rewritten from the code.
 
-| Document | Statement | Correct per SRS |
-|---|---|---|
-| FEATURES_SPECIFICATION §2.4 | Demo drawer lists the email and password in the text | Credentials injected by build config, debug only (FR-AUTH-7, C-18); do not publish them in docs |
-| FEATURES_SPECIFICATION §3.1 | "freeze card, reveal CVV, or copy account number" | Spending Freeze as self-commitment; reveal *account number* only; no CVV (FR-ACC-3…7, C-13, C-14) |
-| FEATURES_SPECIFICATION §5.3, DATA_MODELS §5 | Rates "automatically fetch and normalise"; fixed 308.50 / 307.40 | Fetched rate is a suggestion; received LKR decides; rate frozen per entry (ADR-0001) |
-| FEATURES_SPECIFICATION §6.1 | "Scans across all aggregated accounts" | Scans Kavindu's *recorded* accounts (FR-SUB-6, C-13) |
-| FEATURES_SPECIFICATION §6.2 | "Unused for 68 days" | Risk from charge-day answers and app usage (FR-SUB-4, 5) |
-| FEATURES_SPECIFICATION §5.2 | Crypto as "USDT staking yield" | Crypto Trading Results, profit or loss (FR-INC-7) |
+| Document | Statement | Correct per SRS | Status |
+|---|---|---|---|
+| FEATURES_SPECIFICATION §2.4 | Demo drawer lists the email and password in the text | Credentials injected by build config, debug only (FR-AUTH-7, C-18); do not publish them in docs | Fixed |
+| FEATURES_SPECIFICATION §3.1 | "freeze card, reveal CVV, or copy account number" | Spending Freeze as self-commitment; reveal *account number* only; no CVV (FR-ACC-3…7, C-13, C-14) | Fixed |
+| FEATURES_SPECIFICATION §5.3, DATA_MODELS §5 | Rates "automatically fetch and normalise"; fixed 308.50 / 307.40 | Fetched rate is a suggestion; received LKR decides; rate frozen per entry (ADR-0001) | Fixed |
+| FEATURES_SPECIFICATION §6.1 | "Scans across all aggregated accounts" | Scans Kavindu's *recorded* accounts (FR-SUB-6, C-13) | Fixed |
+| FEATURES_SPECIFICATION §6.2 | "Unused for 68 days" | Risk from charge-day answers and app usage (FR-SUB-4, 5) | Fixed |
+| FEATURES_SPECIFICATION §5.2 | Crypto as "USDT staking yield" | Crypto Trading Results, profit or loss (FR-INC-7) | Fixed |

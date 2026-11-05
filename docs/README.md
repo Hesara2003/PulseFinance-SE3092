@@ -1,39 +1,20 @@
-# PulseFinance Documentation Portal
+# PulseFinance Documentation
 
-Welcome to the official technical documentation for **PulseFinance** — a problem-first, scenario-driven personal finance management system engineered in 100% Kotlin and Jetpack Compose for Android (API 26+).
+PulseFinance is an Android app built for one person: **Kavindu Silva**, a 25-year-old junior software engineer in Colombo. His income arrives four ways (salary, freelance, AdSense in USD, crypto). He has LKR 11,200 left from more than LKR 1.6 million earned, and he wants a MacBook Pro M4 within a year.
 
----
+Start with the **SRS** for the problem, or the **overview** for a summary of what was built.
 
-## 📚 Documentation Index
-
-| Document | Description | Target Audience |
-| :--- | :--- | :--- |
-| [**Project Master Document**](PROJECT_DOCUMENTATION.md) | Complete, consolidated single-file documentation for the entire project. | Evaluators, Architects, Reviewers |
-| [**Architecture & System Design**](ARCHITECTURE.md) | Clean Architecture, MVVM + UDF, Room & Firestore dual-sync, Hilt DI, Coroutines. | Engineers & System Architects |
-| [**Vivid Neo-Fintech Design System**](DESIGN_SYSTEM.md) | Design tokens, color palette, typography, glassmorphism, capsule metrics, and micro-interactions. | UI/UX Designers & Mobile Devs |
-| [**Features Specification**](FEATURES_SPECIFICATION.md) | Screen-by-screen breakdown matching Stitch prototypes (Cockpit, Income Hub, Goals, Analytics, Zombie Audit). | Product Managers & QA |
-| [**Data Models & Storage**](DATA_MODELS_AND_STORAGE.md) | Entity schemas, Room DAOs, Firestore collections, TypeConverters, multi-currency conversion. | Backend & Database Engineers |
-| [**Security & API Integration**](API_AND_SECURITY.md) | Firebase Auth, Firestore security rules, currency normalization, and privacy controls. | Security Engineers & DevOps |
-| [**Setup & Contribution Guide**](SETUP_AND_CONTRIBUTION_GUIDE.md) | JDK 21 setup, Android Studio configuration, Firebase initialization, building APKs. | Developers & Contributors |
-| [**Release Workflow & Google Drive**](RELEASE_WORKFLOW_AND_GDRIVE.md) | Automated GitHub Actions CI/CD bundling APK/AAB and uploading to Google Drive. | Release Engineers & DevOps |
-
----
-
-## 🎯 Project Overview & Problem Statement
-
-PulseFinance was designed specifically for **Kavindu Silva (25)**, a Junior Software Engineer in Colombo, Sri Lanka who manages an irregular multi-stream income (LKR salary, foreign client USD invoices, crypto USDT earnings) and faces lifestyle inflation, hidden subscription leaks, and stalled savings goals.
-
-### Key Innovations
-- **Multi-Stream Income Normalization**: Real-time currency conversion (USD/USDT $\to$ LKR) separating *Realized Liquid Cash* from *Pending Milestone Invoices*.
-- **Goal Velocity Engine**: Dynamic pacing and interactive **Opportunity Cost Translation** (e.g., *“Skipping this LKR 2,500 cafe dining funds 1.9 days of your MacBook Pro M4”*).
-- **Zombie Subscription Hunter**: Detects recurring debits across multi-bank accounts with one-tap “Nuke” cancellation.
-- **Cockpit Safe-To-Spend**: Real-time safe allowance after deducting committed rent (LKR 34k) and goal allocations.
-
----
-
-## 🚀 Quick Navigation
-
-- Need to run the project locally? Follow the [Setup Guide](SETUP_AND_CONTRIBUTION_GUIDE.md).
-- Inspecting the UI tokens and layout? Check the [Design System](DESIGN_SYSTEM.md).
-- Reviewing the database schemas? See [Data Models](DATA_MODELS_AND_STORAGE.md).
-- Reading the complete full specification? Open [Project Master Document](PROJECT_DOCUMENTATION.md).
+| Document | What's in it | Read it for |
+|---|---|---|
+| [SRS.md](SRS.md) | Scenario analysis, the four failed tools (F1–F4), problems P1–P11, every requirement with priority, status and traceability | The *why*, and what's done |
+| [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) | One-page overview: the problem, what was built, current status, links | A quick summary |
+| [FEATURES_SPECIFICATION.md](FEATURES_SPECIFICATION.md) | Screen-by-screen features as built, each tied to its requirement | What the app does |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Layer and MVVM diagrams, offline sync, DI, platform integrations | How it is built |
+| [DATA_MODELS_AND_STORAGE.md](DATA_MODELS_AND_STORAGE.md) | Firestore schema, ER diagram, Room cache, rates | What is stored, and where |
+| [API_AND_SECURITY.md](API_AND_SECURITY.md) | Rules, sign-in, permissions, external APIs, known gaps | How his data is protected |
+| [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) | Colours, type, components, and the scenario reasons behind them | How it looks, and why |
+| [adr/](adr/) | Architecture decision records (ADR-0001: fetched rate suggests, received amount decides) | Decisions that shouldn't be re-argued |
+| [../GLOSSARY.md](../GLOSSARY.md) | Domain terms used in code and docs | Shared vocabulary |
+| [SETUP_AND_CONTRIBUTION_GUIDE.md](SETUP_AND_CONTRIBUTION_GUIDE.md) | Build, run, test, conventions, Git workflow | Working on the code |
+| [RELEASE_WORKFLOW_AND_GDRIVE.md](RELEASE_WORKFLOW_AND_GDRIVE.md) | CI and the APK upload to Google Drive | Getting a build |
+| [../prototype/](../prototype/) | Early HTML mock-ups of the main screens (03/10, before the 16/10 redesign) | Design history |
