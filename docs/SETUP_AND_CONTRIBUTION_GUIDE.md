@@ -46,7 +46,12 @@ How to build, run and test PulseFinance, and how the three of us (Hesara, Sandal
 **From Android Studio:** open the folder, let Gradle sync, choose an emulator or device on Android 8.0+, then press **Run**.
 
 **Signing in during development:**
-- **Demo account:** debug builds show a demo drawer on the sign-in screen. **Auto Fill** signs in to the shared, pre-seeded demo account. The credentials come from `BuildConfig` in debug builds only; don't copy them into docs, screenshots or commits (FR-AUTH-7).
+- **Demo account:** debug builds show a demo drawer on the sign-in screen. **Auto Fill** signs in to the shared, pre-seeded demo account. Ask a teammate for the credentials and add them to your `local.properties` (gitignored):
+  ```properties
+  pulsefinance.demoEmail=…
+  pulsefinance.demoPassword=…
+  ```
+  CI can pass `PULSEFINANCE_DEMO_EMAIL` / `PULSEFINANCE_DEMO_PASSWORD` instead. Without them the drawer is hidden; release builds never have it. Don't copy the credentials into docs, screenshots or commits (FR-AUTH-7).
 - **New account:** a fresh account starts with four empty accounts and nothing else. Record your own test data, or use the demo account to see a populated app.
 
 **Unit tests** live in `app/src/test/`. They cover:

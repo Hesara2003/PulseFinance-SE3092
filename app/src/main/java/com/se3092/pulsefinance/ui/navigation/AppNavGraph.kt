@@ -1,6 +1,7 @@
 package com.se3092.pulsefinance.ui.navigation
 
-import com.se3092.pulsefinance.ui.theme.NeoGreenDark
+import com.se3092.pulsefinance.ui.theme.pulseColors
+import androidx.compose.material3.MaterialTheme
 import com.se3092.pulsefinance.R
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
@@ -78,12 +79,6 @@ import com.se3092.pulsefinance.ui.screens.income.IncomeScreen
 import com.se3092.pulsefinance.ui.screens.income.IncomeViewModel
 import com.se3092.pulsefinance.ui.screens.setup.SetupScreen
 import com.se3092.pulsefinance.ui.screens.setup.SetupViewModel
-import com.se3092.pulsefinance.ui.theme.NeoBorder
-import com.se3092.pulsefinance.ui.theme.NeoCard
-import com.se3092.pulsefinance.ui.theme.NeoGreen
-import com.se3092.pulsefinance.ui.theme.NeoSurface
-import com.se3092.pulsefinance.ui.theme.NeoTextSecondary
-import com.se3092.pulsefinance.ui.theme.NeoTextTertiary
 
 data class NavItem(
     val screen: Screen,
@@ -138,7 +133,7 @@ fun AppNavGraph(
     val showBottomBar = currentRoute != Screen.Auth.route && currentRoute != Screen.Setup.route
 
     Scaffold(
-        containerColor = NeoSurface,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (showBottomBar) {
                 Box(
@@ -153,12 +148,12 @@ fun AppNavGraph(
                             .shadow(
                                 elevation = 16.dp,
                                 shape = CircleShape,
-                                ambientColor = Color(0x1F0F172A),
-                                spotColor = Color(0x1F0F172A)
+                                ambientColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.12f),
+                                spotColor = MaterialTheme.pulseColors.shadow.copy(alpha = 0.12f)
                             ),
                         shape = CircleShape,
-                        color = NeoCard,
-                        border = BorderStroke(1.dp, NeoBorder)
+                        color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Row(
                             modifier = Modifier
@@ -275,7 +270,7 @@ private val dockInactiveFilter = ColorFilter.colorMatrix(ColorMatrix().apply { s
  */
 @Composable
 private fun DockItem(label: String, @DrawableRes icon: Int, selected: Boolean, onClick: () -> Unit) {
-    val blob by animateColorAsState(if (selected) NeoGreen.copy(alpha = 0.16f) else Color.Transparent, label = "dock-blob")
+    val blob by animateColorAsState(if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.16f) else Color.Transparent, label = "dock-blob")
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -302,7 +297,7 @@ private fun DockItem(label: String, @DrawableRes icon: Int, selected: Boolean, o
             text = label,
             fontSize = 10.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            color = if (selected) NeoGreenDark else NeoTextTertiary
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.pulseColors.textTertiary
         )
     }
 }
@@ -313,10 +308,10 @@ private fun DockCenterButton(selected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(50.dp)
-            .shadow(8.dp, CircleShape, spotColor = Color(0x5900C950))
+            .shadow(8.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f))
             .clip(CircleShape)
-            .background(if (selected) NeoGreen.copy(alpha = 0.16f) else NeoCard)
-            .border(if (selected) 3.dp else 2.dp, NeoGreen, CircleShape)
+            .background(if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surface)
+            .border(if (selected) 3.dp else 2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .semantics { contentDescription = "Income" },
         contentAlignment = Alignment.Center

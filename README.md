@@ -86,7 +86,7 @@ The app is configured for the Firebase project `finance-app-se3092` (see `.fireb
 
 **Signing in:**
 - **New accounts:** register with email or Google. A new account starts with four empty accounts: primary bank, secondary auto-debit, cash and crypto exchange. Nothing else is pre-filled; he records his own data.
-- **Demo account (debug builds only):** the sign-in screen has a demo drawer that fills in a pre-seeded demo account. The credentials are injected through `BuildConfig` in debug builds and are empty in release builds (FR-AUTH-7), so they are not repeated here.
+- **Demo account (debug builds only):** the sign-in screen has a demo drawer that fills in a pre-seeded demo account. The credentials are read from your `local.properties` (`pulsefinance.demoEmail`, `pulsefinance.demoPassword`) into `BuildConfig` in debug builds only, and are empty in release builds (FR-AUTH-7), so they are not repeated here. See the setup guide.
 
 **Tests:**
 

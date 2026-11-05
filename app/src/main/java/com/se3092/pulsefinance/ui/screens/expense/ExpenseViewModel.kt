@@ -35,6 +35,8 @@ data class AuditUiState(
     val initials: String = "",
     val isLoading: Boolean = true,
     val subscriptions: List<DetectedSubscription> = emptyList(),
+    /** [subscriptions] grouped by the account they're charged to (FR-SUB-6). */
+    val subscriptionsByAccount: List<Pair<String, List<DetectedSubscription>>> = emptyList(),
     val flaggedCount: Int = 0,
     val flaggedMonthlyLkr: Double = 0.0,
     val flaggedAnnualLkr: Double = 0.0,
@@ -75,6 +77,7 @@ class ExpenseViewModel @Inject constructor(
             AuditUiState(
                 isLoading = false,
                 subscriptions = subscriptions,
+                subscriptionsByAccount = DetectSubscriptionsUseCase.groupByAccount(subscriptions),
                 flaggedCount = flagged.size,
                 flaggedMonthlyLkr = monthly,
                 flaggedAnnualLkr = monthly * 12,

@@ -94,6 +94,15 @@ class DetectSubscriptionsUseCase @Inject constructor() {
         private const val LOOKBACK_DAYS = 120L
         private const val ACTIVE_DAYS = 45L
 
+        /**
+         * Subscriptions grouped by the account they're charged to (FR-SUB-6), keeping the order of
+         * [subscriptions] within and across groups. Charges with no account go under [UNASSIGNED].
+         */
+        fun groupByAccount(subscriptions: List<DetectedSubscription>): List<Pair<String, List<DetectedSubscription>>> =
+            subscriptions.groupBy { it.accountName.ifBlank { UNASSIGNED } }.toList()
+
+        const val UNASSIGNED = "Unassigned Account"
+
         /** Stable key for a merchant, e.g. "Netflix Premium " -> "netflix_premium". Safe as a Firestore map key. */
         fun keyFor(title: String): String =
             title.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_')
